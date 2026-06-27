@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@800;900&family=Titan+One&display=swap");
 
 :root {
   color-scheme: dark;
@@ -120,10 +120,10 @@ button {
 
 .hero__bottom-glass {
   background:
-    linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.018) 42%, rgba(255, 214, 41, 0.06) 74%, rgba(255, 255, 255, 0.07) 100%);
-  backdrop-filter: blur(3.4px) saturate(1.1);
-  mask-image: linear-gradient(180deg, transparent 0%, transparent 38%, rgba(0, 0, 0, 0.78) 70%, #000 100%);
-  opacity: 0.98;
+    linear-gradient(180deg, transparent 0%, transparent 52%, rgba(0, 0, 0, 0.28) 76%, rgba(0, 0, 0, 0.62) 100%);
+  backdrop-filter: none;
+  mask-image: linear-gradient(180deg, transparent 0%, transparent 48%, rgba(0, 0, 0, 0.86) 76%, #000 100%);
+  opacity: 0.94;
   z-index: -1;
 }
 
@@ -252,20 +252,24 @@ p {
 }
 
 .hero h1 {
-  font-family: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
-  font-size: clamp(2.65rem, 6.4vw, 5.8rem);
+  font-family: "Titan One", "Barlow Condensed", Impact, sans-serif;
+  font-size: clamp(2.45rem, 5.9vw, 5.4rem);
   font-weight: 900;
   letter-spacing: 0;
-  line-height: 0.82;
+  line-height: 0.86;
   margin-bottom: 0;
-  max-width: 11.5ch;
-  -webkit-text-stroke: 0.85px rgba(0, 0, 0, 0.98);
+  max-width: 14ch;
+  -webkit-text-stroke: 0.72px rgba(0, 0, 0, 0.98);
   paint-order: stroke fill;
   text-shadow:
-    0.025em 0.035em 0 rgba(0, 0, 0, 0.98),
-    0 0.26rem 1.1rem rgba(0, 0, 0, 0.78),
-    0 0 2.2rem rgba(255, 255, 255, 0.18);
+    0.028em 0.042em 0 rgba(0, 0, 0, 0.98),
+    0 0.26rem 1rem rgba(0, 0, 0, 0.78),
+    0 0 1.9rem rgba(255, 255, 255, 0.16);
   text-transform: uppercase;
+}
+
+.hero h1 span {
+  display: block;
 }
 
 .hero__copy {
@@ -318,10 +322,10 @@ p {
   --button-bg: var(--yellow);
   align-items: center;
   background: transparent;
-  color: #fff;
+  color: #080808;
   cursor: pointer;
   display: inline-flex;
-  font-family: "Barlow Condensed", "Arial Narrow", Impact, sans-serif;
+  font-family: "Titan One", "Barlow Condensed", Impact, sans-serif;
   font-weight: 900;
   justify-content: center;
   min-height: 4.15rem;
@@ -335,28 +339,28 @@ p {
 .rockstar-button span {
   align-items: center;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 46%),
-    linear-gradient(135deg, #080808 0%, #141414 46%, #050505 100%);
-  border: 2px solid var(--yellow);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.04) 42%),
+    linear-gradient(135deg, #ffe86a 0%, var(--yellow) 46%, #f5b700 100%);
+  border: 2px solid rgba(255, 255, 255, 0.52);
   border-radius: 999px;
   box-shadow:
-    inset 0 0.1rem 0 rgba(255, 255, 255, 0.18),
-    inset 0 -0.18rem 0 rgba(255, 214, 41, 0.2),
+    inset 0 0.12rem 0 rgba(255, 255, 255, 0.64),
+    inset 0 -0.22rem 0 rgba(174, 112, 0, 0.3),
     0 0.95rem 2.4rem rgba(0, 0, 0, 0.42),
-    0 0 2.4rem rgba(255, 214, 41, 0.24);
-  color: #fff;
+    0 0 2.4rem rgba(255, 214, 41, 0.28);
+  color: #080808;
   display: flex;
   height: 100%;
   justify-content: center;
-  font-size: 1.55rem;
+  font-size: 1.3rem;
   letter-spacing: 0;
   min-height: 4.15rem;
   overflow: hidden;
   padding: 0 2rem;
   position: relative;
   text-shadow:
-    0.04em 0.05em 0 rgba(0, 0, 0, 0.86),
-    0 0.45rem 1rem rgba(0, 0, 0, 0.72);
+    0.035em 0.045em 0 rgba(255, 255, 255, 0.44),
+    0 0.28rem 0.9rem rgba(0, 0, 0, 0.25);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
@@ -390,13 +394,13 @@ p {
 .rockstar-button:hover span,
 .rockstar-button:focus-visible span {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 46%),
-    linear-gradient(135deg, #111 0%, #1e1e1e 46%, #050505 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.08) 42%),
+    linear-gradient(135deg, #fff080 0%, #ffdc31 46%, #f8b90a 100%);
   box-shadow:
-    inset 0 0.1rem 0 rgba(255, 255, 255, 0.24),
-    inset 0 -0.18rem 0 rgba(255, 214, 41, 0.24),
+    inset 0 0.12rem 0 rgba(255, 255, 255, 0.72),
+    inset 0 -0.22rem 0 rgba(174, 112, 0, 0.32),
     0 1.05rem 2.6rem rgba(0, 0, 0, 0.46),
-    0 0 3rem rgba(255, 214, 41, 0.4);
+    0 0 3rem rgba(255, 214, 41, 0.44);
   transform: translateY(-0.08rem);
 }
 
@@ -815,18 +819,18 @@ p {
   0%,
   100% {
     box-shadow:
-      inset 0 0.1rem 0 rgba(255, 255, 255, 0.18),
-      inset 0 -0.18rem 0 rgba(255, 214, 41, 0.2),
+      inset 0 0.12rem 0 rgba(255, 255, 255, 0.64),
+      inset 0 -0.22rem 0 rgba(174, 112, 0, 0.3),
       0 0.95rem 2.4rem rgba(0, 0, 0, 0.42),
-      0 0 2.1rem rgba(255, 214, 41, 0.18);
+      0 0 2.1rem rgba(255, 214, 41, 0.2);
   }
 
   50% {
     box-shadow:
-      inset 0 0.1rem 0 rgba(255, 255, 255, 0.24),
-      inset 0 -0.18rem 0 rgba(255, 214, 41, 0.3),
+      inset 0 0.12rem 0 rgba(255, 255, 255, 0.74),
+      inset 0 -0.22rem 0 rgba(174, 112, 0, 0.34),
       0 1.05rem 2.65rem rgba(0, 0, 0, 0.5),
-      0 0 3rem rgba(255, 214, 41, 0.34);
+      0 0 3rem rgba(255, 214, 41, 0.42);
   }
 }
 
@@ -888,9 +892,9 @@ p {
     padding: 0;
   }
 
-  .hero__art {
+.hero__art {
     background-image:
-      linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.01) 48%, rgba(0, 0, 0, 0.06) 78%, rgba(0, 0, 0, 0.12) 100%),
+      linear-gradient(180deg, transparent 0%, transparent 54%, rgba(0, 0, 0, 0.16) 82%, rgba(0, 0, 0, 0.34) 100%),
       url('/assets/gta-vi-lucia-jason-expanded.png');
     background-color: #9b7cb2;
     background-position: center top;
@@ -922,7 +926,7 @@ p {
     align-self: flex-end;
     margin-left: 0;
     max-width: 100%;
-    padding: 0 1rem 4.65rem;
+    padding: 0 1rem 3.3rem;
     width: 100%;
   }
 
@@ -937,10 +941,10 @@ p {
   }
 
   .hero h1 {
-    font-size: clamp(3.15rem, 15.4vw, 4.65rem);
-    line-height: 0.8;
+    font-size: clamp(2.7rem, 13.1vw, 3.85rem);
+    line-height: 0.83;
     margin-bottom: 0;
-    max-width: 9.2ch;
+    max-width: 100%;
     -webkit-text-stroke: 0.78px rgba(0, 0, 0, 0.98);
     text-shadow:
       0.024em 0.034em 0 rgba(0, 0, 0, 0.98),
@@ -951,11 +955,11 @@ p {
   .hero__copy {
     color: #fff;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: clamp(1.1rem, 4.85vw, 1.32rem);
+    font-size: clamp(1.02rem, 4.42vw, 1.18rem);
     font-weight: 900;
     line-height: 1.14;
-    margin: 0.95rem auto 0;
-    max-width: 24.7rem;
+    margin: 0.78rem auto 0;
+    max-width: 23.6rem;
     text-align: center;
     -webkit-text-stroke: 0.3px rgba(0, 0, 0, 0.96);
     text-shadow:
@@ -979,7 +983,7 @@ p {
   .hero__invite {
     display: block;
     margin: 0 auto;
-    max-width: 23.8rem;
+    max-width: 24rem;
     padding: 0;
     text-align: center;
     text-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.7);
@@ -987,7 +991,7 @@ p {
 
   .hero__actions {
     justify-content: center;
-    margin-top: 1.65rem;
+    margin-top: 1.25rem;
   }
 
   .rockstar-button {
@@ -996,8 +1000,8 @@ p {
   }
 
   .rockstar-button span {
-    font-size: 1.62rem;
-    min-height: 4.35rem;
+    font-size: 1.24rem;
+    min-height: 4.05rem;
   }
 
   .quiz-header .brand-copy {
@@ -1075,12 +1079,12 @@ p {
 
 @media (max-width: 420px) {
   .hero h1 {
-    font-size: clamp(2.95rem, 14.8vw, 4.1rem);
+    font-size: clamp(2.46rem, 12.7vw, 3.44rem);
   }
 
   .hero__copy {
-    font-size: clamp(1.04rem, 4.75vw, 1.18rem);
-    max-width: 22.8rem;
+    font-size: clamp(0.98rem, 4.28vw, 1.08rem);
+    max-width: 21.8rem;
   }
 
   .rockstar-button {
@@ -1088,7 +1092,7 @@ p {
   }
 
   .rockstar-button span {
-    font-size: 1.52rem;
+    font-size: 1.12rem;
     padding-inline: 1.25rem;
   }
 
