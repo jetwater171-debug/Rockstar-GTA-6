@@ -42,8 +42,7 @@ button {
 .experience {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 15% 20%, rgba(255, 45, 143, 0.2), transparent 32rem),
-    radial-gradient(circle at 90% 74%, rgba(26, 231, 255, 0.2), transparent 28rem),
+    radial-gradient(circle at 15% 20%, rgba(255, 214, 41, 0.08), transparent 28rem),
     #000;
   isolation: isolate;
   overflow: hidden;
@@ -76,8 +75,8 @@ button {
   background-size: cover;
   filter: saturate(1.18) contrast(1.06);
   transform:
-    translate3d(calc(var(--pointer-x) * -18px), calc(var(--pointer-y) * -10px), 0)
-    scale(1.035);
+    translate3d(calc(var(--pointer-x) * -12px), calc(var(--pointer-y) * -8px), 0)
+    scale(1.01);
   animation: artPulse 9s ease-in-out infinite alternate;
   z-index: -5;
 }
@@ -101,10 +100,9 @@ button {
 
 .hero__speed-lines {
   background:
-    linear-gradient(102deg, transparent 8%, rgba(255, 214, 41, 0.18) 8.2%, transparent 8.8%),
-    linear-gradient(103deg, transparent 59%, rgba(255, 45, 143, 0.22) 59.2%, transparent 60%),
-    linear-gradient(104deg, transparent 78%, rgba(26, 231, 255, 0.18) 78.2%, transparent 78.8%);
-  opacity: 0.85;
+    linear-gradient(102deg, transparent 8%, rgba(255, 214, 41, 0.14) 8.2%, transparent 8.8%),
+    linear-gradient(103deg, transparent 59%, rgba(255, 255, 255, 0.06) 59.2%, transparent 60%);
+  opacity: 0.58;
   z-index: -2;
   animation: lineDrive 6s ease-in-out infinite;
 }
@@ -125,7 +123,7 @@ button {
   height: var(--size);
   border-radius: 999px;
   background: color-mix(in srgb, var(--yellow), white 14%);
-  box-shadow: 0 0 1.4rem rgba(255, 214, 41, 0.7);
+  box-shadow: 0 0 1.2rem rgba(255, 214, 41, 0.58);
   opacity: 0;
   animation: particleRise 7s linear infinite;
   animation-delay: var(--delay);
@@ -147,43 +145,25 @@ button {
 .brand {
   align-items: center;
   display: flex;
-  gap: 0.8rem;
 }
 
 .brand-mark {
-  align-items: center;
   aspect-ratio: 1;
-  background: var(--yellow);
-  border: 0.16rem solid #050505;
   box-shadow:
-    0 0 0 0.14rem rgba(255, 255, 255, 0.9),
-    0.5rem 0.5rem 0 #000,
-    0 0 2.2rem rgba(255, 214, 41, 0.45);
-  color: #070707;
-  display: grid;
-  font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-  font-size: clamp(1.45rem, 3vw, 2.1rem);
-  height: clamp(3.1rem, 6vw, 4.4rem);
-  justify-content: center;
-  letter-spacing: 0;
-  line-height: 1;
-  position: relative;
-  transform: rotate(-2deg);
+    0.45rem 0.45rem 0 #000,
+    0 0 2.2rem rgba(255, 214, 41, 0.38);
+  display: block;
+  height: clamp(3rem, 5.5vw, 4.2rem);
+  object-fit: contain;
+  transform: rotate(-1.5deg);
+  width: auto;
 }
 
 .brand-mark--quiz {
-  height: clamp(3.9rem, 7vw, 5rem);
+  height: clamp(3.65rem, 6vw, 4.65rem);
   box-shadow:
-    0 0 0 0.12rem rgba(255, 255, 255, 0.92),
     0.42rem 0.42rem 0 #000,
     0 0 3rem rgba(255, 214, 41, 0.42);
-}
-
-.brand-mark span {
-  color: #fff;
-  font-size: 0.7em;
-  margin-left: 0.05em;
-  text-shadow: -1px 1px 0 #000;
 }
 
 .brand-copy {
@@ -221,7 +201,7 @@ button {
 .hero__content {
   align-self: center;
   margin-left: clamp(0rem, 5vw, 5rem);
-  max-width: min(47rem, 92vw);
+  max-width: min(39rem, 92vw);
   padding-top: 5rem;
   position: relative;
   z-index: 2;
@@ -229,7 +209,7 @@ button {
 
 .kicker {
   color: var(--yellow);
-  font-size: clamp(0.8rem, 1.8vw, 0.95rem);
+  font-size: clamp(0.72rem, 1.5vw, 0.9rem);
   font-weight: 1000;
   letter-spacing: 0;
   margin: 0 0 0.8rem;
@@ -244,11 +224,11 @@ p {
 
 .hero h1 {
   font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-  font-size: clamp(3.7rem, 10.8vw, 10rem);
+  font-size: clamp(4rem, 11vw, 9.5rem);
   letter-spacing: 0;
   line-height: 0.84;
   margin-bottom: clamp(1.2rem, 3vw, 2rem);
-  max-width: 8ch;
+  max-width: 5ch;
   text-shadow:
     0.06em 0.06em 0 #000,
     0 0 2.7rem rgba(255, 214, 41, 0.16);
@@ -257,9 +237,9 @@ p {
 
 .hero__copy {
   color: var(--muted);
-  font-size: clamp(1rem, 2vw, 1.22rem);
-  line-height: 1.58;
-  max-width: 39rem;
+  font-size: clamp(0.98rem, 1.7vw, 1.14rem);
+  line-height: 1.48;
+  max-width: 32rem;
 }
 
 .hero__release {
@@ -370,7 +350,7 @@ p {
     radial-gradient(circle at 85% 112%, rgba(255, 214, 41, 0.08), transparent 22rem),
     #000;
   justify-content: center;
-  padding: 8rem clamp(1rem, 3vw, 2rem) 2rem;
+  padding: 7.5rem clamp(1rem, 3vw, 2rem) 2rem;
 }
 
 .quiz-ambient {
@@ -382,14 +362,14 @@ p {
 
 .quiz-poster {
   background:
-    linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.86) 42%, rgba(0, 0, 0, 0.18) 100%),
-    linear-gradient(0deg, #000 0%, rgba(0, 0, 0, 0.08) 52%, #000 100%),
+    linear-gradient(90deg, #000 0%, rgba(0, 0, 0, 0.9) 46%, rgba(0, 0, 0, 0.35) 100%),
+    linear-gradient(0deg, #000 0%, rgba(0, 0, 0, 0.35) 52%, #000 100%),
     url('/assets/gta-vi-poster.jpg');
   background-position: center right;
   background-size: cover;
   filter: grayscale(0.15) saturate(0.72) contrast(1.12);
   inset: 0;
-  opacity: 0.18;
+  opacity: 0.12;
   pointer-events: none;
   position: absolute;
   transform: scale(1.02);
@@ -422,7 +402,7 @@ p {
     linear-gradient(180deg, rgba(0, 0, 0, 0.98), rgba(0, 0, 0, 0.78) 72%, transparent);
   border-bottom: 1px solid rgba(255, 214, 41, 0.12);
   justify-content: center;
-  min-height: 6.4rem;
+  min-height: 5.9rem;
   padding: 0.9rem clamp(1rem, 2.5vw, 2rem) 1.35rem;
 }
 
@@ -456,34 +436,13 @@ p {
   border: 1px solid rgba(255, 214, 41, 0.24);
   color: var(--yellow);
   font-weight: 1000;
-  min-width: 3.8rem;
+  min-width: 3.65rem;
   padding: 0.54rem 0.75rem;
   text-align: center;
 }
 
-.lives {
-  display: flex;
-  gap: 0.45rem;
-}
-
-.lives span {
-  background: rgba(255, 255, 255, 0.18);
-  clip-path: polygon(50% 0, 61% 33%, 97% 33%, 68% 53%, 79% 87%, 50% 66%, 21% 87%, 32% 53%, 3% 33%, 39% 33%);
-  height: 1.25rem;
-  transition:
-    transform 220ms ease,
-    background 220ms ease,
-    opacity 220ms ease;
-  width: 1.25rem;
-}
-
-.lives span.is-active {
-  background: var(--yellow);
-  box-shadow: 0 0 1.4rem rgba(255, 214, 41, 0.55);
-}
-
 .quiz-shell {
-  max-width: 58rem;
+  max-width: 54rem;
   position: relative;
   width: min(100%, 58rem);
   z-index: 2;
@@ -508,15 +467,15 @@ p {
 
 .question-panel {
   background:
-    linear-gradient(135deg, rgba(255, 214, 41, 0.075), transparent 18%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
-    rgba(2, 2, 2, 0.965);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+    linear-gradient(135deg, rgba(255, 214, 41, 0.052), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 38%),
+    rgba(0, 0, 0, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.11);
   box-shadow:
     0 2.5rem 8rem rgba(0, 0, 0, 0.88),
     inset 0 0 0 1px rgba(255, 214, 41, 0.05),
     inset 0 -4rem 8rem rgba(0, 0, 0, 0.46);
-  min-height: 34rem;
+  min-height: 30rem;
   overflow: hidden;
   padding: clamp(1.25rem, 4vw, 3rem);
   position: relative;
@@ -571,17 +530,17 @@ p {
 .question-panel__meta strong {
   color: rgba(255, 255, 255, 0.16);
   font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-  font-size: clamp(3rem, 9vw, 5.7rem);
+  font-size: clamp(2.6rem, 8vw, 5rem);
   line-height: 0.75;
 }
 
 .question-panel h2 {
   font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-  font-size: clamp(2.45rem, 6vw, 5.25rem);
+  font-size: clamp(2.15rem, 5.4vw, 4.65rem);
   letter-spacing: 0;
   line-height: 0.95;
   margin: 1rem 0 clamp(1.5rem, 4vw, 2.4rem);
-  max-width: 12ch;
+  max-width: 13ch;
   position: relative;
   text-transform: uppercase;
   z-index: 1;
@@ -604,7 +563,7 @@ p {
   font-weight: 900;
   gap: 1rem;
   justify-content: space-between;
-  min-height: 4.4rem;
+  min-height: 4rem;
   overflow: hidden;
   padding: 1rem 1.1rem;
   position: relative;
@@ -685,9 +644,8 @@ p {
 .result-screen {
   align-items: center;
   background:
-    radial-gradient(circle at 50% 30%, rgba(255, 214, 41, 0.18), transparent 24rem),
-    radial-gradient(circle at 20% 80%, rgba(255, 45, 143, 0.18), transparent 22rem),
-    #020202;
+    radial-gradient(circle at 50% 30%, rgba(255, 214, 41, 0.12), transparent 22rem),
+    #000;
   justify-content: center;
   padding: 2rem;
 }
@@ -818,9 +776,13 @@ p {
 
   .hero__art {
     background-image:
-      linear-gradient(180deg, rgba(0, 0, 0, 0.68) 0%, rgba(0, 0, 0, 0.24) 34%, rgba(0, 0, 0, 0.98) 100%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.48) 0%, rgba(0, 0, 0, 0.16) 34%, rgba(0, 0, 0, 0.98) 100%),
       url('/assets/gta-vi-lucia-jason.jpg');
-    background-position: 62% center;
+    background-color: #000;
+    background-position: 58% 10%;
+    background-repeat: no-repeat;
+    background-size: auto 88%;
+    transform: none;
   }
 
   .topbar__tag,
@@ -828,15 +790,39 @@ p {
     display: none;
   }
 
+  .topbar {
+    padding: 0.9rem;
+  }
+
+  .brand-mark {
+    height: 3.3rem;
+  }
+
   .hero__content {
     align-self: flex-end;
     margin-left: 0;
-    padding-bottom: 4.2rem;
+    max-width: 100%;
+    padding-bottom: 4.4rem;
     padding-top: 7rem;
   }
 
+  .kicker {
+    font-size: 0.72rem;
+    margin-bottom: 0.45rem;
+  }
+
   .hero h1 {
-    max-width: 7.5ch;
+    font-size: clamp(3.25rem, 16.2vw, 4.25rem);
+    line-height: 0.86;
+    margin-bottom: 0.9rem;
+    max-width: 5ch;
+  }
+
+  .hero__copy {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.94rem;
+    line-height: 1.42;
+    max-width: 21rem;
   }
 
   .hero__release {
@@ -845,7 +831,8 @@ p {
   }
 
   .legal-note {
-    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.64rem;
     right: 1rem;
   }
 
@@ -854,7 +841,7 @@ p {
   }
 
   .quiz-header {
-    min-height: 5.8rem;
+    min-height: 5.3rem;
     padding: 0.7rem 1rem 1rem;
   }
 
@@ -871,11 +858,11 @@ p {
   }
 
   .quiz-header__logo {
-    top: 0.68rem;
+    top: 0.58rem;
   }
 
   .brand-mark--quiz {
-    height: 3.65rem;
+    height: 3.25rem;
   }
 
   .question-count {
@@ -883,23 +870,14 @@ p {
     padding: 0.48rem 0.58rem;
   }
 
-  .lives {
-    gap: 0.3rem;
-  }
-
-  .lives span {
-    height: 1.05rem;
-    width: 1.05rem;
-  }
-
   .quiz-screen {
     align-items: flex-start;
-    padding: 6.65rem 0.9rem 1rem;
+    padding: 6rem 0.75rem 0.9rem;
   }
 
   .quiz-poster {
     background-position: 62% center;
-    opacity: 0.11;
+    opacity: 0.07;
   }
 
   .quiz-shell {
@@ -908,21 +886,21 @@ p {
 
   .question-panel {
     min-height: auto;
-    padding: 1.15rem;
+    padding: 1rem;
   }
 
   .question-panel h2 {
-    font-size: clamp(1.9rem, 9.5vw, 2.75rem);
+    font-size: clamp(1.65rem, 8.6vw, 2.35rem);
     line-height: 1;
-    margin-bottom: 1.25rem;
+    margin: 0.75rem 0 1.05rem;
     max-width: 100%;
   }
 
   .answer {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     line-height: 1.25;
-    min-height: 4.15rem;
-    padding: 0.9rem;
+    min-height: 3.7rem;
+    padding: 0.82rem;
   }
 
   .answer b {
@@ -933,11 +911,11 @@ p {
 
 @media (max-width: 420px) {
   .hero h1 {
-    font-size: clamp(3.35rem, 17.5vw, 4.6rem);
+    font-size: clamp(3.05rem, 15.8vw, 4.05rem);
   }
 
   .hero__copy {
-    font-size: 0.96rem;
+    font-size: 0.92rem;
   }
 
   .rockstar-button {
@@ -949,7 +927,7 @@ p {
   }
 
   .question-panel__meta strong {
-    font-size: 3rem;
+    font-size: 2.65rem;
   }
 
   .question-panel__meta {

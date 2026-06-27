@@ -3,68 +3,67 @@ import './styles.css';
 const quiz = [
   {
     eyebrow: 'GTA VI',
-    question: 'Qual dupla esta no centro da nova fase de GTA VI?',
-    options: ['Lucia e Jason', 'Franklin e Lamar', 'Tommy e Lance'],
+    question: 'Qual jogo esta chegando na nova fase da Rockstar?',
+    options: ['GTA VI', 'Minecraft 2', 'FIFA Street'],
     answer: 0,
   },
   {
     eyebrow: 'GTA V',
-    question: 'Em GTA V, qual cidade e o grande palco da historia?',
-    options: ['Liberty City', 'Los Santos', 'Vice City'],
-    answer: 1,
+    question: 'GTA V ficou famoso por qual cidade principal?',
+    options: ['Los Santos', 'Hyrule', 'Mushroom Kingdom'],
+    answer: 0,
   },
   {
     eyebrow: 'GTA V',
-    question: 'Quais sao os tres protagonistas jogaveis de GTA V?',
-    options: ['CJ, Big Smoke e Ryder', 'Niko, Roman e Packie', 'Michael, Franklin e Trevor'],
-    answer: 2,
+    question: 'Qual desses personagens e protagonista de GTA V?',
+    options: ['Franklin', 'Mario', 'Sonic'],
+    answer: 0,
   },
   {
-    eyebrow: 'Gameplay',
-    question: 'Qual atividade marcou muito a campanha de GTA V?',
-    options: ['Golpes planejados em equipe', 'Corridas de dragao', 'Batalhas por turnos'],
+    eyebrow: 'GTA V',
+    question: 'Qual atividade combina mais com GTA V?',
+    options: ['Dirigir carros pela cidade', 'Cuidar de fazenda medieval', 'Montar castelo de gelo'],
     answer: 0,
   },
   {
     eyebrow: 'Online',
-    question: 'No GTA Online, o que os jogadores mais fazem para evoluir?',
-    options: ['Completar missoes, eventos e negocios', 'Ficar apenas no menu', 'Trocar senha com desconhecidos'],
+    question: 'GTA Online permite jogar com outras pessoas?',
+    options: ['Sim', 'Nao', 'So offline'],
     answer: 0,
   },
   {
-    eyebrow: 'Mapa',
-    question: 'GTA VI retorna para uma regiao inspirada em qual vibe?',
-    options: ['Neve eterna e montanhas geladas', 'Praias, neon e caos tropical', 'Castelos medievais'],
-    answer: 1,
+    eyebrow: 'GTA VI',
+    question: 'Qual dupla aparece muito nos materiais de GTA VI?',
+    options: ['Lucia e Jason', 'CJ e Ryder', 'Niko e Roman'],
+    answer: 0,
+  },
+  {
+    eyebrow: 'Vice City',
+    question: 'GTA VI tem uma vibe mais proxima de qual clima?',
+    options: ['Praias, neon e cidade viva', 'Neve eterna', 'Espaco sideral'],
+    answer: 0,
+  },
+  {
+    eyebrow: 'Rockstar',
+    question: 'Qual empresa e conhecida pela serie GTA?',
+    options: ['Rockstar Games', 'Nintendo', 'Roblox Corporation'],
+    answer: 0,
   },
   {
     eyebrow: 'Perfil',
-    question: 'Qual resposta mostra melhor um jogador com perfil de GTA?',
-    options: ['Explorar historia, mapa, carros e detalhes', 'Ignorar qualquer missao', 'Nunca testar nada novo'],
+    question: 'Voce tem interesse em receber novidades de GTA VI?',
+    options: ['Sim, tenho interesse', 'Nao conheco GTA', 'Nao jogo nada'],
     answer: 0,
   },
   {
-    eyebrow: 'Conhecimento',
-    question: 'Qual empresa publica a serie Grand Theft Auto?',
-    options: ['Valve', 'Rockstar Games', 'Mojang Studios'],
-    answer: 1,
-  },
-  {
-    eyebrow: 'Seguranca',
-    question: 'Em uma promocao gamer seria correto pedir qual informacao?',
-    options: ['Senha da conta', 'Codigo do cartao', 'Plataforma preferida'],
-    answer: 2,
-  },
-  {
     eyebrow: 'Final',
-    question: 'O que voce faria primeiro ao entrar em um GTA novo?',
-    options: ['Explorar a cidade e sentir o mapa', 'Fechar antes do menu', 'Apagar o save'],
+    question: 'Se fosse selecionado, voce gostaria de participar da proxima etapa?',
+    options: ['Sim, quero participar', 'Nao quero', 'Talvez depois'],
     answer: 0,
   },
 ];
 
 let currentQuestion = 0;
-let lives = 3;
 let score = 0;
 let isLocked = false;
 
@@ -81,28 +80,20 @@ function render() {
 
         <header class="topbar">
           ${brand('dark')}
-          <span class="topbar__tag">Selecao promocional</span>
         </header>
 
         <div class="hero__content">
-          <p class="kicker">Grand Theft Auto VI</p>
-          <h1>GTA VI Promo Quiz</h1>
+          <p class="kicker">Convite promocional</p>
+          <h1>GTA VI</h1>
           <p class="hero__copy">
-            Responda uma triagem rapida inspirada no universo Rockstar: GTA V,
-            GTA Online e a nova era de Vice City. Sao 10 perguntas, 3 vidas e
-            um corte final para liberar a proxima etapa.
+            Participe da selecao de perfis para uma promocao especial inspirada
+            na nova era de Grand Theft Auto.
           </p>
-          <div class="hero__release" aria-label="Informacoes do quiz">
-            <span>10 perguntas</span>
-            <span>3 vidas</span>
-            <span>GTA V + GTA VI</span>
-          </div>
           <div class="hero__actions">
             <button class="rockstar-button" id="startButton">
               <span>QUERO PARTICIPAR</span>
               <i aria-hidden="true"></i>
             </button>
-            <span class="hero__micro">Sem coleta de dados nesta primeira etapa.</span>
           </div>
         </div>
 
@@ -117,9 +108,6 @@ function render() {
         </div>
         <div class="quiz-poster" aria-hidden="true"></div>
         <header class="quiz-header">
-          <div class="quiz-header__status quiz-header__status--left">
-            <div class="lives" id="lives" aria-label="Vidas restantes"></div>
-          </div>
           <div class="quiz-header__logo" aria-label="Simbolo Rockstar Games">
             ${brandMark('quiz')}
           </div>
@@ -152,16 +140,12 @@ function brand(variant) {
   return `
     <div class="brand brand--${variant}" aria-label="Rockstar inspired mark">
       ${brandMark(variant)}
-      <div class="brand-copy">
-        <strong>ROCKSTAR</strong>
-        <small>GTA VI QUIZ</small>
-      </div>
     </div>
   `;
 }
 
 function brandMark(variant = 'default') {
-  return `<div class="brand-mark brand-mark--${variant}">R<span>*</span></div>`;
+  return `<img class="brand-mark brand-mark--${variant}" src="/assets/rockstar-logo.png" alt="Rockstar Games" />`;
 }
 
 function buildParticles() {
@@ -203,7 +187,6 @@ function renderQuestion(skipTransition = false) {
   const panel = document.querySelector('#questionPanel');
   const progress = document.querySelector('#progressBar');
   const questionCount = document.querySelector('#questionCount');
-  const livesNode = document.querySelector('#lives');
 
   if (!panel || !item) return;
 
@@ -218,7 +201,6 @@ function renderQuestion(skipTransition = false) {
         <span>${item.eyebrow}</span>
         <strong>${String(currentQuestion + 1).padStart(2, '0')}</strong>
       </div>
-      <p class="question-panel__label">Selection quiz</p>
       <h2>${item.question}</h2>
       <div class="answers">
         ${item.options
@@ -244,12 +226,6 @@ function renderQuestion(skipTransition = false) {
   const progressValue = ((currentQuestion + 1) / quiz.length) * 100;
   if (progress) progress.style.width = `${progressValue}%`;
   if (questionCount) questionCount.textContent = `${currentQuestion + 1}/${quiz.length}`;
-  if (livesNode) {
-    livesNode.innerHTML = Array.from({ length: 3 }, (_, index) => {
-      const active = index < lives ? 'is-active' : '';
-      return `<span class="${active}" aria-hidden="true"></span>`;
-    }).join('');
-  }
 }
 
 function handleAnswer(event) {
@@ -269,16 +245,9 @@ function handleAnswer(event) {
 
   if (correct) {
     score += 1;
-  } else {
-    lives = Math.max(0, lives - 1);
   }
 
   window.setTimeout(() => {
-    if (lives === 0) {
-      showResult(false);
-      return;
-    }
-
     currentQuestion += 1;
 
     if (currentQuestion >= quiz.length) {
@@ -294,18 +263,16 @@ function handleAnswer(event) {
 function showResult(completed) {
   switchScreen('result');
 
-  const approved = completed && score >= 7 && lives > 0;
+  const approved = completed && score >= 6;
   const resultCard = document.querySelector('#resultCard');
-  const title = approved ? 'Perfil qualificado' : completed ? 'Quase na rota' : 'Vidas esgotadas';
+  const title = approved ? 'Perfil selecionado' : 'Quase la';
   const copy = approved
-    ? 'Voce passou pela triagem inicial. A proxima etapa pode receber cadastro, plataforma e preferencias quando ligarmos Supabase.'
-    : completed
-      ? 'Voce concluiu o quiz, mas ficou abaixo do corte inicial. Vale tentar de novo com mais atencao.'
-      : 'A triagem encerrou antes da pergunta final. Recomece para tentar manter pelo menos uma vida ate o fim.';
+    ? 'Voce concluiu a triagem inicial. A proxima etapa pode receber cadastro, plataforma e preferencias quando ligarmos Supabase.'
+    : 'Voce concluiu o quiz. Tente novamente para melhorar seu perfil na selecao.';
 
   resultCard.innerHTML = `
     ${brand('light')}
-    <p class="kicker">${score}/${quiz.length} acertos - ${lives} vida${lives === 1 ? '' : 's'}</p>
+    <p class="kicker">${score}/${quiz.length} respostas alinhadas</p>
     <h2>${title}</h2>
     <p>${copy}</p>
     <div class="result-actions">
@@ -321,7 +288,6 @@ function showResult(completed) {
 
 function resetQuiz() {
   currentQuestion = 0;
-  lives = 3;
   score = 0;
   isLocked = false;
   switchScreen('home');
