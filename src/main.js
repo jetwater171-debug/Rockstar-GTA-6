@@ -2,62 +2,62 @@ import './styles.css';
 
 const quiz = [
   {
-    eyebrow: 'Identidade',
-    question: 'Qual dupla protagoniza a nova fase de GTA VI?',
-    options: ['Lucia e Jason', 'Michael e Trevor', 'Tommy e Lance'],
+    eyebrow: 'GTA VI',
+    question: 'Qual dupla esta no centro da nova fase de GTA VI?',
+    options: ['Lucia e Jason', 'Franklin e Lamar', 'Tommy e Lance'],
+    answer: 0,
+  },
+  {
+    eyebrow: 'GTA V',
+    question: 'Em GTA V, qual cidade e o grande palco da historia?',
+    options: ['Liberty City', 'Los Santos', 'Vice City'],
+    answer: 1,
+  },
+  {
+    eyebrow: 'GTA V',
+    question: 'Quais sao os tres protagonistas jogaveis de GTA V?',
+    options: ['CJ, Big Smoke e Ryder', 'Niko, Roman e Packie', 'Michael, Franklin e Trevor'],
+    answer: 2,
+  },
+  {
+    eyebrow: 'Gameplay',
+    question: 'Qual atividade marcou muito a campanha de GTA V?',
+    options: ['Golpes planejados em equipe', 'Corridas de dragao', 'Batalhas por turnos'],
+    answer: 0,
+  },
+  {
+    eyebrow: 'Online',
+    question: 'No GTA Online, o que os jogadores mais fazem para evoluir?',
+    options: ['Completar missoes, eventos e negocios', 'Ficar apenas no menu', 'Trocar senha com desconhecidos'],
     answer: 0,
   },
   {
     eyebrow: 'Mapa',
-    question: 'GTA VI apresenta um estado ficticio inspirado principalmente em qual clima?',
-    options: ['Florida moderna e neon', 'Alasca selvagem', 'Europa medieval'],
-    answer: 0,
+    question: 'GTA VI retorna para uma regiao inspirada em qual vibe?',
+    options: ['Neve eterna e montanhas geladas', 'Praias, neon e caos tropical', 'Castelos medievais'],
+    answer: 1,
   },
   {
-    eyebrow: 'Estilo',
-    question: 'Qual elemento combina mais com a identidade visual de GTA VI?',
-    options: ['Noites tropicais, neon e caos urbano', 'Castelos e magia antiga', 'Faroeste seco e silencioso'],
-    answer: 0,
-  },
-  {
-    eyebrow: 'Gameplay',
-    question: 'Em GTA, qual comportamento mostra melhor que voce entende a experiencia?',
-    options: ['Explorar missoes, mapa, historia e detalhes', 'Ignorar tudo e sair do jogo', 'Usar sempre a mesma rua'],
-    answer: 0,
-  },
-  {
-    eyebrow: 'Universo',
-    question: 'Qual destes nomes esta mais associado a GTA?',
-    options: ['Vice City', 'Hyrule', 'Raccoon City'],
-    answer: 0,
-  },
-  {
-    eyebrow: 'Comunidade',
-    question: 'Qual atitude ajuda a manter uma comunidade boa em eventos online?',
-    options: ['Respeitar regras e outros jogadores', 'Spammar golpes no chat', 'Vazar dados de pessoas'],
+    eyebrow: 'Perfil',
+    question: 'Qual resposta mostra melhor um jogador com perfil de GTA?',
+    options: ['Explorar historia, mapa, carros e detalhes', 'Ignorar qualquer missao', 'Nunca testar nada novo'],
     answer: 0,
   },
   {
     eyebrow: 'Conhecimento',
     question: 'Qual empresa publica a serie Grand Theft Auto?',
-    options: ['Rockstar Games', 'Mojang Studios', 'Valve'],
-    answer: 0,
+    options: ['Valve', 'Rockstar Games', 'Mojang Studios'],
+    answer: 1,
   },
   {
-    eyebrow: 'Perfil',
-    question: 'Para uma promocao gamer, qual dado faz mais sentido pedir primeiro?',
-    options: ['Interesse na plataforma e no jogo', 'Senha pessoal', 'Codigo do cartao'],
-    answer: 0,
-  },
-  {
-    eyebrow: 'Lancamento',
-    question: 'Qual plataforma costuma ser central em grandes lancamentos AAA?',
-    options: ['Consoles atuais', 'Calculadoras escolares', 'TV sem internet'],
-    answer: 0,
+    eyebrow: 'Seguranca',
+    question: 'Em uma promocao gamer seria correto pedir qual informacao?',
+    options: ['Senha da conta', 'Codigo do cartao', 'Plataforma preferida'],
+    answer: 2,
   },
   {
     eyebrow: 'Final',
-    question: 'O que voce faria primeiro ao entrar em um novo GTA?',
+    question: 'O que voce faria primeiro ao entrar em um GTA novo?',
     options: ['Explorar a cidade e sentir o mapa', 'Fechar antes do menu', 'Apagar o save'],
     answer: 0,
   },
@@ -101,7 +101,7 @@ function render() {
         </div>
 
         <footer class="legal-note">
-          Protótipo visual não oficial. GTA, Rockstar Games e marcas relacionadas pertencem aos respectivos titulares.
+          Prototipo visual nao oficial. GTA, Rockstar Games e marcas relacionadas pertencem aos respectivos titulares.
         </footer>
       </section>
 
@@ -110,9 +110,13 @@ function render() {
           <span></span><span></span><span></span>
         </div>
         <header class="quiz-header">
-          ${brand('light')}
-          <div class="quiz-header__status">
+          <div class="quiz-header__status quiz-header__status--left">
             <div class="lives" id="lives" aria-label="Vidas restantes"></div>
+          </div>
+          <div class="quiz-header__logo" aria-label="Simbolo Rockstar Games">
+            ${brandMark('quiz')}
+          </div>
+          <div class="quiz-header__status quiz-header__status--right">
             <div class="question-count" id="questionCount"></div>
           </div>
         </header>
@@ -140,13 +144,17 @@ function render() {
 function brand(variant) {
   return `
     <div class="brand brand--${variant}" aria-label="Rockstar inspired mark">
-      <div class="brand-mark">R<span>*</span></div>
+      ${brandMark(variant)}
       <div class="brand-copy">
         <strong>ROCKSTAR</strong>
         <small>GTA VI QUIZ</small>
       </div>
     </div>
   `;
+}
+
+function brandMark(variant = 'default') {
+  return `<div class="brand-mark brand-mark--${variant}">R<span>*</span></div>`;
 }
 
 function buildParticles() {
@@ -289,7 +297,7 @@ function showResult(completed) {
 
   resultCard.innerHTML = `
     ${brand('light')}
-    <p class="kicker">${score}/${quiz.length} acertos · ${lives} vida${lives === 1 ? '' : 's'}</p>
+    <p class="kicker">${score}/${quiz.length} acertos - ${lives} vida${lives === 1 ? '' : 's'}</p>
     <h2>${title}</h2>
     <p>${copy}</p>
     <div class="result-actions">
