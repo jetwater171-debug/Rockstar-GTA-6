@@ -152,7 +152,7 @@ function brand(variant) {
 }
 
 function brandMark(variant = 'default') {
-  const src = variant === 'symbol' || variant === 'quiz' ? '/assets/rockstar-r-white.svg' : '/assets/rockstar-logo.png';
+  const src = variant === 'symbol' || variant === 'quiz' ? '/assets/rockstar-logo-white-user-transparent.png' : '/assets/rockstar-logo.png';
   return `<img class="brand-mark brand-mark--${variant}" src="${src}" alt="Rockstar Games" />`;
 }
 
