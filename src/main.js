@@ -79,15 +79,9 @@ function render() {
         <div class="particle-field" id="particles" aria-hidden="true"></div>
 
         <header class="topbar">
-          <button class="nav-icon nav-icon--menu" aria-label="Abrir menu">
-            <span></span><span></span><span></span>
-          </button>
           <div class="topbar__logo">
             ${brandMark('symbol')}
           </div>
-          <button class="nav-icon nav-icon--user" aria-label="Perfil">
-            <span></span>
-          </button>
         </header>
 
         <div class="hero__content">
@@ -95,12 +89,16 @@ function render() {
             <div class="vi-mark" aria-hidden="true">VI</div>
             <div>
               <p class="kicker">Grand Theft Auto VI</p>
-              <h1>Reserve seu acesso</h1>
+              <h1>Participe da promocao</h1>
             </div>
           </div>
+          <p class="hero__copy">
+            Responda o questionario promocional da Rockstar para participar da
+            promocao exclusiva do GTA 6.
+          </p>
           <div class="hero__actions">
             <button class="rockstar-button" id="startButton">
-              <span>Saiba mais</span>
+              <span>Quero participar</span>
               <i aria-hidden="true"></i>
             </button>
           </div>
