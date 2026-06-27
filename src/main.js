@@ -88,7 +88,7 @@ function render() {
         <div class="hero__content">
           <div class="hero__invite">
             <p class="kicker">Grand Theft Auto VI</p>
-            <h1><span class="vi-mark">VI</span> Participe da promocao</h1>
+            <h1>Participe da promocao</h1>
           </div>
           <p class="hero__copy">
             Responda o questionario promocional da Rockstar para participar da
