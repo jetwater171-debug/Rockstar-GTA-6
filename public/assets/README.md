@@ -1,6 +1,9 @@
 Hero artwork source:
 https://www.rockstargames.com/VI/media/artwork-wallpapers
 
+Mobile hero artwork source:
+`Jason_and_Lucia_03_phone.jpg` from the official GTAVI Artwork & Wallpapers zip.
+
 Poster artwork source:
 https://www.rockstargames.com/VI
 
