@@ -819,9 +819,9 @@ p {
       linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.03) 45%, rgba(0, 0, 0, 0.22) 76%, rgba(0, 0, 0, 0.44) 100%),
       url('/assets/gta-vi-lucia-jason-phone.jpg');
     background-color: #b985af;
-    background-position: center top;
+    background-position: center -5.15rem;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: auto 112%;
     transform: none;
   }
 
@@ -831,7 +831,7 @@ p {
   }
 
   .topbar {
-    height: 3.8rem;
+    height: 5.25rem;
     padding: 0;
     pointer-events: none;
   }
@@ -841,7 +841,7 @@ p {
   }
 
   .brand-mark--symbol {
-    height: 2.75rem;
+    height: 4.2rem;
   }
 
   .hero__content {
