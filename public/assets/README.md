@@ -7,6 +7,9 @@ Mobile hero artwork source:
 Expanded mobile hero artwork:
 `gta-vi-lucia-jason-expanded.png`, provided by the project owner for the mobile landing hero.
 
+Final iPhone hero artwork:
+`gta-vi-lucia-jason-iphone-final.png`, provided by the project owner for the mobile landing hero.
+
 Poster artwork source:
 https://www.rockstargames.com/VI
 
