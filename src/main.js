@@ -76,6 +76,7 @@ function render() {
         <div class="hero__art" aria-hidden="true"></div>
         <div class="hero__grain" aria-hidden="true"></div>
         <div class="hero__speed-lines" aria-hidden="true"></div>
+        <div class="hero__bottom-glass" aria-hidden="true"></div>
         <div class="particle-field" id="particles" aria-hidden="true"></div>
 
         <header class="topbar">
