@@ -7,4 +7,7 @@ https://www.rockstargames.com/VI
 Rockstar logo source provided by project owner:
 https://logospng.org/download/rockstar-games/rockstar-games-256.png
 
+White R mark:
+Project-local contrast mark derived as an SVG for dark UI placement.
+
 This project is a visual prototype/fan concept and should not be presented as an official promotion unless authorized by the rights holder.

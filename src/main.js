@@ -79,19 +79,28 @@ function render() {
         <div class="particle-field" id="particles" aria-hidden="true"></div>
 
         <header class="topbar">
-          ${brand('dark')}
+          <button class="nav-icon nav-icon--menu" aria-label="Abrir menu">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="topbar__logo">
+            ${brandMark('symbol')}
+          </div>
+          <button class="nav-icon nav-icon--user" aria-label="Perfil">
+            <span></span>
+          </button>
         </header>
 
         <div class="hero__content">
-          <p class="kicker">Convite promocional</p>
-          <h1>GTA VI</h1>
-          <p class="hero__copy">
-            Participe da selecao de perfis para uma promocao especial inspirada
-            na nova era de Grand Theft Auto.
-          </p>
+          <div class="hero__invite">
+            <div class="vi-mark" aria-hidden="true">VI</div>
+            <div>
+              <p class="kicker">Grand Theft Auto VI</p>
+              <h1>Reserve seu acesso</h1>
+            </div>
+          </div>
           <div class="hero__actions">
             <button class="rockstar-button" id="startButton">
-              <span>QUERO PARTICIPAR</span>
+              <span>Saiba mais</span>
               <i aria-hidden="true"></i>
             </button>
           </div>
@@ -145,7 +154,8 @@ function brand(variant) {
 }
 
 function brandMark(variant = 'default') {
-  return `<img class="brand-mark brand-mark--${variant}" src="/assets/rockstar-logo.png" alt="Rockstar Games" />`;
+  const src = variant === 'symbol' || variant === 'quiz' ? '/assets/rockstar-r-white.svg' : '/assets/rockstar-logo.png';
+  return `<img class="brand-mark brand-mark--${variant}" src="${src}" alt="Rockstar Games" />`;
 }
 
 function buildParticles() {

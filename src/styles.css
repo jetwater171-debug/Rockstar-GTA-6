@@ -68,8 +68,8 @@ button {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.99) 0%, rgba(0, 0, 0, 0.86) 30%, rgba(0, 0, 0, 0.18) 66%, rgba(0, 0, 0, 0.72) 100%),
-    linear-gradient(0deg, rgba(0, 0, 0, 0.98) 0%, transparent 38%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.56) 30%, rgba(0, 0, 0, 0.08) 66%, rgba(0, 0, 0, 0.48) 100%),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.96) 0%, transparent 42%, rgba(0, 0, 0, 0.18) 100%),
     url('/assets/gta-vi-lucia-jason.jpg');
   background-position: center;
   background-size: cover;
@@ -133,7 +133,7 @@ button {
 .quiz-header {
   align-items: center;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   left: 0;
   padding: clamp(1rem, 2.5vw, 2rem);
   position: absolute;
@@ -149,21 +149,22 @@ button {
 
 .brand-mark {
   aspect-ratio: 1;
-  box-shadow:
-    0.45rem 0.45rem 0 #000,
-    0 0 2.2rem rgba(255, 214, 41, 0.38);
+  box-shadow: none;
   display: block;
-  height: clamp(3rem, 5.5vw, 4.2rem);
+  height: clamp(2.25rem, 4vw, 3rem);
   object-fit: contain;
-  transform: rotate(-1.5deg);
+  transform: none;
   width: auto;
 }
 
 .brand-mark--quiz {
-  height: clamp(3.65rem, 6vw, 4.65rem);
-  box-shadow:
-    0.42rem 0.42rem 0 #000,
-    0 0 3rem rgba(255, 214, 41, 0.42);
+  height: clamp(2.35rem, 4.2vw, 3.2rem);
+  filter: drop-shadow(0 0 1.5rem rgba(255, 255, 255, 0.16));
+}
+
+.brand-mark--symbol {
+  height: clamp(2.1rem, 3.8vw, 2.9rem);
+  filter: drop-shadow(0 0 1rem rgba(255, 255, 255, 0.18));
 }
 
 .brand-copy {
@@ -199,10 +200,11 @@ button {
 }
 
 .hero__content {
-  align-self: center;
+  align-self: flex-end;
   margin-left: clamp(0rem, 5vw, 5rem);
-  max-width: min(39rem, 92vw);
-  padding-top: 5rem;
+  max-width: min(45rem, 92vw);
+  padding-bottom: clamp(3rem, 8vw, 5.2rem);
+  padding-top: 9rem;
   position: relative;
   z-index: 2;
 }
@@ -223,16 +225,16 @@ p {
 }
 
 .hero h1 {
-  font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-  font-size: clamp(4rem, 11vw, 9.5rem);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(2rem, 5.4vw, 4.9rem);
+  font-weight: 1000;
   letter-spacing: 0;
-  line-height: 0.84;
-  margin-bottom: clamp(1.2rem, 3vw, 2rem);
-  max-width: 5ch;
+  line-height: 0.96;
+  margin-bottom: 0;
+  max-width: 16ch;
   text-shadow:
-    0.06em 0.06em 0 #000,
-    0 0 2.7rem rgba(255, 214, 41, 0.16);
-  text-transform: uppercase;
+    0 0.18rem 1.2rem rgba(0, 0, 0, 0.72),
+    0 0 2.7rem rgba(255, 255, 255, 0.08);
 }
 
 .hero__copy {
@@ -269,7 +271,7 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-top: clamp(1.6rem, 4vw, 2.7rem);
+  margin-top: clamp(1.5rem, 3vw, 2rem);
 }
 
 .rockstar-button {
@@ -285,17 +287,18 @@ p {
   min-width: min(18rem, 100%);
   padding: 0;
   position: relative;
-  text-transform: uppercase;
-  transform: skewX(-9deg);
+  text-transform: none;
+  transform: none;
 }
 
 .rockstar-button span {
   align-items: center;
-  background: var(--button-bg);
-  border: 2px solid #fff;
+  background: #ffd7a8;
+  border: 0;
+  border-radius: 999px;
   box-shadow:
-    0.45rem 0.45rem 0 #000,
-    0 0 2rem rgba(255, 214, 41, 0.28);
+    0 0.8rem 2rem rgba(0, 0, 0, 0.3),
+    0 0 2rem rgba(255, 214, 41, 0.16);
   display: flex;
   height: 100%;
   justify-content: center;
@@ -310,22 +313,16 @@ p {
 }
 
 .rockstar-button i {
-  background: #000;
-  height: 0.8rem;
-  position: absolute;
-  right: -0.38rem;
-  top: 0.44rem;
-  transform: rotate(45deg);
-  width: 0.8rem;
+  display: none;
 }
 
 .rockstar-button:hover span,
 .rockstar-button:focus-visible span {
-  background: #fff;
+  background: #ffe6c6;
   box-shadow:
-    0.7rem 0.7rem 0 #000,
-    0 0 2.6rem rgba(255, 45, 143, 0.38);
-  transform: translate(-0.12rem, -0.12rem);
+    0 0.9rem 2.2rem rgba(0, 0, 0, 0.38),
+    0 0 2.6rem rgba(255, 214, 41, 0.24);
+  transform: translateY(-0.08rem);
 }
 
 .hero__micro,
@@ -333,6 +330,84 @@ p {
   color: rgba(255, 255, 255, 0.56);
   font-size: 0.82rem;
   line-height: 1.4;
+}
+
+.topbar__logo {
+  left: 50%;
+  position: absolute;
+  top: clamp(1rem, 2.4vw, 1.7rem);
+  transform: translateX(-50%);
+}
+
+.nav-icon {
+  align-items: center;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  height: 2.4rem;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  top: clamp(1rem, 2.4vw, 1.7rem);
+  width: 2.4rem;
+}
+
+.nav-icon--menu {
+  left: clamp(1rem, 2.5vw, 2rem);
+}
+
+.nav-icon--menu span {
+  background: currentColor;
+  display: block;
+  height: 0.14rem;
+  margin: 0.13rem 0;
+  width: 1.1rem;
+}
+
+.nav-icon--user {
+  right: clamp(1rem, 2.5vw, 2rem);
+}
+
+.nav-icon--user span {
+  border: 0.13rem solid currentColor;
+  border-radius: 999px;
+  height: 0.72rem;
+  position: relative;
+  width: 0.72rem;
+}
+
+.nav-icon--user span::after {
+  border: 0.13rem solid currentColor;
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+  content: '';
+  height: 0.5rem;
+  left: 50%;
+  position: absolute;
+  top: 0.78rem;
+  transform: translateX(-50%);
+  width: 1rem;
+}
+
+.hero__invite {
+  align-items: center;
+  display: flex;
+  gap: clamp(0.75rem, 2.4vw, 1.4rem);
+}
+
+.vi-mark {
+  color: transparent;
+  flex: 0 0 auto;
+  font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+  font-size: clamp(4rem, 11vw, 7.4rem);
+  line-height: 0.78;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0.3rem 1.2rem rgba(0, 0, 0, 0.45);
 }
 
 .legal-note {
@@ -779,9 +854,9 @@ p {
       linear-gradient(180deg, rgba(0, 0, 0, 0.48) 0%, rgba(0, 0, 0, 0.16) 34%, rgba(0, 0, 0, 0.98) 100%),
       url('/assets/gta-vi-lucia-jason.jpg');
     background-color: #000;
-    background-position: 58% 10%;
+    background-position: 56% 8%;
     background-repeat: no-repeat;
-    background-size: auto 88%;
+    background-size: auto 74%;
     transform: none;
   }
 
@@ -795,14 +870,18 @@ p {
   }
 
   .brand-mark {
-    height: 3.3rem;
+    height: 2.2rem;
+  }
+
+  .brand-mark--symbol {
+    height: 2.05rem;
   }
 
   .hero__content {
     align-self: flex-end;
     margin-left: 0;
     max-width: 100%;
-    padding-bottom: 4.4rem;
+    padding-bottom: 4.6rem;
     padding-top: 7rem;
   }
 
@@ -812,10 +891,10 @@ p {
   }
 
   .hero h1 {
-    font-size: clamp(3.25rem, 16.2vw, 4.25rem);
-    line-height: 0.86;
-    margin-bottom: 0.9rem;
-    max-width: 5ch;
+    font-size: clamp(1.75rem, 7.4vw, 2.15rem);
+    line-height: 1.02;
+    margin-bottom: 0;
+    max-width: 12ch;
   }
 
   .hero__copy {
@@ -862,7 +941,7 @@ p {
   }
 
   .brand-mark--quiz {
-    height: 3.25rem;
+    height: 2.55rem;
   }
 
   .question-count {
@@ -911,7 +990,7 @@ p {
 
 @media (max-width: 420px) {
   .hero h1 {
-    font-size: clamp(3.05rem, 15.8vw, 4.05rem);
+    font-size: clamp(1.72rem, 7.2vw, 2.05rem);
   }
 
   .hero__copy {
@@ -932,6 +1011,10 @@ p {
 
   .question-panel__meta {
     font-size: 0.78rem;
+  }
+
+  .vi-mark {
+    font-size: clamp(4.15rem, 20vw, 5.15rem);
   }
 }
 
