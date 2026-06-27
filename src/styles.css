@@ -110,10 +110,10 @@ button {
 
 .hero__bottom-glass {
   background:
-    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.07) 46%, rgba(0, 0, 0, 0.34) 72%, rgba(0, 0, 0, 0.55) 100%);
-  backdrop-filter: blur(1px);
-  mask-image: linear-gradient(180deg, transparent 0%, transparent 40%, #000 70%, #000 100%);
-  opacity: 0.94;
+    linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.05) 48%, rgba(0, 0, 0, 0.22) 74%, rgba(0, 0, 0, 0.38) 100%);
+  backdrop-filter: blur(0.9px);
+  mask-image: linear-gradient(180deg, transparent 0%, transparent 44%, #000 74%, #000 100%);
+  opacity: 0.9;
   z-index: -1;
 }
 
@@ -816,12 +816,12 @@ p {
 
   .hero__art {
     background-image:
-      linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.03) 45%, rgba(0, 0, 0, 0.22) 76%, rgba(0, 0, 0, 0.44) 100%),
-      url('/assets/gta-vi-lucia-jason-phone.jpg');
-    background-color: #b985af;
-    background-position: center -5.15rem;
+      linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.02) 48%, rgba(0, 0, 0, 0.16) 76%, rgba(0, 0, 0, 0.3) 100%),
+      url('/assets/gta-vi-lucia-jason-expanded.png');
+    background-color: #9b7cb2;
+    background-position: center top;
     background-repeat: no-repeat;
-    background-size: auto 112%;
+    background-size: cover;
     transform: none;
   }
 
@@ -891,12 +891,10 @@ p {
   }
 
   .hero__invite {
-    background: rgba(0, 0, 0, 0.22);
-    border-radius: 1.1rem;
     justify-content: center;
     margin: 0 auto;
     max-width: 23rem;
-    padding: 0.4rem 0.5rem 0.45rem;
+    padding: 0;
     text-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.7);
   }
 

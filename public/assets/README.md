@@ -4,6 +4,9 @@ https://www.rockstargames.com/VI/media/artwork-wallpapers
 Mobile hero artwork source:
 `Jason_and_Lucia_03_phone.jpg` from the official GTAVI Artwork & Wallpapers zip.
 
+Expanded mobile hero artwork:
+`gta-vi-lucia-jason-expanded.png`, provided by the project owner for the mobile landing hero.
+
 Poster artwork source:
 https://www.rockstargames.com/VI
 
