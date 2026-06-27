@@ -85,12 +85,18 @@ function render() {
         </header>
 
         <div class="hero__content">
-          <p class="kicker">Vice City esta chamando</p>
-          <h1>Entre no quiz e prove que seu perfil combina com GTA VI.</h1>
+          <p class="kicker">Grand Theft Auto VI</p>
+          <h1>GTA VI Promo Quiz</h1>
           <p class="hero__copy">
-            Uma triagem rapida com 10 perguntas, 3 vidas e visual inspirado na energia
-            neon, perigosa e cinematografica da nova era Grand Theft Auto.
+            Responda uma triagem rapida inspirada no universo Rockstar: GTA V,
+            GTA Online e a nova era de Vice City. Sao 10 perguntas, 3 vidas e
+            um corte final para liberar a proxima etapa.
           </p>
+          <div class="hero__release" aria-label="Informacoes do quiz">
+            <span>10 perguntas</span>
+            <span>3 vidas</span>
+            <span>GTA V + GTA VI</span>
+          </div>
           <div class="hero__actions">
             <button class="rockstar-button" id="startButton">
               <span>QUERO PARTICIPAR</span>
@@ -109,6 +115,7 @@ function render() {
         <div class="quiz-ambient" aria-hidden="true">
           <span></span><span></span><span></span>
         </div>
+        <div class="quiz-poster" aria-hidden="true"></div>
         <header class="quiz-header">
           <div class="quiz-header__status quiz-header__status--left">
             <div class="lives" id="lives" aria-label="Vidas restantes"></div>
@@ -211,6 +218,7 @@ function renderQuestion(skipTransition = false) {
         <span>${item.eyebrow}</span>
         <strong>${String(currentQuestion + 1).padStart(2, '0')}</strong>
       </div>
+      <p class="question-panel__label">Selection quiz</p>
       <h2>${item.question}</h2>
       <div class="answers">
         ${item.options
