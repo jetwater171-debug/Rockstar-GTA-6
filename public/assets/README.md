@@ -10,6 +10,9 @@ Expanded mobile hero artwork:
 Poster artwork source:
 https://www.rockstargames.com/VI
 
+Official GTA VI logo source:
+https://www.rockstargames.com/VI
+
 Rockstar logo source provided by project owner:
 https://logospng.org/download/rockstar-games/rockstar-games-256.png
 

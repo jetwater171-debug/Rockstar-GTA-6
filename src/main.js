@@ -87,7 +87,7 @@ function render() {
 
         <div class="hero__content">
           <div class="hero__invite">
-            <div class="vi-mark" aria-hidden="true">VI</div>
+            <img class="vi-mark" src="/assets/gta-vi-official-logo-trimmed.png" alt="GTA VI" />
             <div>
               <p class="kicker">Grand Theft Auto VI</p>
               <h1>Participe da promocao</h1>
