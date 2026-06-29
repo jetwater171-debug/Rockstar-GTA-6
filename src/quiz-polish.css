@@ -5,7 +5,7 @@
   justify-content: center;
   min-height: 100svh;
   overflow: hidden;
-  padding: clamp(8.4rem, 15svh, 9.9rem) clamp(0.9rem, 3vw, 2rem) 2rem;
+  padding: clamp(6.7rem, 12svh, 7.7rem) clamp(0.9rem, 3vw, 2rem) 2rem;
 }
 
 .quiz-screen::before,
@@ -24,50 +24,57 @@
   background: #000;
   border-bottom: 0;
   display: flex;
+  inset-inline: 0;
   justify-content: center;
-  min-height: clamp(7.05rem, 12.4svh, 8.7rem);
-  padding: clamp(0.72rem, 2svh, 1.15rem) clamp(0.82rem, 3vw, 2rem);
+  min-height: 6rem;
+  padding: 1rem;
+  position: absolute;
+  top: 0;
+  z-index: 50;
 }
 
 .quiz-header__logo {
-  -webkit-backdrop-filter: blur(30px) saturate(1.14);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
   align-items: center;
-  backdrop-filter: blur(30px) saturate(1.14);
+  backdrop-filter: blur(26px) saturate(150%);
   background:
-    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.042) 48%, rgba(255, 255, 255, 0.018) 100%),
-    rgba(18, 18, 18, 0.78);
-  border: 0;
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05)),
+    rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 999px;
   box-shadow:
-    inset 0 0 0 1.5px rgba(255, 255, 255, 0.25),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.035),
-    0 1rem 2.7rem rgba(0, 0, 0, 0.72);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 22px 40px rgba(0, 0, 0, 0.4);
   display: flex;
-  height: clamp(4.35rem, 8.3svh, 5.45rem);
+  height: 4rem;
   justify-content: center;
   left: 50%;
   overflow: hidden;
+  padding: 0 1.5rem;
   position: absolute;
-  top: clamp(0.82rem, 2svh, 1.16rem);
+  top: 1rem;
   transform: translateX(-50%);
-  width: min(92vw, 56rem);
+  width: min(calc(100vw - 2rem), 22rem);
 }
 
 .quiz-header__logo::before {
-  background:
-    radial-gradient(ellipse at 50% 48%, rgba(255, 255, 255, 0.13), transparent 36%),
-    linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.12) 42%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.08) 58%, transparent 100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  border-radius: 999px;
+  bottom: 1px;
   content: "";
-  inset: 0;
-  opacity: 0.32;
+  filter: blur(12px);
+  left: 12%;
+  opacity: 0.6;
   pointer-events: none;
   position: absolute;
+  right: 12%;
+  top: 1px;
 }
 
 .brand-mark--quiz {
-  height: clamp(2.35rem, 4.7svh, 3.05rem);
-  filter: drop-shadow(0 0.26rem 0.62rem rgba(0, 0, 0, 0.38));
+  height: clamp(2.08rem, 5vw, 2.45rem);
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.14));
+  opacity: 0.86;
   position: relative;
   z-index: 1;
 }
@@ -322,7 +329,7 @@
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .quiz-header__logo {
-    background: #1b1b1b;
+    background: rgba(12, 12, 12, 0.88);
   }
 
   .question-panel {
@@ -334,23 +341,28 @@
   }
 }
 
+@media (min-width: 640px) {
+  .quiz-header__logo {
+    width: min(calc(100vw - 2rem), 28rem);
+  }
+}
+
 @media (max-width: 780px) {
   .quiz-screen {
-    padding: clamp(7.85rem, 14.5svh, 9.05rem) 0.82rem 1rem;
+    padding: clamp(6.55rem, 12.3svh, 7.55rem) 0.82rem 1rem;
   }
 
   .quiz-header {
-    min-height: clamp(6.55rem, 11.5svh, 7.7rem);
-    padding-inline: 0.82rem;
+    min-height: 5.9rem;
+    padding-inline: 1rem;
   }
 
   .quiz-header__logo {
-    height: clamp(4rem, 7.75svh, 4.76rem);
-    width: calc(100vw - 1.64rem);
+    height: 4rem;
   }
 
   .brand-mark--quiz {
-    height: clamp(2.12rem, 4.25svh, 2.66rem);
+    height: clamp(2.02rem, 4.9vw, 2.32rem);
   }
 
   .quiz-shell {
@@ -387,11 +399,7 @@
   }
 
   .quiz-header {
-    padding-inline: 0.68rem;
-  }
-
-  .quiz-header__logo {
-    width: calc(100vw - 1.36rem);
+    padding-inline: 1rem;
   }
 
   .answer {
