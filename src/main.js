@@ -1,66 +1,97 @@
 import './styles.css';
 import './hero-polish.css';
+import './quiz-polish.css';
 
 const quiz = [
   {
-    eyebrow: 'GTA VI',
-    question: 'Qual jogo esta chegando na nova fase da Rockstar?',
-    options: ['GTA VI', 'Minecraft 2', 'FIFA Street'],
-    answer: 0,
+    eyebrow: 'Experiencia',
+    question: 'Voce ja jogou GTA V?',
+    options: [
+      { icon: 'V', label: 'Sim, joguei bastante', points: 2 },
+      { icon: 'GT', label: 'Joguei um pouco', points: 1 },
+      { icon: '01', label: 'Ainda nao joguei', points: 0 },
+    ],
   },
   {
-    eyebrow: 'GTA V',
-    question: 'GTA V ficou famoso por qual cidade principal?',
-    options: ['Los Santos', 'Hyrule', 'Mushroom Kingdom'],
-    answer: 0,
+    eyebrow: 'GTA Online',
+    question: 'Voce ja entrou no GTA Online?',
+    options: [
+      { icon: 'ON', label: 'Sim, jogo ou ja joguei online', points: 2 },
+      { icon: 'RP', label: 'Conheco, mas joguei pouco', points: 1 },
+      { icon: 'OFF', label: 'Nunca joguei online', points: 0 },
+    ],
   },
   {
-    eyebrow: 'GTA V',
-    question: 'Qual desses personagens e protagonista de GTA V?',
-    options: ['Franklin', 'Mario', 'Sonic'],
-    answer: 0,
+    eyebrow: 'Expectativa',
+    question: 'Qual e sua expectativa para GTA VI?',
+    options: [
+      { icon: 'VI', label: 'Muito alta, estou acompanhando tudo', points: 2 },
+      { icon: 'VIP', label: 'Alta, quero ver as novidades', points: 1 },
+      { icon: 'NEW', label: 'Ainda estou conhecendo melhor', points: 0 },
+    ],
   },
   {
-    eyebrow: 'GTA V',
-    question: 'Qual atividade combina mais com GTA V?',
-    options: ['Dirigir carros pela cidade', 'Cuidar de fazenda medieval', 'Montar castelo de gelo'],
-    answer: 0,
+    eyebrow: 'Interesse',
+    question: 'O que mais chama sua atencao em GTA VI?',
+    options: [
+      { icon: 'ST', label: 'Historia, Lucia e Jason', points: 2 },
+      { icon: 'MAP', label: 'Mundo aberto e exploracao', points: 2 },
+      { icon: 'ON', label: 'Modo online e novidades futuras', points: 1 },
+    ],
   },
   {
-    eyebrow: 'Online',
-    question: 'GTA Online permite jogar com outras pessoas?',
-    options: ['Sim', 'Nao', 'So offline'],
-    answer: 0,
-  },
-  {
-    eyebrow: 'GTA VI',
-    question: 'Qual dupla aparece muito nos materiais de GTA VI?',
-    options: ['Lucia e Jason', 'CJ e Ryder', 'Niko e Roman'],
-    answer: 0,
-  },
-  {
-    eyebrow: 'Vice City',
-    question: 'GTA VI tem uma vibe mais proxima de qual clima?',
-    options: ['Praias, neon e cidade viva', 'Neve eterna', 'Espaco sideral'],
-    answer: 0,
-  },
-  {
-    eyebrow: 'Rockstar',
-    question: 'Qual empresa e conhecida pela serie GTA?',
-    options: ['Rockstar Games', 'Nintendo', 'Roblox Corporation'],
-    answer: 0,
+    eyebrow: 'Plataforma',
+    question: 'Em qual plataforma voce pretende jogar primeiro?',
+    options: [
+      { icon: 'PS', label: 'PlayStation', points: 2 },
+      { icon: 'XB', label: 'Xbox', points: 2 },
+      { icon: 'PC', label: 'PC ou ainda vou decidir', points: 1 },
+    ],
   },
   {
     eyebrow: 'Perfil',
-    question: 'Voce tem interesse em receber novidades de GTA VI?',
-    options: ['Sim, tenho interesse', 'Nao conheco GTA', 'Nao jogo nada'],
-    answer: 0,
+    question: 'Qual estilo de jogador combina mais com voce?',
+    options: [
+      { icon: 'EXP', label: 'Exploro mapa, missoes e detalhes', points: 2 },
+      { icon: 'ACT', label: 'Gosto de acao, carros e desafios', points: 2 },
+      { icon: 'CAS', label: 'Jogo casualmente quando da', points: 1 },
+    ],
+  },
+  {
+    eyebrow: 'Frequencia',
+    question: 'Com que frequencia voce joga games de mundo aberto?',
+    options: [
+      { icon: '7D', label: 'Toda semana', points: 2 },
+      { icon: '30', label: 'Algumas vezes por mes', points: 1 },
+      { icon: 'LOW', label: 'Raramente', points: 0 },
+    ],
+  },
+  {
+    eyebrow: 'Rockstar',
+    question: 'Voce costuma acompanhar lancamentos da Rockstar?',
+    options: [
+      { icon: 'R*', label: 'Sim, acompanho noticias e trailers', points: 2 },
+      { icon: 'VI', label: 'Acompanho principalmente GTA VI', points: 1 },
+      { icon: 'NO', label: 'Nao acompanho muito', points: 0 },
+    ],
+  },
+  {
+    eyebrow: 'Promocao',
+    question: 'Se for selecionado, voce participaria da proxima etapa?',
+    options: [
+      { icon: 'OK', label: 'Sim, quero participar', points: 2 },
+      { icon: 'INFO', label: 'Sim, quero ver os detalhes', points: 1 },
+      { icon: 'WAIT', label: 'Talvez depois', points: 0 },
+    ],
   },
   {
     eyebrow: 'Final',
-    question: 'Se fosse selecionado, voce gostaria de participar da proxima etapa?',
-    options: ['Sim, quero participar', 'Nao quero', 'Talvez depois'],
-    answer: 0,
+    question: 'Voce quer receber novidades e acesso a proxima fase?',
+    options: [
+      { icon: 'VIP', label: 'Quero receber a proxima etapa', points: 2 },
+      { icon: 'NEWS', label: 'Quero receber novidades primeiro', points: 1 },
+      { icon: 'LATER', label: 'Prefiro decidir depois', points: 0 },
+    ],
   },
 ];
 
@@ -192,6 +223,29 @@ function switchScreen(name) {
   });
 }
 
+function optionLabel(option) {
+  return typeof option === 'string' ? option : option.label;
+}
+
+function optionIcon(option, index) {
+  return typeof option === 'string' ? String.fromCharCode(65 + index) : option.icon;
+}
+
+function optionPoints(option, index, item) {
+  if (typeof option === 'string') {
+    return index === item.answer ? 1 : 0;
+  }
+
+  return Number(option.points || 0);
+}
+
+function maxScore() {
+  return quiz.reduce((total, item) => {
+    const best = Math.max(...item.options.map((option, index) => optionPoints(option, index, item)));
+    return total + best;
+  }, 0);
+}
+
 function renderQuestion(skipTransition = false) {
   const item = quiz[currentQuestion];
   const panel = document.querySelector('#questionPanel');
@@ -208,8 +262,8 @@ function renderQuestion(skipTransition = false) {
   window.setTimeout(() => {
     panel.innerHTML = `
       <div class="question-panel__meta">
-        <span>${item.eyebrow}</span>
-        <strong>${String(currentQuestion + 1).padStart(2, '0')}</strong>
+        <span>Pergunta ${currentQuestion + 1} de ${quiz.length}</span>
+        <strong>${item.eyebrow}</strong>
       </div>
       <h2>${item.question}</h2>
       <div class="answers">
@@ -217,7 +271,8 @@ function renderQuestion(skipTransition = false) {
           .map(
             (option, index) => `
               <button class="answer" data-index="${index}">
-                <span>${option}</span>
+                <span class="answer__icon">${optionIcon(option, index)}</span>
+                <span class="answer__text">${optionLabel(option)}</span>
                 <b>${String.fromCharCode(65 + index)}</b>
               </button>
             `,
@@ -243,19 +298,18 @@ function handleAnswer(event) {
   isLocked = true;
 
   const selected = Number(event.currentTarget.dataset.index);
-  const correct = selected === quiz[currentQuestion].answer;
+  const item = quiz[currentQuestion];
+  const selectedOption = item.options[selected];
   const answers = document.querySelectorAll('.answer');
 
   answers.forEach((answer) => {
     const answerIndex = Number(answer.dataset.index);
     answer.disabled = true;
-    answer.classList.toggle('is-correct', answerIndex === quiz[currentQuestion].answer);
-    answer.classList.toggle('is-wrong', answerIndex === selected && !correct);
+    answer.classList.toggle('is-selected', answerIndex === selected);
+    answer.classList.toggle('is-muted', answerIndex !== selected);
   });
 
-  if (correct) {
-    score += 1;
-  }
+  score += optionPoints(selectedOption, selected, item);
 
   window.setTimeout(() => {
     currentQuestion += 1;
@@ -267,22 +321,23 @@ function handleAnswer(event) {
 
     isLocked = false;
     renderQuestion();
-  }, 900);
+  }, 720);
 }
 
 function showResult(completed) {
   switchScreen('result');
 
-  const approved = completed && score >= 6;
+  const total = maxScore();
+  const approved = completed && score >= Math.ceil(total * 0.55);
   const resultCard = document.querySelector('#resultCard');
-  const title = approved ? 'Perfil selecionado' : 'Quase la';
+  const title = approved ? 'Perfil pre-selecionado' : 'Perfil em analise';
   const copy = approved
-    ? 'Voce concluiu a triagem inicial. A proxima etapa pode receber cadastro, plataforma e preferencias quando ligarmos Supabase.'
-    : 'Voce concluiu o quiz. Tente novamente para melhorar seu perfil na selecao.';
+    ? 'Seu perfil ficou alinhado com a triagem inicial. A proxima etapa coleta cadastro, plataforma e preferencias para finalizar a selecao.'
+    : 'Voce concluiu a triagem. Algumas respostas ainda precisam de mais alinhamento para avancar na selecao.';
 
   resultCard.innerHTML = `
     ${brand('light')}
-    <p class="kicker">${score}/${quiz.length} respostas alinhadas</p>
+    <p class="kicker">${score}/${total} pontos de perfil</p>
     <h2>${title}</h2>
     <p>${copy}</p>
     <div class="result-actions">
