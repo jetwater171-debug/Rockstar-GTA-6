@@ -1,4 +1,4 @@
-import { ensureAllowedRequest, issueAdminCookie, readJson, sendJson, verifyAdminPassword } from '../_utils.js';
+import { ensureAllowedRequest, issueAdminCookie, readJson, sendJson, verifyAdminPassword } from '../../lib/api-utils.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
