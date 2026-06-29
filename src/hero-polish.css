@@ -1,0 +1,191 @@
+/* Final hero polish: fluid across iPhone, Android and desktop. */
+.hero {
+  overflow: hidden;
+}
+
+.hero::before,
+.hero::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.hero::before {
+  background:
+    linear-gradient(180deg, transparent 0%, rgba(255, 214, 41, 0.08) 44%, rgba(0, 0, 0, 0.42) 100%),
+    radial-gradient(ellipse at 50% 100%, rgba(255, 214, 41, 0.2), transparent 62%);
+  bottom: -1px;
+  filter: saturate(1.08);
+  height: clamp(9rem, 30svh, 22rem);
+  inset-inline: -14%;
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.7) 38%, #000 100%);
+  opacity: 0.78;
+  transform-origin: center bottom;
+  animation: liquidLift 6s ease-in-out infinite;
+}
+
+.hero::after {
+  background:
+    linear-gradient(105deg, transparent 8%, rgba(255, 255, 255, 0.12) 18%, transparent 30%),
+    linear-gradient(100deg, transparent 60%, rgba(255, 214, 41, 0.1) 68%, transparent 78%);
+  inset: 0;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 82%, transparent 100%);
+  mix-blend-mode: screen;
+  opacity: 0.34;
+  transform: translate3d(-2%, 0, 0);
+  animation: glassSweep 8s ease-in-out infinite;
+}
+
+.hero__content {
+  animation: heroSettle 720ms cubic-bezier(0.2, 0.86, 0.2, 1) both;
+}
+
+.hero h1 {
+  font-family: Impact, Anton, "Barlow Condensed", sans-serif;
+  letter-spacing: 0;
+}
+
+.hero h1 span:first-child {
+  margin-bottom: -0.06em;
+}
+
+.rockstar-button span {
+  background: #ffd629;
+  color: #fff;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.rockstar-button span::before {
+  background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.08) 34%, rgba(255, 255, 255, 0.66) 48%, rgba(255, 255, 255, 0.08) 62%, transparent 76%);
+  mix-blend-mode: screen;
+  z-index: 0;
+}
+
+@media (min-width: 781px) {
+  .hero__content {
+    margin-left: clamp(2rem, 6vw, 6rem);
+    max-width: min(44rem, 48vw);
+    padding-bottom: clamp(2.8rem, 8.5vh, 5.4rem);
+  }
+
+  .hero h1 {
+    font-size: clamp(4.25rem, 6.2vw, 7rem);
+    line-height: 0.82;
+    max-width: 9.6ch;
+  }
+
+  .hero__copy {
+    max-width: 40rem;
+  }
+
+  .rockstar-button {
+    min-width: min(20.5rem, 100%);
+  }
+}
+
+@media (max-width: 780px) {
+  .hero__art {
+    background-position: center top;
+  }
+
+  .hero__content {
+    padding-bottom: calc(clamp(1.35rem, 3.6svh, 2.55rem) + env(safe-area-inset-bottom));
+  }
+
+  .hero__invite {
+    max-width: min(23.4rem, 93vw);
+    transform: translateY(clamp(0rem, 0.8svh, 0.5rem));
+  }
+
+  .kicker {
+    font-size: clamp(0.82rem, min(4.15vw, 2.35svh), 1.32rem);
+  }
+
+  .hero h1 {
+    font-size: clamp(2.1rem, min(12.4vw, 5.85svh), 3.84rem);
+    line-height: 0.78;
+  }
+
+  .hero__copy {
+    font-size: clamp(0.82rem, min(3.58vw, 2.1svh), 1.08rem);
+    max-width: min(22rem, 90vw);
+  }
+
+  .hero__actions {
+    margin-top: clamp(0.58rem, 1.45svh, 0.98rem);
+  }
+
+  .rockstar-button {
+    width: min(21.8rem, 94vw);
+  }
+
+  .rockstar-button span {
+    font-size: clamp(1rem, min(4.75vw, 2.65svh), 1.34rem);
+    min-height: clamp(3.05rem, min(12.2vw, 5.85svh), 3.78rem);
+  }
+}
+
+@media (max-width: 380px) {
+  .hero__invite {
+    max-width: min(20.8rem, 92vw);
+  }
+
+  .hero h1 {
+    font-size: clamp(1.94rem, min(11.7vw, 5.45svh), 3.22rem);
+  }
+
+  .hero__copy {
+    font-size: clamp(0.76rem, min(3.38vw, 1.95svh), 0.96rem);
+  }
+}
+
+@media (max-width: 780px) and (orientation: landscape) {
+  .hero__content {
+    max-width: min(24rem, 52vw);
+  }
+
+  .hero__invite,
+  .hero__copy,
+  .hero__actions {
+    margin-left: 0;
+    text-align: left;
+  }
+}
+
+@keyframes liquidLift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scaleY(1);
+  }
+
+  50% {
+    transform: translate3d(0, 0.5rem, 0) scaleY(1.04);
+  }
+}
+
+@keyframes glassSweep {
+  0%,
+  100% {
+    opacity: 0.26;
+    transform: translate3d(-3%, 0, 0);
+  }
+
+  50% {
+    opacity: 0.42;
+    transform: translate3d(3%, 0, 0);
+  }
+}
+
+@keyframes heroSettle {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 1rem, 0) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
