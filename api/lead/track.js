@@ -7,7 +7,7 @@ import {
   sendJson,
   supabaseFetch,
   text
-} from '../_utils.js';
+} from '../../lib/api-utils.js';
 
 function cleanObject(input = {}) {
   return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== null && value !== undefined));
