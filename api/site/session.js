@@ -1,4 +1,4 @@
-import { ensureAllowedRequest, issueSessionCookie, sendJson } from '../_utils.js';
+import { ensureAllowedRequest, issueSessionCookie, sendJson } from '../../lib/api-utils.js';
 
 export default function handler(req, res) {
   if (!ensureAllowedRequest(req, res, { requireSession: false })) return;
