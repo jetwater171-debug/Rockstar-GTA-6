@@ -3,7 +3,6 @@ import {
   clientIp,
   digits,
   ensureAllowedRequest,
-  numberOrNull,
   readJson,
   sendJson,
   supabaseFetch,
@@ -20,7 +19,6 @@ function asObject(value) {
 
 function buildRecord(body, req) {
   const personal = asObject(body.personal);
-  const quiz = asObject(body.quiz);
   const utm = asObject(body.utm);
   const now = new Date().toISOString();
   return cleanObject({
@@ -31,9 +29,6 @@ function buildRecord(body, req) {
     cpf: digits(personal.cpf || body.cpf, 14),
     email: text(personal.email || body.email, 180),
     phone: digits(personal.phoneDigits || personal.phone || body.phone, 20),
-    quiz_score: numberOrNull(quiz.score),
-    quiz_total: numberOrNull(quiz.total),
-    quiz_status: text(quiz.status, 80),
     utm_source: text(utm.utm_source || body.utm_source || utm.src || body.src, 120),
     utm_medium: text(utm.utm_medium || body.utm_medium, 120),
     utm_campaign: text(utm.utm_campaign || body.utm_campaign || utm.campaign || body.campaign || utm.sck || body.sck, 180),
@@ -59,7 +54,7 @@ export default async function handler(req, res) {
   const body = await readJson(req);
   const record = buildRecord(body, req);
   if (!record.session_id) return sendJson(res, 400, { ok: false, reason: 'missing_session_id' });
-  if (!record.name && !record.email && !record.phone && !record.cpf && !record.quiz_score && !record.utm_source) {
+  if (!record.name && !record.email && !record.phone && !record.cpf && !record.utm_source && !body.quiz) {
     return sendJson(res, 202, { ok: false, reason: 'skipped_no_data' });
   }
 
