@@ -1,4 +1,4 @@
-import { ensureAllowedRequest, readJson, sendJson, supabaseFetch, text } from '../_utils.js';
+import { ensureAllowedRequest, readJson, sendJson, supabaseFetch, text } from '../../lib/api-utils.js';
 
 function normalizePage(value) {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 80);
