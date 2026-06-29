@@ -143,16 +143,9 @@ function render() {
       </section>
 
       <section class="quiz-screen screen" id="quiz" aria-label="Quiz GTA VI">
-        <div class="quiz-ambient" aria-hidden="true">
-          <span></span><span></span><span></span>
-        </div>
-        <div class="quiz-poster" aria-hidden="true"></div>
         <header class="quiz-header">
           <div class="quiz-header__logo" aria-label="Simbolo Rockstar Games">
             ${brandMark('quiz')}
-          </div>
-          <div class="quiz-header__status quiz-header__status--right">
-            <div class="question-count" id="questionCount"></div>
           </div>
         </header>
 
@@ -250,7 +243,6 @@ function renderQuestion(skipTransition = false) {
   const item = quiz[currentQuestion];
   const panel = document.querySelector('#questionPanel');
   const progress = document.querySelector('#progressBar');
-  const questionCount = document.querySelector('#questionCount');
 
   if (!panel || !item) return;
 
@@ -261,10 +253,6 @@ function renderQuestion(skipTransition = false) {
 
   window.setTimeout(() => {
     panel.innerHTML = `
-      <div class="question-panel__meta">
-        <span>Pergunta ${currentQuestion + 1} de ${quiz.length}</span>
-        <strong>${item.eyebrow}</strong>
-      </div>
       <h2>${item.question}</h2>
       <div class="answers">
         ${item.options
@@ -273,7 +261,6 @@ function renderQuestion(skipTransition = false) {
               <button class="answer" data-index="${index}">
                 <span class="answer__icon">${optionIcon(option, index)}</span>
                 <span class="answer__text">${optionLabel(option)}</span>
-                <b>${String.fromCharCode(65 + index)}</b>
               </button>
             `,
           )
@@ -290,7 +277,6 @@ function renderQuestion(skipTransition = false) {
 
   const progressValue = ((currentQuestion + 1) / quiz.length) * 100;
   if (progress) progress.style.width = `${progressValue}%`;
-  if (questionCount) questionCount.textContent = `${currentQuestion + 1}/${quiz.length}`;
 }
 
 function handleAnswer(event) {
@@ -321,7 +307,7 @@ function handleAnswer(event) {
 
     isLocked = false;
     renderQuestion();
-  }, 720);
+  }, 680);
 }
 
 function showResult(completed) {
