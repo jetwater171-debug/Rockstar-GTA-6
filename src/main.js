@@ -182,6 +182,10 @@ function brandMark(variant = 'default') {
   return `<img class="brand-mark brand-mark--${variant}" src="${src}" alt="Rockstar Games" />`;
 }
 
+function answerMark() {
+  return '<img class="answer-logo" src="/assets/rockstar-logo-white-user-transparent.png" alt="" />';
+}
+
 function buildParticles() {
   const particles = document.querySelector('#particles');
   if (!particles) return;
@@ -220,10 +224,6 @@ function optionLabel(option) {
   return typeof option === 'string' ? option : option.label;
 }
 
-function optionIcon(option, index) {
-  return typeof option === 'string' ? String.fromCharCode(65 + index) : option.icon;
-}
-
 function optionPoints(option, index, item) {
   if (typeof option === 'string') {
     return index === item.answer ? 1 : 0;
@@ -259,7 +259,7 @@ function renderQuestion(skipTransition = false) {
           .map(
             (option, index) => `
               <button class="answer" data-index="${index}">
-                <span class="answer__icon">${optionIcon(option, index)}</span>
+                <span class="answer__icon" aria-hidden="true">${answerMark()}</span>
                 <span class="answer__text">${optionLabel(option)}</span>
               </button>
             `,
