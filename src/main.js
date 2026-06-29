@@ -1,4 +1,5 @@
 import './styles.css';
+import './hero-polish.css';
 
 const quiz = [
   {
