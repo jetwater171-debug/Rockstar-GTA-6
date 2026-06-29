@@ -252,8 +252,8 @@ p {
 }
 
 .hero h1 {
-  font-family: Anton, "Barlow Condensed", Impact, sans-serif;
-  font-size: clamp(2.85rem, 6.6vw, 5.9rem);
+  font-family: Impact, Anton, "Barlow Condensed", sans-serif;
+  font-size: clamp(2.75rem, 6.35vw, 5.7rem);
   font-weight: 900;
   letter-spacing: 0;
   line-height: 0.84;
@@ -325,7 +325,7 @@ p {
   color: #fff;
   cursor: pointer;
   display: inline-flex;
-  font-family: Anton, "Barlow Condensed", Impact, sans-serif;
+  font-family: Impact, Anton, "Barlow Condensed", sans-serif;
   font-weight: 900;
   justify-content: center;
   min-height: 4.15rem;
@@ -338,7 +338,7 @@ p {
 
 .rockstar-button span {
   align-items: center;
-  background: var(--yellow);
+  background: #ffd629;
   border: 0;
   border-radius: 999px;
   box-shadow:
@@ -348,7 +348,7 @@ p {
   display: flex;
   height: 100%;
   justify-content: center;
-  font-size: 1.55rem;
+  font-size: 1.52rem;
   letter-spacing: 0;
   min-height: 4.15rem;
   overflow: hidden;
@@ -875,7 +875,7 @@ p {
     padding: 0;
   }
 
-.hero__art {
+  .hero__art {
     background-image:
       linear-gradient(180deg, transparent 0%, transparent 58%, rgba(0, 0, 0, 0.14) 82%, rgba(0, 0, 0, 0.34) 100%),
       url('/assets/gta-vi-lucia-jason-iphone-final.png');
@@ -909,7 +909,7 @@ p {
     align-self: flex-end;
     margin-left: 0;
     max-width: 100%;
-    padding: 0 1rem 2.55rem;
+    padding: 0 1rem 2.35rem;
     width: 100%;
   }
 
@@ -924,25 +924,25 @@ p {
   }
 
   .hero h1 {
-    font-size: clamp(2.9rem, 14.1vw, 4.1rem);
-    line-height: 0.8;
+    font-size: clamp(2.64rem, 13.2vw, 3.8rem);
+    line-height: 0.78;
     margin-bottom: 0;
     max-width: 100%;
-    -webkit-text-stroke: 0.7px rgba(0, 0, 0, 0.98);
+    -webkit-text-stroke: 0.8px rgba(0, 0, 0, 0.98);
     text-shadow:
-      0.024em 0.034em 0 rgba(0, 0, 0, 0.98),
-      0 0.34rem 0.95rem rgba(0, 0, 0, 0.78),
-      0 0 1.8rem rgba(255, 255, 255, 0.14);
+      0.028em 0.04em 0 rgba(0, 0, 0, 0.98),
+      0 0.28rem 0.85rem rgba(0, 0, 0, 0.78),
+      0 0 1.45rem rgba(255, 255, 255, 0.14);
   }
 
   .hero__copy {
     color: #fff;
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: clamp(0.98rem, 4.25vw, 1.1rem);
+    font-size: clamp(0.94rem, 4.05vw, 1.06rem);
     font-weight: 900;
-    line-height: 1.14;
-    margin: 0.65rem auto 0;
-    max-width: 23.6rem;
+    line-height: 1.12;
+    margin: 0.56rem auto 0;
+    max-width: 22.8rem;
     text-align: center;
     -webkit-text-stroke: 0.3px rgba(0, 0, 0, 0.96);
     text-shadow:
@@ -974,7 +974,7 @@ p {
 
   .hero__actions {
     justify-content: center;
-    margin-top: 1rem;
+    margin-top: 0.92rem;
   }
 
   .rockstar-button {
@@ -983,8 +983,8 @@ p {
   }
 
   .rockstar-button span {
-    font-size: 1.42rem;
-    min-height: 3.95rem;
+    font-size: 1.34rem;
+    min-height: 3.8rem;
   }
 
   .quiz-header .brand-copy {
@@ -1062,12 +1062,12 @@ p {
 
 @media (max-width: 420px) {
   .hero h1 {
-    font-size: clamp(2.72rem, 13.6vw, 3.75rem);
+    font-size: clamp(2.46rem, 12.5vw, 3.48rem);
   }
 
   .hero__copy {
-    font-size: clamp(0.98rem, 4.28vw, 1.08rem);
-    max-width: 21.8rem;
+    font-size: clamp(0.9rem, 3.95vw, 1.02rem);
+    max-width: 21.4rem;
   }
 
   .rockstar-button {
@@ -1075,7 +1075,7 @@ p {
   }
 
   .rockstar-button span {
-    font-size: 1.3rem;
+    font-size: 1.22rem;
     padding-inline: 1.25rem;
   }
 
@@ -1085,6 +1085,72 @@ p {
 
   .question-panel__meta {
     font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 780px) and (max-height: 710px) {
+  .brand-mark--symbol {
+    height: 3.45rem;
+  }
+
+  .topbar {
+    height: 4.3rem;
+  }
+
+  .hero__art {
+    background-image:
+      linear-gradient(180deg, transparent 0%, transparent 61%, rgba(0, 0, 0, 0.12) 82%, rgba(0, 0, 0, 0.34) 100%),
+      url('/assets/gta-vi-lucia-jason-iphone-final.png');
+    background-position: center top;
+  }
+
+  .hero__content {
+    padding: 0 0.85rem 1.45rem;
+  }
+
+  .hero__invite {
+    max-width: 20.8rem;
+  }
+
+  .kicker {
+    font-size: clamp(0.76rem, 3.15vw, 0.92rem);
+    margin-bottom: 0.18rem;
+  }
+
+  .hero h1 {
+    font-size: clamp(1.92rem, 9.95vw, 2.84rem);
+    line-height: 0.76;
+    -webkit-text-stroke: 0.62px rgba(0, 0, 0, 0.98);
+    text-shadow:
+      0.03em 0.042em 0 rgba(0, 0, 0, 0.98),
+      0 0.22rem 0.72rem rgba(0, 0, 0, 0.78);
+  }
+
+  .hero__copy {
+    font-size: clamp(0.76rem, 3.32vw, 0.9rem);
+    line-height: 1.1;
+    margin-top: 0.42rem;
+    max-width: 19.8rem;
+    -webkit-text-stroke: 0.22px rgba(0, 0, 0, 0.96);
+  }
+
+  .hero__actions {
+    margin-top: 0.58rem;
+  }
+
+  .rockstar-button {
+    width: min(19.6rem, 94vw);
+  }
+
+  .rockstar-button span {
+    font-size: 1.02rem;
+    min-height: 3.2rem;
+  }
+
+  .legal-note {
+    bottom: 0.42rem;
+    font-size: 0.52rem;
+    line-height: 1.25;
   }
 }
 
