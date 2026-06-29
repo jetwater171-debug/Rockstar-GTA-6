@@ -1,11 +1,11 @@
-/* Focused black quiz flow with a subtle ReactBits-inspired glass surface. */
+/* Focused black quiz flow with a Nike-level dark glass capsule language. */
 .quiz-screen {
   align-items: flex-start;
   background: #000;
   justify-content: center;
   min-height: 100svh;
   overflow: hidden;
-  padding: clamp(6rem, 11svh, 7.6rem) clamp(0.9rem, 3vw, 2rem) 2rem;
+  padding: clamp(8.8rem, 16svh, 10.4rem) clamp(0.9rem, 3vw, 2rem) 2rem;
 }
 
 .quiz-screen::before,
@@ -20,30 +20,66 @@
 }
 
 .quiz-header {
+  align-items: center;
   background: #000;
   border-bottom: 0;
-  min-height: clamp(5.15rem, 9.5svh, 6.45rem);
-  padding: 0;
+  display: flex;
+  justify-content: center;
+  min-height: clamp(7.4rem, 13svh, 9.2rem);
+  padding: clamp(0.72rem, 2svh, 1.15rem) clamp(0.82rem, 3vw, 2rem);
 }
 
 .quiz-header__logo {
-  top: clamp(0.58rem, 1.45svh, 0.95rem);
+  -webkit-backdrop-filter: blur(28px) saturate(1.16);
+  align-items: center;
+  backdrop-filter: blur(28px) saturate(1.16);
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.045) 48%, rgba(255, 255, 255, 0.025) 100%),
+    rgba(18, 18, 18, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.27);
+  border-radius: 999px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 1.2rem 3rem rgba(0, 0, 0, 0.72);
+  display: flex;
+  height: clamp(4.55rem, 8.8svh, 5.85rem);
+  justify-content: center;
+  left: 50%;
+  overflow: hidden;
+  position: absolute;
+  top: clamp(0.8rem, 2svh, 1.2rem);
+  transform: translateX(-50%);
+  width: min(92vw, 56rem);
+}
+
+.quiz-header__logo::before {
+  background:
+    linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.18) 36%, rgba(255, 255, 255, 0.34) 50%, rgba(255, 255, 255, 0.14) 64%, transparent 100%);
+  content: "";
+  inset: 0;
+  opacity: 0.2;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-34%) skewX(-12deg);
 }
 
 .brand-mark--quiz {
-  height: clamp(3.35rem, 6.7svh, 4.25rem);
-  filter: drop-shadow(0 0 1.2rem rgba(255, 255, 255, 0.16));
+  height: clamp(2.45rem, 5svh, 3.25rem);
+  filter: drop-shadow(0 0.28rem 0.72rem rgba(0, 0, 0, 0.38));
+  position: relative;
+  z-index: 1;
 }
 
 .quiz-shell {
-  max-width: 50rem;
+  max-width: 54rem;
   position: relative;
-  width: min(100%, 50rem);
+  width: min(100%, 54rem);
   z-index: 2;
 }
 
 .progress-track {
-  background: #1f1f1f;
+  background: #1d1d1d;
   border: 0;
   border-radius: 999px;
   height: 0.56rem;
@@ -62,20 +98,20 @@
 }
 
 .question-panel {
-  -webkit-backdrop-filter: blur(22px) saturate(1.28);
-  backdrop-filter: blur(22px) saturate(1.28);
+  -webkit-backdrop-filter: blur(30px) saturate(1.18);
+  backdrop-filter: blur(30px) saturate(1.18);
   background:
-    linear-gradient(142deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.018) 44%, rgba(255, 255, 255, 0.035)),
-    rgba(5, 5, 6, 0.48);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  border-radius: 8px;
+    radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.03) 42%, rgba(255, 255, 255, 0.012) 100%),
+    rgba(10, 10, 10, 0.62);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: clamp(1.85rem, 5.5vw, 3.7rem);
   box-shadow:
-    0 1.2rem 3.5rem rgba(0, 0, 0, 0.82),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 1.4rem 3.8rem rgba(0, 0, 0, 0.82),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
     inset 0 -1px 0 rgba(255, 255, 255, 0.055);
   min-height: auto;
   overflow: hidden;
-  padding: clamp(1.35rem, 4.1vw, 2.45rem);
+  padding: clamp(1.35rem, 4vw, 2.55rem);
   position: relative;
   transition:
     opacity 220ms ease,
@@ -84,11 +120,11 @@
 
 .question-panel::before {
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.18), transparent 25%),
-    linear-gradient(112deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.05) 16%, transparent 34%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 42%),
+    linear-gradient(112deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.035) 18%, transparent 36%);
   content: "";
   inset: 0;
-  opacity: 0.48;
+  opacity: 0.46;
   pointer-events: none;
   position: absolute;
   z-index: 0;
@@ -96,9 +132,9 @@
 
 .question-panel::after {
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 7px;
+  border-radius: inherit;
   content: "";
-  inset: 1px;
+  inset: 3px;
   pointer-events: none;
   position: absolute;
   z-index: 0;
@@ -117,14 +153,14 @@
 .question-panel h2 {
   color: #fff;
   font-family: "Barlow Condensed", Impact, Anton, ui-sans-serif, system-ui, sans-serif;
-  font-size: clamp(2.08rem, 6.35vw, 4.1rem);
+  font-size: clamp(2.18rem, 6.2vw, 4.18rem);
   font-weight: 900;
   letter-spacing: 0;
-  line-height: 0.95;
+  line-height: 0.96;
   margin: 0 0 clamp(1.35rem, 3.2svh, 2rem);
   max-width: 100%;
   position: relative;
-  text-shadow: 0 0.18rem 0.9rem rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0.18rem 0.9rem rgba(0, 0, 0, 0.54);
   text-transform: uppercase;
   text-wrap: balance;
   z-index: 1;
@@ -138,25 +174,25 @@
 }
 
 .answer {
-  -webkit-backdrop-filter: blur(16px) saturate(1.18);
+  -webkit-backdrop-filter: blur(22px) saturate(1.12);
   align-items: center;
   animation: answerIn 380ms cubic-bezier(0.2, 0.82, 0.2, 1) both;
-  backdrop-filter: blur(16px) saturate(1.18);
+  backdrop-filter: blur(22px) saturate(1.12);
   background:
-    linear-gradient(142deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018) 52%, rgba(255, 255, 255, 0.035)),
-    rgba(8, 8, 9, 0.42);
-  border: 1px solid rgba(255, 255, 255, 0.115);
-  border-radius: 8px;
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.028) 58%, rgba(255, 255, 255, 0.014) 100%),
+    rgba(16, 16, 16, 0.58);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.11),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
   cursor: pointer;
   display: grid;
   gap: clamp(0.86rem, 2.7vw, 1.12rem);
   grid-template-columns: auto 1fr;
-  min-height: clamp(4.35rem, 10svh, 5.65rem);
+  min-height: clamp(4.25rem, 9.2svh, 5.3rem);
   overflow: hidden;
-  padding: clamp(0.86rem, 2.4vw, 1.05rem);
+  padding: clamp(0.62rem, 1.9vw, 0.82rem) clamp(0.86rem, 2.4vw, 1.15rem);
   position: relative;
   transform: translateZ(0);
   transition:
@@ -176,10 +212,13 @@
 
 .answer::before {
   background: #ffd629;
+  border-radius: 999px;
   content: "";
-  inset: 0 auto 0 0;
+  height: 46%;
+  left: 0.35rem;
   position: absolute;
-  transform: scaleX(0);
+  top: 50%;
+  transform: translateY(-50%) scaleX(0);
   transform-origin: left;
   transition: transform 180ms ease;
   width: 0.32rem;
@@ -187,26 +226,26 @@
 
 .answer::after {
   background:
-    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.14), transparent 32%),
-    linear-gradient(112deg, rgba(255, 255, 255, 0.14), transparent 36%);
+    linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.14) 40%, rgba(255, 255, 255, 0.24) 50%, rgba(255, 255, 255, 0.1) 61%, transparent 100%);
   content: "";
   inset: 0;
   opacity: 0;
   pointer-events: none;
   position: absolute;
+  transform: translateX(-22%) skewX(-10deg);
   transition: opacity 180ms ease;
 }
 
 .answer__icon {
   align-items: center;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
   display: grid;
-  height: clamp(2.55rem, 7vw, 3.2rem);
+  height: clamp(2.75rem, 7.2vw, 3.45rem);
   justify-content: center;
-  min-width: clamp(2.95rem, 8.2vw, 3.75rem);
-  padding: 0 0.55rem;
+  min-width: clamp(3.2rem, 8.6vw, 4rem);
+  padding: 0 0.62rem;
   position: relative;
   text-align: center;
   z-index: 1;
@@ -214,7 +253,7 @@
 
 .answer-logo {
   display: block;
-  height: clamp(1.55rem, 4.7vw, 2.05rem);
+  height: clamp(1.52rem, 4.45vw, 1.98rem);
   object-fit: contain;
   width: auto;
   filter: drop-shadow(0 0.16rem 0.42rem rgba(0, 0, 0, 0.42));
@@ -229,7 +268,7 @@
   letter-spacing: 0;
   line-height: 1.14;
   position: relative;
-  text-shadow: 0 0.12rem 0.72rem rgba(0, 0, 0, 0.45);
+  text-shadow: 0 0.12rem 0.72rem rgba(0, 0, 0, 0.48);
   z-index: 1;
 }
 
@@ -240,9 +279,9 @@
 .answer:hover,
 .answer:focus-visible {
   background:
-    linear-gradient(142deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.026) 52%, rgba(255, 255, 255, 0.045)),
-    rgba(10, 10, 11, 0.56);
-  border-color: rgba(255, 214, 41, 0.82);
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.038) 58%, rgba(255, 255, 255, 0.018) 100%),
+    rgba(18, 18, 18, 0.68);
+  border-color: rgba(255, 214, 41, 0.86);
   outline: 0;
   transform: translateY(-0.08rem);
 }
@@ -250,19 +289,19 @@
 .answer:hover::before,
 .answer:focus-visible::before,
 .answer.is-selected::before {
-  transform: scaleX(1);
+  transform: translateY(-50%) scaleX(1);
 }
 
 .answer:hover::after,
 .answer:focus-visible::after,
 .answer.is-selected::after {
-  opacity: 1;
+  opacity: 0.22;
 }
 
 .answer.is-selected {
   background:
-    linear-gradient(142deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.028) 52%, rgba(255, 255, 255, 0.05)),
-    rgba(12, 12, 13, 0.62);
+    radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.045) 58%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(20, 20, 20, 0.76);
   border-color: #ffd629;
   transform: translateY(-0.08rem);
 }
@@ -285,6 +324,10 @@
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .quiz-header__logo {
+    background: #1b1b1b;
+  }
+
   .question-panel {
     background: #090909;
   }
@@ -296,7 +339,21 @@
 
 @media (max-width: 780px) {
   .quiz-screen {
-    padding: clamp(5.6rem, 10.5svh, 6.9rem) 0.82rem 1rem;
+    padding: clamp(8.15rem, 15svh, 9.4rem) 0.82rem 1rem;
+  }
+
+  .quiz-header {
+    min-height: clamp(6.8rem, 12svh, 8rem);
+    padding-inline: 0.82rem;
+  }
+
+  .quiz-header__logo {
+    height: clamp(4.15rem, 8.2svh, 5.05rem);
+    width: calc(100vw - 1.64rem);
+  }
+
+  .brand-mark--quiz {
+    height: clamp(2.22rem, 4.6svh, 2.82rem);
   }
 
   .quiz-shell {
@@ -309,6 +366,7 @@
   }
 
   .question-panel {
+    border-radius: clamp(1.55rem, 7vw, 2.45rem);
     padding: clamp(1.12rem, 4.9vw, 1.56rem);
   }
 
@@ -331,13 +389,21 @@
     padding-inline: 0.68rem;
   }
 
+  .quiz-header {
+    padding-inline: 0.68rem;
+  }
+
+  .quiz-header__logo {
+    width: calc(100vw - 1.36rem);
+  }
+
   .answer {
     gap: 0.65rem;
     padding-inline: 0.72rem;
   }
 
   .answer__icon {
-    min-width: 2.7rem;
+    min-width: 2.95rem;
   }
 }
 
