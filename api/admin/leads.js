@@ -1,4 +1,4 @@
-import { ensureAllowedRequest, requireAdmin, sendJson, supabaseFetch } from '../_utils.js';
+import { ensureAllowedRequest, requireAdmin, sendJson, supabaseFetch } from '../../lib/api-utils.js';
 
 function cleanSearch(value) {
   return String(value || '').trim().replace(/[%(),]/g, '').slice(0, 80);
