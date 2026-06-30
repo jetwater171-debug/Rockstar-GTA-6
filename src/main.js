@@ -948,6 +948,14 @@ function bindAdminContent() {
       status.textContent = result.message || 'Teste concluido.';
     });
   });
+  document.querySelector('[data-gateway-test-run]')?.addEventListener('click', runGatewayTests);
+  document.querySelector('[data-gateway-test-clear]')?.addEventListener('click', () => {
+    const results = document.querySelector('#gatewayTestResults');
+    const status = document.querySelector('#gatewayTestStatus');
+    if (results) results.innerHTML = '<div class="gateway-test-empty-rs">Defina o valor, escolha os gateways e gere os PIXs de teste.</div>';
+    if (status) status.textContent = '';
+  });
+  bindGatewayTestCopyButtons();
   document.querySelectorAll('[data-gateway-order-move]').forEach((button) => {
     button.addEventListener('click', () => {
       moveGatewayOrder(button.dataset.gateway, button.dataset.gatewayOrderMove);
@@ -956,7 +964,7 @@ function bindAdminContent() {
   bindGatewayDragAndDrop();
   refreshGatewayOrderDom();
   document.querySelectorAll('[data-open-lead]').forEach((button) => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
       adminSelectedLeadSession = button.dataset.openLead || '';
       renderAdminPanel();
     });
@@ -1250,8 +1258,46 @@ function gatewaysMarkup() {
       <div class="gateway-grid-rs">
         ${gatewayKeys.map((name) => gatewayCardMarkup(name, gateways[name] || {}, order)).join('')}
       </div>
-      <button class="admin-mini-button-rs" data-test-integration="Gateway PIX" type="button">Testar gateway ativo</button>
+      ${gatewayTestMarkup(gateways, order)}
     </section>
+  `;
+}
+
+function gatewayTestMarkup(gateways = {}, order = gatewayKeys) {
+  const active = order[0] || gatewayKeys[0];
+  return `
+    <div class="gateway-test-rs">
+      <div class="admin-section-head-rs">
+        <h2>Teste real de PIX</h2>
+        <span>gateway-test-pix</span>
+      </div>
+      <p class="admin-hint-rs">Gera PIXs reais de teste direto nos gateways salvos. Use valor baixo para validar credenciais, QR e copia-e-cola.</p>
+      <div class="gateway-test-controls-rs">
+        <label class="field-rs">
+          <span>Valor do teste</span>
+          <input id="gatewayTestAmount" type="number" min="1" step="0.01" value="1.00" inputmode="decimal" />
+        </label>
+        <div class="gateway-test-options-rs">
+          ${gatewayKeys.map((name) => {
+            const checked = name === active || gateways[name]?.enabled === true;
+            return `
+              <label>
+                <input type="checkbox" value="${escapeAttr(name)}" data-gateway-test-option ${checked ? 'checked' : ''} />
+                <span>${escapeHtml(gatewayLabel(name))}</span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+        <div class="gateway-test-actions-rs">
+          <button class="admin-mini-button-rs" data-gateway-test-run type="button">Testar gateways</button>
+          <button class="admin-row-button-rs" data-gateway-test-clear type="button">Limpar</button>
+        </div>
+      </div>
+      <p class="admin-muted-rs gateway-test-status-rs" id="gatewayTestStatus"></p>
+      <div class="gateway-test-results-rs" id="gatewayTestResults">
+        <div class="gateway-test-empty-rs">Defina o valor, escolha os gateways e gere os PIXs de teste.</div>
+      </div>
+    </div>
   `;
 }
 
@@ -1334,6 +1380,99 @@ function gatewayFieldsMarkup(name, gateway) {
     settingInput('gateways.bravopay.expiresIn', 'Expira em segundos', gateway.expiresIn || 3600, 'number'),
     settingInput('gateways.bravopay.description', 'Descricao PIX', gateway.description),
   ].join('');
+}
+
+function gatewayTestQrSrc(result = {}) {
+  const direct = String(result.paymentQrUrl || result.paymentCodeBase64 || '').trim();
+  if (direct) {
+    if (/^https?:\/\//i.test(direct) || direct.startsWith('data:image')) return direct;
+    return `data:image/png;base64,${direct}`;
+  }
+  const code = String(result.paymentCode || '').trim();
+  return code ? `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(code)}` : '';
+}
+
+function gatewayTestResultsMarkup(results = [], amount = 0) {
+  const list = Array.isArray(results) ? results : [];
+  if (!list.length) return '<div class="gateway-test-empty-rs">Nenhum resultado retornado.</div>';
+  return list.map((result) => {
+    const ok = result?.ok === true;
+    const qrSrc = gatewayTestQrSrc(result);
+    const paymentCode = String(result?.paymentCode || '').trim();
+    return `
+      <article class="gateway-test-card-rs ${ok ? '' : 'gateway-test-card-rs--error'}">
+        <div class="gateway-test-card-head-rs">
+          <div>
+            <span>Gateway de teste</span>
+            <h3>${escapeHtml(result?.gatewayLabel || gatewayLabel(result?.gateway))}</h3>
+          </div>
+          <b>${ok ? 'Gerado' : 'Falhou'}</b>
+        </div>
+        <div class="gateway-test-meta-rs">
+          <div><span>Valor</span><strong>${formatMoney(result?.amount || amount)}</strong></div>
+          <div><span>Status</span><strong>${escapeHtml(result?.statusRaw || (ok ? 'gerado' : 'falha'))}</strong></div>
+          <div><span>TXID</span><strong>${escapeHtml(result?.txid || '-')}</strong></div>
+        </div>
+        ${ok && qrSrc ? `<img class="gateway-test-qr-rs" src="${escapeAttr(qrSrc)}" alt="QR Code ${escapeAttr(result?.gatewayLabel || '')}" />` : ''}
+        ${paymentCode ? `
+          <div class="gateway-test-copy-rs">
+            <input value="${escapeAttr(paymentCode)}" readonly />
+            <button class="admin-row-button-rs" data-gateway-test-copy type="button">Copiar codigo</button>
+          </div>
+        ` : ''}
+        ${result?.detail ? `<p class="gateway-test-detail-rs">${escapeHtml(result.detail)}</p>` : ''}
+      </article>
+    `;
+  }).join('');
+}
+
+function bindGatewayTestCopyButtons() {
+  document.querySelectorAll('[data-gateway-test-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const input = button.closest('.gateway-test-copy-rs')?.querySelector('input');
+      const value = input?.value || '';
+      await navigator.clipboard?.writeText(value).catch(() => {});
+      button.textContent = 'Copiado';
+      window.setTimeout(() => { button.textContent = 'Copiar codigo'; }, 1300);
+    });
+  });
+}
+
+async function runGatewayTests() {
+  const runButton = document.querySelector('[data-gateway-test-run]');
+  const amountInput = document.querySelector('#gatewayTestAmount');
+  const status = document.querySelector('#gatewayTestStatus');
+  const results = document.querySelector('#gatewayTestResults');
+  const amount = Number(String(amountInput?.value || '').replace(',', '.'));
+  const gateways = Array.from(document.querySelectorAll('[data-gateway-test-option]:checked')).map((item) => item.value);
+  if (!Number.isFinite(amount) || amount < 1) {
+    if (status) status.textContent = 'Informe um valor valido a partir de R$ 1,00.';
+    amountInput?.focus();
+    return;
+  }
+  if (!gateways.length) {
+    if (status) status.textContent = 'Selecione ao menos um gateway para testar.';
+    return;
+  }
+  if (runButton) runButton.disabled = true;
+  if (status) status.textContent = 'Gerando PIXs de teste direto nos gateways salvos...';
+  if (results) results.innerHTML = '<div class="gateway-test-empty-rs">Gerando testes. Aguarde alguns segundos...</div>';
+  try {
+    const data = await adminFetch('/api/admin/gateway-test-pix', {
+      method: 'POST',
+      body: JSON.stringify({ amount, gateways }),
+    });
+    if (results) results.innerHTML = gatewayTestResultsMarkup(data.results || [], data.amount || amount);
+    const okCount = (data.results || []).filter((item) => item?.ok).length;
+    const failCount = (data.results || []).filter((item) => !item?.ok).length;
+    if (status) status.textContent = `Teste concluido: ${okCount} gerado(s), ${failCount} falha(s).`;
+    bindGatewayTestCopyButtons();
+  } catch (error) {
+    if (status) status.textContent = error.message || 'Falha ao gerar PIXs de teste.';
+    if (results) results.innerHTML = `<div class="gateway-test-empty-rs">${escapeHtml(error.message || 'Falha ao gerar PIXs de teste.')}</div>`;
+  } finally {
+    if (runButton) runButton.disabled = false;
+  }
 }
 
 function pagesMarkup() {

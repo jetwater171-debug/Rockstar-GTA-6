@@ -2237,6 +2237,187 @@
   grid-column: 1 / -1;
 }
 
+.gateway-test-rs {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.025)),
+    rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 1.3rem;
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.gateway-test-controls-rs {
+  align-items: end;
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr) auto;
+  margin-top: 1rem;
+}
+
+.gateway-test-options-rs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.gateway-test-options-rs label {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+}
+
+.gateway-test-options-rs input {
+  accent-color: #ffd629;
+}
+
+.gateway-test-options-rs span {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.gateway-test-actions-rs {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+}
+
+.gateway-test-actions-rs .admin-mini-button-rs {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.gateway-test-status-rs {
+  min-height: 1.2rem;
+}
+
+.gateway-test-results-rs {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.gateway-test-empty-rs {
+  background: rgba(0, 0, 0, 0.24);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 1rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.9rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.gateway-test-card-rs {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 214, 41, 0.2);
+  border-radius: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.85rem;
+}
+
+.gateway-test-card-rs--error {
+  border-color: rgba(255, 91, 91, 0.36);
+}
+
+.gateway-test-card-head-rs {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  grid-column: 1 / -1;
+  justify-content: space-between;
+}
+
+.gateway-test-card-head-rs span,
+.gateway-test-meta-rs span {
+  color: rgba(255, 255, 255, 0.5);
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.gateway-test-card-head-rs h3 {
+  font-family: "Barlow Condensed", Impact, Anton, sans-serif;
+  font-size: 1.7rem;
+  line-height: 0.9;
+  margin: 0.15rem 0 0;
+  text-transform: uppercase;
+}
+
+.gateway-test-card-head-rs b {
+  background: #2ab85b;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  padding: 0.45rem 0.75rem;
+  text-transform: uppercase;
+}
+
+.gateway-test-card-rs--error .gateway-test-card-head-rs b {
+  background: #d93434;
+}
+
+.gateway-test-meta-rs {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gateway-test-meta-rs strong {
+  color: #fff;
+  display: block;
+  font-size: 0.82rem;
+  margin-top: 0.15rem;
+  overflow-wrap: anywhere;
+}
+
+.gateway-test-qr-rs {
+  background: #fff;
+  border-radius: 0.85rem;
+  grid-column: 2;
+  grid-row: 2 / span 3;
+  height: 8.5rem;
+  object-fit: contain;
+  padding: 0.45rem;
+  width: 8.5rem;
+}
+
+.gateway-test-copy-rs {
+  display: grid;
+  gap: 0.55rem;
+  grid-column: 1;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.gateway-test-copy-rs input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #fff;
+  min-height: 2.35rem;
+  min-width: 0;
+  padding: 0 0.8rem;
+}
+
+.gateway-test-detail-rs {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+  grid-column: 1 / -1;
+  line-height: 1.45;
+  margin: 0;
+}
+
 .admin-table-wrap-rs {
   overflow-x: auto;
 }
@@ -3031,6 +3212,31 @@
 
   .gateway-order-actions-rs button {
     flex: 1;
+  }
+
+  .gateway-test-controls-rs,
+  .gateway-test-card-rs,
+  .gateway-test-copy-rs,
+  .gateway-test-meta-rs {
+    grid-template-columns: 1fr;
+  }
+
+  .gateway-test-actions-rs {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .gateway-test-actions-rs .admin-row-button-rs,
+  .gateway-test-actions-rs .admin-mini-button-rs {
+    width: 100%;
+  }
+
+  .gateway-test-qr-rs {
+    grid-column: 1;
+    grid-row: auto;
+    height: auto;
+    justify-self: center;
+    width: min(13rem, 100%);
   }
 
   .admin-top-rs,

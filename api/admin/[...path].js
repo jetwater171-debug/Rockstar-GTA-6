@@ -52,6 +52,139 @@ const asObject = (value) => value && typeof value === 'object' && !Array.isArray
 const isPlainObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
 const gatewayLabel = (name) => ({ sunize: 'Sunize', paradise: 'Paradise', atomopay: 'AtomoPay', bravopay: 'Bravo Pay' }[name] || name);
 
+function pickText(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null) continue;
+    const text = String(value).trim();
+    if (text) return text;
+  }
+  return '';
+}
+
+function looksLikePixCopyPaste(value = '') {
+  const text = String(value || '').trim();
+  return text.startsWith('000201') || /br\.gov\.bcb\.pix/i.test(text);
+}
+
+function parseGatewayTestAmount(value) {
+  const amount = Number(String(value ?? '').trim().replace(',', '.'));
+  if (!Number.isFinite(amount) || amount < 1 || amount > 100000) return null;
+  return Number(amount.toFixed(2));
+}
+
+function normalizeGatewayTestSelection(input) {
+  const list = Array.isArray(input) ? input : [input];
+  return Array.from(new Set(list
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter((value) => gateways.includes(value))));
+}
+
+async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    const bodyText = await response.text().catch(() => '');
+    let data = {};
+    try {
+      data = bodyText ? JSON.parse(bodyText) : {};
+    } catch (_error) {
+      data = { message: bodyText };
+    }
+    return { response, data };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function baseUrl(config = {}) {
+  return String(config.baseUrl || config.apiUrl || '').replace(/\/+$/, '');
+}
+
+function collectPixFields(value, depth = 0, bag = {}) {
+  if (!value || typeof value !== 'object' || depth > 6) return bag;
+  Object.entries(value).forEach(([key, item]) => {
+    const normalized = String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!bag.txid && /^(id|txid|transactionid|transactionhash|hash)$/.test(normalized)) bag.txid = pickText(item);
+    if (!bag.externalId && /^(externalid|externalreference|reference)$/.test(normalized)) bag.externalId = pickText(item);
+    if (!bag.status && /^(status|statusraw|situacao)$/.test(normalized)) bag.status = pickText(item);
+    if (!bag.paymentCode && /(copypaste|brcode|emv|payload|pixcode|qrcodetext|qrcopypaste|qrtext)/.test(normalized)) bag.paymentCode = pickText(item);
+    if (!bag.qrRaw && /(qrcodebase64|qrcodeimage|qrimage|imagebase64|base64|qrcode|qr_code)$/.test(normalized)) bag.qrRaw = pickText(item);
+    if (!bag.qrUrl && /(qrcodeurl|qrurl|qrcode_url|paymentqrurl)/.test(normalized)) bag.qrUrl = pickText(item);
+    if (item && typeof item === 'object') collectPixFields(item, depth + 1, bag);
+  });
+  return bag;
+}
+
+function normalizePixResponse(data = {}) {
+  const fields = collectPixFields(data);
+  let paymentCode = pickText(fields.paymentCode);
+  let qrRaw = pickText(fields.qrRaw);
+  if (!paymentCode && looksLikePixCopyPaste(qrRaw)) {
+    paymentCode = qrRaw;
+    qrRaw = '';
+  }
+  let paymentCodeBase64 = '';
+  let paymentQrUrl = '';
+  if (fields.qrUrl) paymentQrUrl = fields.qrUrl;
+  else if (qrRaw) {
+    if (/^https?:\/\//i.test(qrRaw) || qrRaw.startsWith('data:image')) paymentQrUrl = qrRaw;
+    else paymentCodeBase64 = qrRaw;
+  }
+  return {
+    txid: pickText(fields.txid),
+    externalId: pickText(fields.externalId),
+    status: pickText(fields.status),
+    paymentCode,
+    paymentCodeBase64,
+    paymentQrUrl
+  };
+}
+
+async function requestGatewayCreate(gateway, config = {}, payload = {}, testKey = '') {
+  const timeoutMs = Number(config.timeoutMs || 12000);
+  if (gateway === 'sunize') {
+    return fetchJsonWithTimeout(`${baseUrl(config)}/transactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': pickText(config.apiKey),
+        'x-api-secret': pickText(config.apiSecret, config.secret)
+      },
+      body: JSON.stringify(payload)
+    }, timeoutMs);
+  }
+  if (gateway === 'paradise') {
+    return fetchJsonWithTimeout(`${baseUrl(config)}/api/v1/transaction.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': pickText(config.apiKey)
+      },
+      body: JSON.stringify(payload)
+    }, timeoutMs);
+  }
+  if (gateway === 'atomopay') {
+    const endpoint = new URL(`${baseUrl(config)}/transactions`);
+    endpoint.searchParams.set('api_token', pickText(config.apiToken, config.apiKey));
+    return fetchJsonWithTimeout(endpoint.toString(), {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }, timeoutMs);
+  }
+  return fetchJsonWithTimeout(`${baseUrl(config)}/transactions`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${pickText(config.apiKey)}`,
+      ...(testKey ? { 'Idempotency-Key': testKey } : {})
+    },
+    body: JSON.stringify(payload)
+  }, timeoutMs);
+}
+
 function mergeDeep(base, patch) {
   const out = { ...asObject(base) };
   Object.entries(asObject(patch)).forEach(([key, value]) => {
@@ -343,6 +476,128 @@ async function gatewaySales(_req, res) {
   sendJson(res, 200, { ok: true, summary: summaryRows, detail: { totalSales: items.length, totalGrossRevenue: Number(items.reduce((sum, item) => sum + item.amount, 0).toFixed(2)) }, items: items.slice(0, 500) });
 }
 
+async function gatewayTestPix(req, res) {
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  const body = await readJson(req);
+  const amount = parseGatewayTestAmount(body.amount);
+  if (!amount) return sendJson(res, 400, { error: 'Informe um valor valido a partir de R$ 1,00.' });
+  const selected = normalizeGatewayTestSelection(body.gateways);
+  if (!selected.length) return sendJson(res, 400, { error: 'Selecione ao menos um gateway para testar.' });
+
+  const current = await loadSettings();
+  if (current.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (!current.ok) return sendJson(res, 502, { error: 'Falha ao carregar gateways.', detail: current.detail });
+
+  const settings = normalizeGatewaySettings(current.value || {});
+  const baseCustomer = {
+    name: 'Teste Gateway Admin',
+    email: `gateway.test.${Date.now()}@example.com`,
+    phoneDigits: '11999999999',
+    phoneE164: '+5511999999999',
+    document: '52998224725'
+  };
+  const baseIp = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || '127.0.0.1';
+
+  const createOne = async (gateway) => {
+    const config = settings.gateways?.[gateway] || {};
+    const testKey = `admin-gateway-test-${gateway}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const baseResult = {
+      gateway,
+      gatewayLabel: gatewayLabel(gateway),
+      ok: false,
+      amount,
+      txid: '',
+      paymentCode: '',
+      paymentCodeBase64: '',
+      paymentQrUrl: '',
+      statusRaw: '',
+      externalId: testKey,
+      detail: ''
+    };
+
+    try {
+      let payload = null;
+      if (gateway === 'sunize') {
+        if (!baseUrl(config) || !pickText(config.apiKey) || !pickText(config.apiSecret, config.secret)) {
+          return { ...baseResult, detail: 'Credenciais Sunize nao configuradas.' };
+        }
+        payload = {
+          external_id: testKey,
+          total_amount: amount,
+          payment_method: 'PIX',
+          items: [{ id: 'admin-gateway-test-1', title: 'Teste manual admin', description: 'Teste manual de gateway via admin', price: amount, quantity: 1, is_physical: false }],
+          ip: baseIp,
+          customer: { name: baseCustomer.name, email: baseCustomer.email, phone: baseCustomer.phoneE164, document_type: 'CPF', document: baseCustomer.document }
+        };
+      } else if (gateway === 'paradise') {
+        if (!baseUrl(config) || !pickText(config.apiKey)) return { ...baseResult, detail: 'Credenciais Paradise nao configuradas.' };
+        payload = {
+          amount: Math.max(1, Math.round(amount * 100)),
+          description: pickText(config.description) || 'Teste manual de gateway via admin',
+          reference: testKey,
+          source: pickText(config.source) || 'api_externa',
+          customer: { name: baseCustomer.name, email: baseCustomer.email, document: baseCustomer.document, phone: baseCustomer.phoneDigits }
+        };
+        if (payload.source !== 'api_externa' && pickText(config.productHash)) payload.productHash = pickText(config.productHash);
+      } else if (gateway === 'atomopay') {
+        const offerHash = pickText(config.offerHash);
+        const productHash = pickText(config.productHash);
+        if (!baseUrl(config) || !pickText(config.apiToken, config.apiKey) || !offerHash || !productHash) {
+          return { ...baseResult, detail: 'Credenciais AtomoPay nao configuradas.' };
+        }
+        payload = {
+          amount: Math.max(1, Math.round(amount * 100)),
+          offer_hash: offerHash,
+          payment_method: 'pix',
+          customer: { name: baseCustomer.name, email: baseCustomer.email, phone_number: baseCustomer.phoneDigits, document: baseCustomer.document },
+          cart: [{ product_hash: productHash, title: 'Teste manual de gateway via admin', price: Math.max(1, Math.round(amount * 100)), quantity: 1, operation_type: 1, tangible: false }],
+          expire_in_days: 1,
+          transaction_origin: 'api',
+          tracking: { src: 'admin_gateway_test', utm_source: 'admin_gateway_test', utm_medium: 'dashboard', utm_campaign: testKey }
+        };
+      } else {
+        if (!baseUrl(config) || !pickText(config.apiKey)) return { ...baseResult, detail: 'Credenciais Bravo Pay nao configuradas.' };
+        payload = {
+          amount_cents: Math.max(500, Math.round(amount * 100)),
+          method: 'pix',
+          customer: { name: baseCustomer.name, email: baseCustomer.email, cpf: baseCustomer.document, phone: baseCustomer.phoneDigits },
+          description: pickText(config.description) || 'Teste manual de gateway via admin',
+          external_reference: testKey,
+          expires_in: Math.max(60, Math.min(86400, Number(config.expiresIn || 3600) || 3600)),
+          utm: { source: 'admin_gateway_test', medium: 'dashboard', campaign: testKey }
+        };
+      }
+
+      const { response, data } = await requestGatewayCreate(gateway, config, payload, testKey);
+      if (!response?.ok || data?.success === false || data?.hasError === true || data?.error) {
+        const detail = typeof data?.error === 'object'
+          ? pickText(data.error.message, data.error.code)
+          : pickText(data?.error, data?.message, data?.details, `HTTP ${response?.status || 0}`);
+        return { ...baseResult, detail };
+      }
+      const parsed = normalizePixResponse(data || {});
+      return {
+        ...baseResult,
+        ok: true,
+        txid: parsed.txid,
+        paymentCode: parsed.paymentCode,
+        paymentCodeBase64: parsed.paymentCodeBase64,
+        paymentQrUrl: parsed.paymentQrUrl,
+        statusRaw: parsed.status,
+        externalId: parsed.externalId || testKey,
+        detail: (!parsed.paymentCode && !parsed.paymentCodeBase64 && !parsed.paymentQrUrl)
+          ? 'Gateway criou a transacao, mas nao devolveu QR/copia-e-cola na resposta.'
+          : ''
+      };
+    } catch (error) {
+      return { ...baseResult, detail: error?.name === 'AbortError' ? 'Timeout ao chamar gateway.' : (error?.message || 'request_error') };
+    }
+  };
+
+  const results = await Promise.all(selected.map((gateway) => createOne(gateway)));
+  return sendJson(res, 200, { ok: true, amount, results });
+}
+
 async function backredirects(_req, res) {
   const result = await supabaseFetch('lead_pageviews?select=page,created_at&order=created_at.desc&limit=5000');
   if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
@@ -467,6 +722,7 @@ export default async function handler(req, res) {
   if (route === 'settings') return settings(req, res);
   if (route === 'sales-insights') return salesInsights(req, res);
   if (route === 'gateway-sales') return gatewaySales(req, res);
+  if (route === 'gateway-test-pix') return gatewayTestPix(req, res);
   if (route === 'backredirects') return backredirects(req, res);
   if (route === 'clonadores') return cloners(req, res);
   if (route === 'ip-blacklist') return blacklist(req, res);
