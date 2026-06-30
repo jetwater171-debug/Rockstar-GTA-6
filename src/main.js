@@ -2,6 +2,7 @@ import './styles.css';
 import './hero-polish.css';
 import './quiz-polish.css';
 import './lead-flow.css';
+import './desktop-polish.css';
 
 const quiz = [
   {
