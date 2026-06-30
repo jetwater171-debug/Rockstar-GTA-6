@@ -1,6 +1,9 @@
 {
   "rewrites": [
+    { "source": "/analise", "destination": "/index.html" },
     { "source": "/dados", "destination": "/index.html" },
+    { "source": "/processando", "destination": "/index.html" },
+    { "source": "/ofertas", "destination": "/index.html" },
     { "source": "/admin", "destination": "/index.html" }
   ]
 }
