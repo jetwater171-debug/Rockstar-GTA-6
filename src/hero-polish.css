@@ -1917,6 +1917,12 @@ body.is-home-screen .particle-field {
   overflow: hidden;
 }
 
+body.is-home-screen .hero__art {
+  inset: -1px -10px -1px -10px;
+  max-width: none;
+  width: auto;
+}
+
 body.is-home-screen .experience .hero.screen .rockstar-button {
   border-radius: 999px;
   max-width: min(28.5rem, calc(100vw - 2rem));
@@ -1932,14 +1938,14 @@ body.is-home-screen .experience .hero.screen .rockstar-button span {
   box-shadow:
     0 0.22rem 0 #a86400,
     0 0.95rem 1.85rem rgba(0, 0, 0, 0.48);
-  color: #090909;
+  color: #fff;
   font-family: Impact, "Barlow Condensed", Anton, sans-serif;
-  font-size: clamp(1.45rem, 4.7vw, 2.05rem);
+  font-size: clamp(1.18rem, 4vw, 1.68rem);
   font-weight: 900;
   letter-spacing: 0;
   min-height: clamp(3.75rem, 9vw, 4.45rem);
-  padding: 0 clamp(4.15rem, 11vw, 4.9rem) 0 clamp(1.4rem, 5vw, 2rem);
-  text-shadow: none;
+  padding: 0 clamp(1.4rem, 5vw, 2rem);
+  text-shadow: 0 0.12rem 0.18rem rgba(111, 56, 0, 0.55);
   transform: none;
   transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
   width: 100%;
@@ -1951,21 +1957,7 @@ body.is-home-screen .experience .hero.screen .rockstar-button span::before {
 }
 
 body.is-home-screen .experience .hero.screen .rockstar-button span::after {
-  background: transparent;
-  border-radius: 0;
-  color: #090909;
-  content: ">";
-  display: block;
-  font-family: Impact, Anton, sans-serif;
-  font-size: clamp(1.95rem, 6vw, 2.55rem);
-  font-weight: 900;
-  height: auto;
-  line-height: 1;
-  position: absolute;
-  right: clamp(1.25rem, 4vw, 1.7rem);
-  top: 50%;
-  transform: translateY(-52%) scaleX(0.72);
-  width: auto;
+  display: none;
 }
 
 body.is-home-screen .experience .hero.screen .rockstar-button:hover span,
