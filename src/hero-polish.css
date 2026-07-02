@@ -1874,11 +1874,9 @@ body,
   }
 }
 
-/* Hard stop for home/quiz scrollbars and simplified CTA requested. */
+/* Hard stop for home scrollbars and simplified CTA requested. */
 html.is-home-screen,
-html.is-quiz-screen,
-body.is-home-screen,
-body.is-quiz-screen {
+body.is-home-screen {
   height: 100%;
   max-height: 100%;
   overflow: hidden !important;
@@ -1887,9 +1885,7 @@ body.is-quiz-screen {
 }
 
 body.is-home-screen #app,
-body.is-quiz-screen #app,
-body.is-home-screen .experience,
-body.is-quiz-screen .experience {
+body.is-home-screen .experience {
   height: 100dvh;
   max-height: 100dvh;
   max-width: 100vw;
@@ -1897,8 +1893,12 @@ body.is-quiz-screen .experience {
   width: 100%;
 }
 
-body.is-home-screen .hero.screen.is-active,
-body.is-quiz-screen .quiz-screen.screen.is-active {
+body.is-home-screen .hero.screen.is-active {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, transparent 41%, rgba(10, 0, 10, 0.54) 76%, rgba(0, 0, 0, 0.95) 100%),
+    radial-gradient(ellipse at 50% 90%, rgba(255, 91, 67, 0.15), transparent 54%),
+    url("/assets/gta-vi-lucia-jason-iphone-final.png") center top / cover no-repeat,
+    url("/assets/gta-vi-lucia-jason-title-bg.jpeg") center top / cover no-repeat;
   height: 100dvh;
   max-height: 100dvh;
   max-width: 100vw;
@@ -1918,6 +1918,11 @@ body.is-home-screen .particle-field {
 }
 
 body.is-home-screen .hero__art {
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, transparent 41%, rgba(10, 0, 10, 0.54) 76%, rgba(0, 0, 0, 0.95) 100%),
+    radial-gradient(ellipse at 50% 90%, rgba(255, 91, 67, 0.15), transparent 54%),
+    url("/assets/gta-vi-lucia-jason-iphone-final.png"),
+    url("/assets/gta-vi-lucia-jason-title-bg.jpeg");
   background-position: center top;
   background-size: cover;
   inset: -2px -24px -2px -24px;
@@ -1997,69 +2002,4 @@ body.is-home-screen .experience .hero.screen .rockstar-button:active span {
     0 0.08rem 0 #a86400,
     0 0.55rem 1.2rem rgba(0, 0, 0, 0.38);
   transform: translateY(0.1rem);
-}
-
-body.is-quiz-screen .quiz-screen {
-  align-items: stretch;
-  display: flex;
-  flex-direction: column;
-  padding: clamp(5.65rem, 10svh, 6.45rem) clamp(0.72rem, 2.5vw, 1.25rem) clamp(0.72rem, 1.8svh, 1rem);
-}
-
-body.is-quiz-screen .quiz-header {
-  min-height: clamp(4.85rem, 9svh, 5.7rem);
-}
-
-body.is-quiz-screen .quiz-header__logo {
-  height: clamp(3.35rem, 7.4svh, 4rem);
-}
-
-body.is-quiz-screen .quiz-shell {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  max-height: calc(100dvh - clamp(6.4rem, 12svh, 7.6rem));
-  overflow: hidden;
-}
-
-body.is-quiz-screen .progress-track {
-  flex: 0 0 auto;
-  margin-bottom: clamp(0.65rem, 1.6svh, 1rem);
-}
-
-body.is-quiz-screen .question-panel {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-  padding: clamp(0.95rem, 3.4vw, 1.45rem);
-}
-
-body.is-quiz-screen .question-panel h2 {
-  flex: 0 0 auto;
-  font-size: clamp(1.32rem, 5.65vw, 2.15rem);
-  margin-bottom: clamp(0.72rem, 1.8svh, 1.05rem);
-}
-
-body.is-quiz-screen .answers {
-  display: grid;
-  flex: 1 1 auto;
-  gap: clamp(0.5rem, 1.35svh, 0.72rem);
-  min-height: 0;
-}
-
-body.is-quiz-screen .answer {
-  min-height: clamp(3.05rem, 7.1svh, 4.1rem);
-  padding-block: clamp(0.42rem, 1.15svh, 0.62rem);
-}
-
-body.is-quiz-screen .answer__icon {
-  min-height: clamp(2.35rem, 5.5svh, 3rem);
-  min-width: clamp(2.35rem, 5.5svh, 3rem);
-}
-
-body.is-quiz-screen .answer__text {
-  font-size: clamp(0.88rem, 3.85vw, 1.05rem);
-  line-height: 1.05;
 }
