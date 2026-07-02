@@ -1938,17 +1938,17 @@ body.is-home-screen .experience .hero.screen .rockstar-button span {
   box-shadow:
     0 0.22rem 0 #a86400,
     0 0.95rem 1.85rem rgba(0, 0, 0, 0.48);
-  color: #080500;
-  font-family: "Pricedown", Impact, Anton, "Barlow Condensed", sans-serif;
-  font-size: clamp(1.65rem, 5vw, 2.28rem);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 0.9;
+  color: #141008;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: clamp(1.08rem, 3.55vw, 1.46rem);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1;
   min-height: clamp(3.75rem, 9vw, 4.45rem);
-  padding: 0.16rem clamp(1.4rem, 5vw, 2rem) 0;
+  padding: 0 clamp(1.4rem, 5vw, 2rem);
   text-shadow:
-    0 0.055rem 0 rgba(255, 255, 255, 0.46),
-    0 0.14rem 0 rgba(122, 67, 0, 0.2);
+    0 0.04rem 0 rgba(255, 255, 255, 0.34),
+    0 0.12rem 0.18rem rgba(96, 56, 0, 0.16);
   transform: none;
   transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
   width: 100%;
