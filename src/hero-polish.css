@@ -2003,3 +2003,91 @@ body.is-home-screen .experience .hero.screen .rockstar-button:active span {
     0 0.55rem 1.2rem rgba(0, 0, 0, 0.38);
   transform: translateY(0.1rem);
 }
+
+/* Clean final home edge/alignment pass. */
+body.is-home-screen,
+body.is-home-screen #app,
+body.is-home-screen .experience,
+body.is-home-screen .hero.screen.is-active {
+  margin: 0;
+  max-width: 100dvw;
+  overflow-x: hidden !important;
+  width: 100dvw;
+}
+
+body.is-home-screen .hero.screen.is-active {
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, transparent 41%, rgba(10, 0, 10, 0.54) 76%, rgba(0, 0, 0, 0.95) 100%),
+    radial-gradient(ellipse at 50% 90%, rgba(255, 91, 67, 0.15), transparent 54%),
+    url("/assets/gta-vi-lucia-jason-iphone-final.png") center top / cover no-repeat;
+  justify-content: center;
+  padding: 0;
+}
+
+body.is-home-screen .hero.screen.is-active::before,
+body.is-home-screen .hero.screen.is-active::after,
+body.is-home-screen .hero__speed-lines {
+  display: none !important;
+}
+
+body.is-home-screen .hero__art {
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.04) 0%, transparent 41%, rgba(10, 0, 10, 0.54) 76%, rgba(0, 0, 0, 0.95) 100%),
+    radial-gradient(ellipse at 50% 90%, rgba(255, 91, 67, 0.15), transparent 54%),
+    url("/assets/gta-vi-lucia-jason-iphone-final.png");
+  background-position: center top;
+  background-size: cover;
+  inset: 0;
+  max-width: none;
+  transform: none;
+  width: 100%;
+}
+
+body.is-home-screen .hero__grain {
+  opacity: 0.08;
+}
+
+body.is-home-screen .hero__content {
+  align-items: center;
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: min(30rem, calc(100dvw - 2rem));
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+  width: 100%;
+}
+
+body.is-home-screen .topbar {
+  left: 0;
+  padding-left: 0;
+  padding-right: 0;
+  right: 0;
+  width: 100dvw;
+}
+
+body.is-home-screen .experience .hero.screen .topbar__logo {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+body.is-home-screen .hero__invite,
+body.is-home-screen .hero__actions {
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+body.is-home-screen .hero__promo-title,
+body.is-home-screen .hero__copy {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+body.is-home-screen .experience .hero.screen .rockstar-button {
+  margin-left: auto;
+  margin-right: auto;
+}
