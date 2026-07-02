@@ -1904,7 +1904,7 @@ body.is-home-screen .hero.screen.is-active {
   max-width: 100vw;
   min-height: 100dvh;
   overflow: hidden !important;
-  width: 100%;
+  width: 100dvw;
 }
 
 body.is-home-screen .hero__art,
