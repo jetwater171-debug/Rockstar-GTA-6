@@ -1437,6 +1437,64 @@
   }
 }
 
+/* Home only: clean Rockstar mark without the quiz liquid-glass capsule. */
+.experience .hero.screen .topbar {
+  align-items: flex-start;
+  display: flex;
+  height: clamp(4.2rem, 9svh, 5.5rem);
+  justify-content: center;
+  padding-top: clamp(1.05rem, 2.6svh, 1.65rem);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.experience .hero.screen .topbar__logo {
+  -webkit-backdrop-filter: none;
+  align-items: center;
+  backdrop-filter: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  height: auto;
+  justify-content: center;
+  left: 50%;
+  overflow: visible;
+  padding: 0;
+  position: absolute;
+  top: clamp(1.05rem, 2.6svh, 1.65rem);
+  transform: translateX(-50%);
+  width: auto;
+}
+
+.experience .hero.screen .topbar__logo::before {
+  display: none;
+}
+
+.experience .hero.screen .brand-mark--symbol {
+  filter:
+    drop-shadow(0 0.35rem 0.45rem rgba(0, 0, 0, 0.28))
+    drop-shadow(0 0 0.95rem rgba(255, 255, 255, 0.18));
+  height: clamp(3.05rem, 7.2vw, 4.25rem);
+  opacity: 0.96;
+}
+
+@media (max-width: 780px) {
+  .experience .hero.screen .topbar {
+    height: clamp(4.15rem, 8.6svh, 5.15rem);
+    padding-top: clamp(0.98rem, 2.2svh, 1.28rem);
+  }
+
+  .experience .hero.screen .topbar__logo {
+    top: clamp(0.98rem, 2.2svh, 1.28rem);
+  }
+
+  .experience .hero.screen .brand-mark--symbol {
+    height: clamp(3.15rem, 12vw, 3.9rem);
+  }
+}
+
 /* GTA VI lockup tuned closer to the supplied reference. */
 .hero__gta-lockup {
   align-items: flex-end;
