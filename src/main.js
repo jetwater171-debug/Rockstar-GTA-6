@@ -158,25 +158,40 @@ let adminSelectedLeadSession = null;
 
 const app = document.querySelector('#app');
 
+function setDocumentScreenMode(mode) {
+  const classes = ['is-home-screen', 'is-quiz-screen'];
+  document.documentElement.classList.remove(...classes);
+  document.body.classList.remove(...classes);
+  if (!mode) return;
+  const className = `is-${mode}-screen`;
+  document.documentElement.classList.add(className);
+  document.body.classList.add(className);
+}
+
 function render() {
   const route = routeName();
   if (route === 'analise') {
+    setDocumentScreenMode(null);
     renderAnalysisPage();
     return;
   }
   if (route === 'dados') {
+    setDocumentScreenMode(null);
     renderDataPage();
     return;
   }
   if (route === 'processando') {
+    setDocumentScreenMode(null);
     renderProcessingPage();
     return;
   }
   if (route === 'ofertas') {
+    setDocumentScreenMode(null);
     renderOffersPage();
     return;
   }
   if (route === 'admin') {
+    setDocumentScreenMode(null);
     renderAdminPage();
     return;
   }
@@ -184,6 +199,7 @@ function render() {
 }
 
 function renderExperience() {
+  setDocumentScreenMode('home');
   app.innerHTML = `
     <main class="experience">
       <section class="hero screen is-active" id="home" aria-label="Inicio do quiz">
@@ -473,6 +489,8 @@ function switchScreen(name) {
   document.querySelectorAll('.screen').forEach((screen) => {
     screen.classList.toggle('is-active', screen.id === name);
   });
+  setDocumentScreenMode(name === 'quiz' ? 'quiz' : 'home');
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
 
 function optionLabel(option) {

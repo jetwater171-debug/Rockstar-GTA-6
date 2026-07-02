@@ -1873,3 +1873,179 @@ body,
     padding-right: 3.8rem;
   }
 }
+
+/* Hard stop for home/quiz scrollbars and simplified CTA requested. */
+html.is-home-screen,
+html.is-quiz-screen,
+body.is-home-screen,
+body.is-quiz-screen {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  width: 100%;
+}
+
+body.is-home-screen #app,
+body.is-quiz-screen #app,
+body.is-home-screen .experience,
+body.is-quiz-screen .experience {
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: 100vw;
+  overflow: hidden !important;
+  width: 100vw;
+}
+
+body.is-home-screen .hero.screen.is-active,
+body.is-quiz-screen .quiz-screen.screen.is-active {
+  height: 100dvh;
+  max-height: 100dvh;
+  max-width: 100vw;
+  min-height: 100dvh;
+  overflow: hidden !important;
+  width: 100vw;
+}
+
+body.is-home-screen .hero__art,
+body.is-home-screen .hero__grain,
+body.is-home-screen .hero__speed-lines,
+body.is-home-screen .hero__bottom-glass,
+body.is-home-screen .particle-field {
+  inset: 0;
+  max-width: 100vw;
+  overflow: hidden;
+}
+
+body.is-home-screen .experience .hero.screen .rockstar-button {
+  border-radius: 999px;
+  max-width: min(28.5rem, calc(100vw - 2rem));
+  overflow: visible;
+  width: min(28.5rem, calc(100vw - 2rem));
+}
+
+body.is-home-screen .experience .hero.screen .rockstar-button span {
+  animation: none !important;
+  background: #ffd21c;
+  border: 0;
+  border-radius: 999px;
+  box-shadow:
+    0 0.22rem 0 #a86400,
+    0 0.95rem 1.85rem rgba(0, 0, 0, 0.48);
+  color: #090909;
+  font-family: Impact, "Barlow Condensed", Anton, sans-serif;
+  font-size: clamp(1.45rem, 4.7vw, 2.05rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  min-height: clamp(3.75rem, 9vw, 4.45rem);
+  padding: 0 clamp(4.15rem, 11vw, 4.9rem) 0 clamp(1.4rem, 5vw, 2rem);
+  text-shadow: none;
+  transform: none;
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  width: 100%;
+}
+
+body.is-home-screen .experience .hero.screen .rockstar-button span::before {
+  animation: none !important;
+  display: none;
+}
+
+body.is-home-screen .experience .hero.screen .rockstar-button span::after {
+  background: transparent;
+  border-radius: 0;
+  color: #090909;
+  content: ">";
+  display: block;
+  font-family: Impact, Anton, sans-serif;
+  font-size: clamp(1.95rem, 6vw, 2.55rem);
+  font-weight: 900;
+  height: auto;
+  line-height: 1;
+  position: absolute;
+  right: clamp(1.25rem, 4vw, 1.7rem);
+  top: 50%;
+  transform: translateY(-52%) scaleX(0.72);
+  width: auto;
+}
+
+body.is-home-screen .experience .hero.screen .rockstar-button:hover span,
+body.is-home-screen .experience .hero.screen .rockstar-button:focus-visible span {
+  background: #ffdc2f;
+  box-shadow:
+    0 0.22rem 0 #a86400,
+    0 1rem 1.95rem rgba(0, 0, 0, 0.5);
+  filter: none;
+  transform: translateY(-0.04rem);
+}
+
+body.is-home-screen .experience .hero.screen .rockstar-button:active span {
+  box-shadow:
+    0 0.08rem 0 #a86400,
+    0 0.55rem 1.2rem rgba(0, 0, 0, 0.38);
+  transform: translateY(0.1rem);
+}
+
+body.is-quiz-screen .quiz-screen {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(5.65rem, 10svh, 6.45rem) clamp(0.72rem, 2.5vw, 1.25rem) clamp(0.72rem, 1.8svh, 1rem);
+}
+
+body.is-quiz-screen .quiz-header {
+  min-height: clamp(4.85rem, 9svh, 5.7rem);
+}
+
+body.is-quiz-screen .quiz-header__logo {
+  height: clamp(3.35rem, 7.4svh, 4rem);
+}
+
+body.is-quiz-screen .quiz-shell {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  max-height: calc(100dvh - clamp(6.4rem, 12svh, 7.6rem));
+  overflow: hidden;
+}
+
+body.is-quiz-screen .progress-track {
+  flex: 0 0 auto;
+  margin-bottom: clamp(0.65rem, 1.6svh, 1rem);
+}
+
+body.is-quiz-screen .question-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(0.95rem, 3.4vw, 1.45rem);
+}
+
+body.is-quiz-screen .question-panel h2 {
+  flex: 0 0 auto;
+  font-size: clamp(1.32rem, 5.65vw, 2.15rem);
+  margin-bottom: clamp(0.72rem, 1.8svh, 1.05rem);
+}
+
+body.is-quiz-screen .answers {
+  display: grid;
+  flex: 1 1 auto;
+  gap: clamp(0.5rem, 1.35svh, 0.72rem);
+  min-height: 0;
+}
+
+body.is-quiz-screen .answer {
+  min-height: clamp(3.05rem, 7.1svh, 4.1rem);
+  padding-block: clamp(0.42rem, 1.15svh, 0.62rem);
+}
+
+body.is-quiz-screen .answer__icon {
+  min-height: clamp(2.35rem, 5.5svh, 3rem);
+  min-width: clamp(2.35rem, 5.5svh, 3rem);
+}
+
+body.is-quiz-screen .answer__text {
+  font-size: clamp(0.88rem, 3.85vw, 1.05rem);
+  line-height: 1.05;
+}
