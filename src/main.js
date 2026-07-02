@@ -948,6 +948,32 @@ function bindAdminContent() {
       status.textContent = result.message || 'Teste concluido.';
     });
   });
+  document.querySelectorAll('[data-gateway-config-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const card = button.closest('.gateway-card-rs');
+      const panel = card?.querySelector('[data-gateway-config-panel]');
+      const isOpen = !card?.classList.contains('is-open');
+      card?.classList.toggle('is-open', isOpen);
+      button.setAttribute('aria-expanded', String(isOpen));
+      if (panel) panel.hidden = !isOpen;
+      button.textContent = isOpen ? 'Recolher' : 'Configurar';
+    });
+  });
+  document.querySelector('[data-gateway-test-open]')?.addEventListener('click', () => {
+    const modal = document.querySelector('[data-gateway-test-modal]');
+    modal?.classList.remove('hidden');
+    modal?.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('admin-modal-open-rs');
+    window.setTimeout(() => document.querySelector('#gatewayTestAmount')?.focus(), 80);
+  });
+  document.querySelectorAll('[data-gateway-test-close]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const modal = document.querySelector('[data-gateway-test-modal]');
+      modal?.classList.add('hidden');
+      modal?.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('admin-modal-open-rs');
+    });
+  });
   document.querySelector('[data-gateway-test-run]')?.addEventListener('click', runGatewayTests);
   document.querySelector('[data-gateway-test-clear]')?.addEventListener('click', () => {
     const results = document.querySelector('#gatewayTestResults');
@@ -1248,7 +1274,13 @@ function gatewaysMarkup() {
   const order = gatewayOrderFromSettings(gateways);
   return `
     <section class="admin-section-rs">
-      <div class="admin-section-head-rs"><h2>Multigateway</h2><span>fallback pix</span></div>
+      <div class="admin-section-head-rs gateway-admin-head-rs">
+        <div>
+          <h2>Multigateway</h2>
+          <span>fallback pix</span>
+        </div>
+        <button class="admin-mini-button-rs gateway-test-open-rs" data-gateway-test-open type="button">Testar gateway</button>
+      </div>
       <p class="admin-hint-rs">O primeiro gateway da fila recebe o PIX. Se ele falhar, o sistema tenta os proximos na ordem abaixo.</p>
       <input type="hidden" data-setting="gateways.active" value="${escapeAttr(order[0])}" data-gateway-active-input />
       <input type="hidden" data-setting="gateways.activeGateway" value="${escapeAttr(order[0])}" data-gateway-active-gateway-input />
@@ -1266,36 +1298,42 @@ function gatewaysMarkup() {
 function gatewayTestMarkup(gateways = {}, order = gatewayKeys) {
   const active = order[0] || gatewayKeys[0];
   return `
-    <div class="gateway-test-rs">
-      <div class="admin-section-head-rs">
-        <h2>Teste real de PIX</h2>
-        <span>gateway-test-pix</span>
-      </div>
-      <p class="admin-hint-rs">Gera PIXs reais de teste direto nos gateways salvos. Use valor baixo para validar credenciais, QR e copia-e-cola.</p>
-      <div class="gateway-test-controls-rs">
-        <label class="field-rs">
-          <span>Valor do teste</span>
-          <input id="gatewayTestAmount" type="number" min="1" step="0.01" value="1.00" inputmode="decimal" />
-        </label>
-        <div class="gateway-test-options-rs">
-          ${gatewayKeys.map((name) => {
-            const checked = name === active || gateways[name]?.enabled === true;
-            return `
-              <label>
-                <input type="checkbox" value="${escapeAttr(name)}" data-gateway-test-option ${checked ? 'checked' : ''} />
-                <span>${escapeHtml(gatewayLabel(name))}</span>
-              </label>
-            `;
-          }).join('')}
+    <div class="gateway-test-modal-rs hidden" data-gateway-test-modal aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="gatewayTestTitle">
+      <button class="gateway-test-backdrop-rs" data-gateway-test-close type="button" aria-label="Fechar teste de gateway"></button>
+      <div class="gateway-test-dialog-rs">
+        <div class="gateway-test-head-rs">
+          <div>
+            <span>teste real</span>
+            <h2 id="gatewayTestTitle">Gerar PIX de teste</h2>
+          </div>
+          <button class="gateway-test-close-rs" data-gateway-test-close type="button" aria-label="Fechar">Fechar</button>
         </div>
-        <div class="gateway-test-actions-rs">
-          <button class="admin-mini-button-rs" data-gateway-test-run type="button">Testar gateways</button>
-          <button class="admin-row-button-rs" data-gateway-test-clear type="button">Limpar</button>
+        <p class="admin-hint-rs">Gera PIXs reais direto nas credenciais salvas. Use valor baixo para validar fallback, QR Code e copia-e-cola antes de escalar trafego.</p>
+        <div class="gateway-test-controls-rs">
+          <label class="field-rs">
+            <span>Valor do teste</span>
+            <input id="gatewayTestAmount" type="number" min="1" step="0.01" value="1.00" inputmode="decimal" />
+          </label>
+          <div class="gateway-test-options-rs" aria-label="Gateways para testar">
+            ${gatewayKeys.map((name) => {
+              const checked = name === active || gateways[name]?.enabled === true;
+              return `
+                <label>
+                  <input type="checkbox" value="${escapeAttr(name)}" data-gateway-test-option ${checked ? 'checked' : ''} />
+                  <span>${escapeHtml(gatewayLabel(name))}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+          <div class="gateway-test-actions-rs">
+            <button class="admin-mini-button-rs" data-gateway-test-run type="button">Gerar teste</button>
+            <button class="admin-row-button-rs" data-gateway-test-clear type="button">Limpar</button>
+          </div>
         </div>
-      </div>
-      <p class="admin-muted-rs gateway-test-status-rs" id="gatewayTestStatus"></p>
-      <div class="gateway-test-results-rs" id="gatewayTestResults">
-        <div class="gateway-test-empty-rs">Defina o valor, escolha os gateways e gere os PIXs de teste.</div>
+        <p class="admin-muted-rs gateway-test-status-rs" id="gatewayTestStatus"></p>
+        <div class="gateway-test-results-rs" id="gatewayTestResults">
+          <div class="gateway-test-empty-rs">Defina o valor, escolha os gateways e gere os PIXs de teste.</div>
+        </div>
       </div>
     </div>
   `;
@@ -1323,16 +1361,20 @@ function gatewayOrderRowMarkup(name, index) {
 function gatewayCardMarkup(name, gateway, order = gatewayKeys) {
   const fallbackIndex = order.indexOf(name);
   const position = fallbackIndex === 0 ? 'principal' : fallbackIndex > 0 ? `fallback ${fallbackIndex}` : 'fora da fila';
+  const panelId = `gatewayConfig-${name}`;
   return `
-    <div class="gateway-card-rs">
+    <div class="gateway-card-rs" data-gateway-card="${escapeAttr(name)}">
       <div class="gateway-card-head-rs">
         <div>
           <strong>${gatewayLabel(name)}</strong>
           <small>${position}</small>
         </div>
-        ${settingToggle(`gateways.${name}.enabled`, 'habilitado', gateway.enabled === true)}
+        <div class="gateway-card-actions-rs">
+          ${settingToggle(`gateways.${name}.enabled`, 'habilitado', gateway.enabled === true)}
+          <button class="admin-row-button-rs gateway-config-toggle-rs" data-gateway-config-toggle="${escapeAttr(name)}" type="button" aria-expanded="false" aria-controls="${escapeAttr(panelId)}">Configurar</button>
+        </div>
       </div>
-      <div class="gateway-fields-rs">
+      <div class="gateway-fields-rs" id="${escapeAttr(panelId)}" data-gateway-config-panel="${escapeAttr(name)}" hidden>
         ${gatewayFieldsMarkup(name, gateway)}
       </div>
     </div>
