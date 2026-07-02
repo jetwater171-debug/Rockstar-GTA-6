@@ -105,6 +105,7 @@ const storageKeys = {
 };
 
 const gatewayKeys = ['sunize', 'paradise', 'atomopay', 'bravopay'];
+const clarityTagAllowList = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'ttclid', 'gclid', 'src', 'sck'];
 
 const gtaOffers = [
   {
@@ -117,6 +118,7 @@ const gtaOffers = [
     oldPrice: 349.9,
     badge: 'Selecionado',
     image: '/assets/gta-vi-poster.jpg',
+    details: ['Jogo base digital', 'Perfil vinculado ao cadastro aprovado', 'Liberacao apos confirmacao da etapa final'],
   },
   {
     id: 'ultimate',
@@ -129,6 +131,7 @@ const gtaOffers = [
     badge: 'Mais escolhido',
     image: '/assets/gta-vi-lucia-jason-phone.jpg',
     featured: true,
+    details: ['Inclui conteudo digital extra', 'Prioridade na fila de liberacao', 'Bonus inicial vinculado ao perfil'],
   },
   {
     id: 'early',
@@ -141,6 +144,7 @@ const gtaOffers = [
     badge: 'Prioridade maxima',
     image: '/assets/gta-vi-lucia-jason-expanded.png',
     premium: true,
+    details: ['Acesso 7 dias antes da liberacao geral', 'Prioridade maxima na validacao', 'Pacote completo com beneficios digitais'],
   },
 ];
 
@@ -346,7 +350,7 @@ function dataScoreMarkup(summary = {}) {
 
 function dataFormMarkup(personal) {
   return `
-    <form class="data-form" id="leadForm">
+    <form class="data-form" id="leadForm" data-clarity-mask="true">
       <div class="data-form-grid-rs">
         <label class="field-rs">
           <span>Nome completo</span>
@@ -378,7 +382,7 @@ function successMarkup() {
 
 function renderAdminPage() {
   app.innerHTML = `
-    <main class="admin-screen" data-page="admin">
+    <main class="admin-screen" data-page="admin" data-clarity-mask="true">
       <section class="admin-shell-rs admin-shell-rs--pro">
         <article class="admin-card-rs" id="adminLoginCard">
           <div class="admin-logo-rs">${brandMark('quiz')}</div>
@@ -441,6 +445,8 @@ function renderAdminPage() {
       </section>
     </main>
   `;
+  initSession();
+  trackPage('admin');
   bindAdmin();
 }
 
@@ -472,6 +478,7 @@ function bindIntro() {
   document.querySelector('#startButton')?.addEventListener('click', async () => {
     await initSession();
     await trackPage('quiz');
+    trackClarityEvent('quiz_started', { stage: 'quiz' });
     await trackLead({ stage: 'quiz', event: 'quiz_started' });
     switchScreen('quiz');
     renderQuestion(true);
@@ -556,6 +563,11 @@ function handleAnswer(event) {
 
   score += points;
   quizAnswers.push({ question: item.question, answer: optionLabel(selectedOption), points });
+  trackClarityEvent(`quiz_answer_${currentQuestion + 1}`, {
+    stage: 'quiz',
+    question_index: currentQuestion + 1,
+    answer_points: points,
+  });
 
   window.setTimeout(async () => {
     currentQuestion += 1;
@@ -579,6 +591,12 @@ async function finishQuiz() {
     completedAt: new Date().toISOString(),
   };
   writeJson(storageKeys.quiz, summary);
+  trackClarityEvent('quiz_completed', {
+    stage: 'quiz',
+    quiz_status: summary.status,
+    quiz_score: score,
+    quiz_total: total,
+  });
   await trackLead({ stage: 'quiz', event: 'quiz_completed', quiz: summary });
   navigateTo('/analise');
 }
@@ -597,11 +615,13 @@ function bindDataForm() {
       phone: document.querySelector('#leadPhone')?.value.trim() || '',
     };
     if (!personal.name || !personal.email || !personal.phone) {
+      trackClarityEvent('personal_submit_invalid', { stage: 'dados' });
       status.classList.add('is-error');
       status.textContent = 'Preencha nome, email e telefone para continuar.';
       return;
     }
     writeJson(storageKeys.personal, personal);
+    trackClarityEvent('personal_submitted', { stage: 'dados', lead_contact: 'captured' });
     const result = await trackLead({ stage: 'dados', event: 'personal_submitted', personal, quiz: readJson(storageKeys.quiz, null) });
     if (!result.ok && result.reason !== 'missing_supabase_config') {
       status.classList.add('is-error');
@@ -663,6 +683,7 @@ function bindProcessingPage() {
   const headline = document.querySelector('#processingHeadline');
   const goOffers = async (event = 'vsl_completed') => {
     if (routeName() !== 'processando') return;
+    trackClarityEvent(event, { stage: 'processando' });
     await trackLead({
       stage: 'processando',
       event,
@@ -676,6 +697,7 @@ function bindProcessingPage() {
   playButton?.addEventListener('click', () => {
     if (started) return;
     started = true;
+    trackClarityEvent('vsl_started', { stage: 'processando' });
     playButton.classList.add('is-playing');
     playButton.setAttribute('aria-label', 'Video em andamento');
     if (caption) caption.textContent = 'Liberando selecao...';
@@ -698,7 +720,7 @@ function renderOffersPage() {
         <article class="offer-approval-rs">
           <span class="offer-approved-pill-rs">Aprovado</span>
           <h1><span>Perfil 100%</span><span>aprovado</span></h1>
-          <p>
+          <p data-clarity-mask="true">
             Parabens, ${escapeHtml(firstName)}. Sua analise foi concluida e uma selecao especial foi liberada para este cadastro.
           </p>
         </article>
@@ -713,6 +735,7 @@ function renderOffersPage() {
   `;
   initSession();
   trackPage('ofertas');
+  trackClarityEvent('offers_viewed', { stage: 'ofertas' });
   trackLead({
     stage: 'ofertas',
     event: 'offers_viewed',
@@ -743,6 +766,9 @@ function offerCardMarkup(offer) {
       <div class="offer-card-copy-rs">
         <h2>${escapeHtml(offer.title)}</h2>
         <p>${escapeHtml(offer.description)}</p>
+        <ul class="offer-benefits-rs">
+          ${(offer.details || []).map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}
+        </ul>
       </div>
       <div class="offer-price-rs">
         <span>${formatMoney(offer.oldPrice)}</span>
@@ -769,6 +795,12 @@ function bindOffersPage() {
       });
       button.textContent = 'Selecionado';
       button.disabled = true;
+      trackClarityEvent('offer_selected', {
+        stage: 'ofertas',
+        selected_offer_id: offer.id,
+        selected_offer_title: offer.title,
+        selected_offer_price: offer.price,
+      });
       await trackLead({
         stage: 'ofertas',
         event: 'offer_selected',
@@ -1901,6 +1933,62 @@ function getSessionId() {
   return sessionId;
 }
 
+function clarityValue(value) {
+  if (Array.isArray(value)) return value.map(clarityValue).filter(Boolean);
+  if (value === undefined || value === null || value === '') return '';
+  return String(value).slice(0, 255);
+}
+
+function setClarityTag(key, value) {
+  if (typeof window.clarity !== 'function') return;
+  const cleanKey = clarityValue(key);
+  const cleanValue = clarityValue(value);
+  if (!cleanKey || !cleanValue || (Array.isArray(cleanValue) && !cleanValue.length)) return;
+  try {
+    window.clarity('set', cleanKey, cleanValue);
+  } catch (_error) {}
+}
+
+function setClarityContext(page = routeName()) {
+  if (typeof window.clarity !== 'function') return;
+  const sessionId = getSessionId();
+  try {
+    window.clarity('identify', `session:${sessionId}`, sessionId, page, `session:${sessionId.slice(0, 8)}`);
+  } catch (_error) {}
+
+  setClarityTag('site', 'gta6_promo_quiz');
+  setClarityTag('current_page', page);
+  setClarityTag('current_path', window.location.pathname || '/');
+
+  const utm = readJson(storageKeys.utm, {});
+  clarityTagAllowList.forEach((key) => setClarityTag(key, utm[key]));
+
+  const quiz = readJson(storageKeys.quiz, null);
+  if (quiz) {
+    setClarityTag('quiz_status', quiz.status);
+    setClarityTag('quiz_score', quiz.score);
+    setClarityTag('quiz_total', quiz.total);
+  }
+
+  const offer = readJson('gta6_selected_offer', null);
+  if (offer) {
+    setClarityTag('selected_offer_id', offer.id);
+    setClarityTag('selected_offer_title', offer.title);
+    setClarityTag('selected_offer_price', offer.price);
+  }
+}
+
+function trackClarityEvent(name, tags = {}) {
+  if (typeof window.clarity !== 'function') return;
+  setClarityContext(tags.page || routeName());
+  Object.entries(tags).forEach(([key, value]) => setClarityTag(key, value));
+  const eventName = clarityValue(name);
+  if (!eventName) return;
+  try {
+    window.clarity('event', eventName);
+  } catch (_error) {}
+}
+
 async function trackLead(payload = {}) {
   await initSession();
   const body = {
@@ -1926,6 +2014,7 @@ async function trackLead(payload = {}) {
 
 async function trackPage(page) {
   await initSession();
+  trackClarityEvent(`page_view_${page}`, { page, stage: page });
   try {
     await fetch('/api/lead/pageview', {
       method: 'POST',
@@ -1997,4 +2086,5 @@ function resetQuiz() {
 }
 
 window.addEventListener('popstate', render);
+persistUtm();
 render();

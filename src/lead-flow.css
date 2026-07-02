@@ -1157,6 +1157,339 @@
   }
 }
 
+/* Clean black approved-offer layout. */
+.offer-screen-rs {
+  background: #000;
+  overflow-x: hidden;
+  padding: clamp(7.2rem, 12svh, 8.2rem) clamp(1rem, 3vw, 1.6rem) 2.6rem;
+}
+
+.offer-shell-rs {
+  gap: clamp(1rem, 2.5vw, 1.45rem);
+  width: min(100%, 54rem);
+}
+
+.offer-approval-rs {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.4rem;
+  box-shadow: none;
+  padding: clamp(1.25rem, 3.6vw, 2rem);
+}
+
+.offer-approval-rs::before {
+  display: none;
+}
+
+.offer-approved-pill-rs {
+  background: #27b85a;
+  box-shadow: none;
+  font-size: clamp(0.78rem, 2.6vw, 0.95rem);
+  min-height: 2.2rem;
+  padding: 0.58rem 1.1rem;
+}
+
+.offer-approval-rs h1 {
+  font-size: clamp(2rem, 6.5vw, 3.4rem);
+  line-height: 0.9;
+  margin-top: 0.85rem;
+  text-shadow: none;
+}
+
+.offer-approval-rs p {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(0.94rem, 3.1vw, 1.08rem);
+  font-weight: 650;
+  line-height: 1.5;
+  max-width: 35rem;
+}
+
+.offer-list-rs {
+  gap: clamp(0.95rem, 2.8vw, 1.35rem);
+}
+
+.offer-card-rs,
+.offer-card-rs--featured,
+.offer-card-rs--premium,
+.offer-card-rs.is-selected {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: #060606;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.35rem;
+  box-shadow: none;
+}
+
+.offer-card-rs {
+  gap: clamp(1rem, 3vw, 1.35rem);
+  grid-template-columns: minmax(7.8rem, 10.8rem) minmax(0, 1fr);
+  min-height: 13.5rem;
+  padding: clamp(1rem, 3.2vw, 1.3rem);
+}
+
+.offer-card-rs::before,
+.offer-product-box-rs::before,
+.offer-product-box-rs::after {
+  display: none;
+}
+
+.offer-card-rs--featured,
+.offer-card-rs.is-selected {
+  border-color: rgba(255, 214, 41, 0.55);
+}
+
+.offer-card-rs--premium {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.offer-card-top-rs {
+  align-items: center;
+}
+
+.offer-card-top-rs span {
+  background: rgba(39, 184, 90, 0.14);
+  color: #67e792;
+}
+
+.offer-card-top-rs b {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.offer-product-box-rs {
+  background: #101010;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  box-shadow: none;
+  padding: 0.65rem;
+  width: min(100%, 10rem);
+}
+
+.offer-art-rs {
+  border-radius: 0.75rem;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  opacity: 0.92;
+  position: absolute;
+  width: 100%;
+  z-index: 0;
+}
+
+.offer-product-box-rs > img:not(.offer-art-rs) {
+  filter: drop-shadow(0 0.18rem 0.36rem rgba(0, 0, 0, 0.6));
+  width: min(7rem, 78%);
+}
+
+.offer-product-box-rs small {
+  background: rgba(0, 0, 0, 0.58);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.88);
+  padding: 0.36rem 0.58rem;
+}
+
+.offer-card-copy-rs h2 {
+  font-size: clamp(1.8rem, 5.8vw, 2.7rem);
+  line-height: 0.94;
+}
+
+.offer-card-copy-rs p {
+  color: rgba(255, 255, 255, 0.68);
+  display: block;
+  font-size: clamp(0.92rem, 2.8vw, 1rem);
+  font-weight: 600;
+  line-height: 1.45;
+  margin-top: 0.55rem;
+}
+
+.offer-benefits-rs {
+  display: grid;
+  gap: 0.42rem;
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+}
+
+.offer-benefits-rs li {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: clamp(0.82rem, 2.6vw, 0.92rem);
+  font-weight: 600;
+  line-height: 1.32;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.offer-benefits-rs li::before {
+  background: #ffd629;
+  border-radius: 999px;
+  content: "";
+  height: 0.32rem;
+  left: 0;
+  position: absolute;
+  top: 0.48rem;
+  width: 0.32rem;
+}
+
+.offer-price-rs {
+  margin-top: 0.8rem;
+}
+
+.offer-price-rs strong {
+  color: #ffd629;
+  font-size: clamp(2rem, 6vw, 2.7rem);
+  text-shadow: none;
+}
+
+.offer-select-rs {
+  box-shadow: none;
+  font-family: "Barlow Condensed", Arial Narrow, Arial, sans-serif;
+  font-size: clamp(1rem, 3.4vw, 1.2rem);
+  margin-top: 0.35rem;
+  min-height: 3.2rem;
+}
+
+@media (min-width: 781px) {
+  .offer-list-rs {
+    grid-template-columns: 1fr;
+  }
+
+  .offer-card-rs {
+    align-content: center;
+    grid-template-columns: minmax(9rem, 11.5rem) minmax(0, 1fr) auto;
+  }
+
+  .offer-card-top-rs {
+    grid-column: 2 / span 2;
+    grid-row: 1;
+  }
+
+  .offer-product-rs {
+    grid-column: 1;
+    grid-row: 1 / span 4;
+  }
+
+  .offer-card-copy-rs {
+    grid-column: 2;
+  }
+
+  .offer-price-rs,
+  .offer-select-rs {
+    grid-column: 3;
+    justify-self: end;
+  }
+
+  .offer-select-rs {
+    width: 10rem;
+  }
+}
+
+@media (max-width: 780px) {
+  .offer-screen-rs {
+    overflow-y: auto;
+    padding: clamp(5.7rem, 10.5svh, 6.4rem) 0.86rem 1.4rem;
+  }
+
+  .offer-shell-rs {
+    gap: 0.95rem;
+  }
+
+  .offer-approval-rs {
+    border-radius: 1.2rem;
+    padding: 1rem;
+  }
+
+  .offer-approval-rs h1 {
+    font-size: clamp(1.82rem, 8.2vw, 2.5rem);
+  }
+
+  .offer-approval-rs p {
+    font-size: 0.9rem;
+    max-width: 22rem;
+  }
+
+  .offer-card-rs {
+    border-radius: 1.15rem;
+    display: grid;
+    gap: 0.85rem;
+    grid-template-columns: 7.25rem minmax(0, 1fr);
+    min-height: 14.5rem;
+    padding: 0.9rem;
+  }
+
+  .offer-card-top-rs {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .offer-card-top-rs span,
+  .offer-card-top-rs b {
+    display: inline-flex;
+    font-size: 0.62rem;
+    min-height: 1.8rem;
+    padding: 0.44rem 0.62rem;
+  }
+
+  .offer-product-rs {
+    grid-column: 1;
+    grid-row: 2 / span 4;
+  }
+
+  .offer-product-box-rs {
+    aspect-ratio: 4 / 5.4;
+    width: 7.25rem;
+  }
+
+  .offer-card-copy-rs {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    padding-right: 0;
+  }
+
+  .offer-card-copy-rs h2 {
+    font-size: clamp(1.5rem, 6.6vw, 1.95rem);
+  }
+
+  .offer-card-copy-rs p {
+    font-size: 0.86rem;
+  }
+
+  .offer-benefits-rs {
+    gap: 0.34rem;
+    margin-top: 0.62rem;
+  }
+
+  .offer-benefits-rs li {
+    font-size: 0.76rem;
+  }
+
+  .offer-price-rs {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .offer-price-rs strong {
+    font-size: clamp(1.85rem, 7.8vw, 2.25rem);
+  }
+
+  .offer-select-rs {
+    grid-column: 2;
+    grid-row: 4;
+    justify-self: start;
+    min-height: 2.85rem;
+    padding: 0 1.3rem;
+    width: auto;
+  }
+
+  .offer-disclaimer-rs {
+    display: block;
+    padding: 0 0.4rem;
+  }
+}
+
 .flow-topbar-rs {
   align-items: center;
   display: flex;
