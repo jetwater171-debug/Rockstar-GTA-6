@@ -2198,3 +2198,74 @@ body.is-home-screen .experience .hero.screen .rockstar-button {
     font-size: clamp(7.6rem, 7.2vw, 11.2rem);
   }
 }
+
+/* Desktop composition polish: cleaner spacing and hierarchy. */
+@media (min-width: 900px) {
+  body.is-home-screen .hero.screen.is-active,
+  body.is-home-screen .hero__art {
+    background-position: 58% center;
+  }
+
+  body.is-home-screen .hero__content {
+    max-width: min(37rem, 41vw);
+    padding-left: max(5rem, calc((100vw - 1220px) / 2));
+    transform: translateY(3.2vh);
+    width: min(37rem, 41vw);
+  }
+
+  body.is-home-screen .hero__gta-lockup {
+    margin-bottom: 0.55rem;
+    width: clamp(7.7rem, 7.8vw, 10.8rem);
+  }
+
+  body.is-home-screen .hero__promo-title {
+    filter: drop-shadow(0 0.45rem 0.45rem rgba(0, 0, 0, 0.5));
+  }
+
+  body.is-home-screen .hero__promo-title .hero__title-top {
+    font-size: clamp(4.15rem, 4.8vw, 6.35rem);
+    line-height: 0.82;
+  }
+
+  body.is-home-screen .hero__promo-title .hero__title-bottom {
+    font-size: clamp(5.55rem, 6.65vw, 8.85rem);
+    line-height: 0.76;
+  }
+
+  body.is-home-screen .hero__palm {
+    height: clamp(5.9rem, 5.4vw, 7.6rem);
+    left: clamp(-3rem, -2.45vw, -2rem);
+    top: clamp(0.6rem, 0.8vw, 1rem);
+    width: clamp(3.9rem, 3.7vw, 5rem);
+  }
+
+  body.is-home-screen .hero__copy {
+    font-size: clamp(0.96rem, 1.05vw, 1.15rem);
+    line-height: 1.45;
+    margin-top: 1.05rem;
+    max-width: 30rem;
+    text-shadow: 0 0.18rem 0.45rem rgba(0, 0, 0, 0.58);
+  }
+
+  body.is-home-screen .hero__actions {
+    margin-top: 1.35rem;
+  }
+
+  body.is-home-screen .experience .hero.screen .rockstar-button {
+    max-width: 24rem;
+    width: 24rem;
+  }
+
+  body.is-home-screen .experience .hero.screen .rockstar-button span {
+    font-size: clamp(1rem, 1.08vw, 1.18rem);
+    min-height: 4rem;
+  }
+}
+
+@media (min-width: 1500px) {
+  body.is-home-screen .hero__content {
+    max-width: 39rem;
+    padding-left: max(6rem, calc((100vw - 1300px) / 2));
+    width: 39rem;
+  }
+}
