@@ -3,6 +3,7 @@ import './hero-polish.css';
 import './quiz-polish.css';
 import './lead-flow.css';
 import './desktop-polish.css';
+import './home-premium.css';
 
 const quiz = [
   {
@@ -203,46 +204,96 @@ function render() {
 }
 
 function renderExperience() {
+  if (currentQuestion >= quiz.length) {
+    currentQuestion = 0;
+    score = 0;
+    isLocked = false;
+    quizAnswers = [];
+  }
+
   setDocumentScreenMode('home');
   app.innerHTML = `
     <main class="experience">
-      <section class="hero screen is-active" id="home" aria-label="Inicio do quiz">
-        <div class="hero__art" aria-hidden="true"></div>
-        <div class="hero__grain" aria-hidden="true"></div>
-        <div class="hero__speed-lines" aria-hidden="true"></div>
-        <div class="hero__bottom-glass" aria-hidden="true"></div>
+      <section class="hero home-premium screen is-active" id="home" aria-labelledby="homeTitle">
+        <picture class="home-premium__media" aria-hidden="true">
+          <source media="(max-width: 899px) and (orientation: portrait)" srcset="/assets/gta-vi-lucia-jason-phone.jpg" />
+          <img
+            src="/assets/gta-vi-lucia-jason.jpg"
+            alt=""
+            width="3840"
+            height="2160"
+            fetchpriority="high"
+            decoding="async"
+          />
+        </picture>
+        <div class="home-premium__scrim" aria-hidden="true"></div>
+        <div class="home-premium__atmosphere" aria-hidden="true"></div>
+        <div class="home-premium__frame" aria-hidden="true"></div>
         <div class="particle-field" id="particles" aria-hidden="true"></div>
 
-        <header class="topbar">
-          <div class="topbar__logo">${brandMark('symbol')}</div>
+        <header class="home-premium__topbar">
+          <a class="home-premium__brand" href="/" aria-label="Voltar ao início">
+            <img src="/assets/rockstar-logo.png" alt="" width="256" height="256" />
+            <span>
+              <strong>GTA VI</strong>
+              <small>Experiência interativa</small>
+            </span>
+          </a>
+          <div class="home-premium__status" aria-label="Experiência 01, edição 2026">
+            <i aria-hidden="true"></i>
+            <span>Experiência 01</span>
+            <strong>2026</strong>
+          </div>
         </header>
 
-        <div class="hero__content">
-          <div class="hero__invite">
-            <div class="hero__gta-lockup" aria-label="GTA VI">
-              <span>GTA</span>
-              <strong>VI</strong>
-            </div>
-            <h1 class="hero__promo-title">
-              <span class="hero__palm" aria-hidden="true"></span>
-              <span class="hero__title-top">Participe da</span>
-              <span class="hero__title-bottom">Promoção</span>
-            </h1>
-          </div>
-          <p class="hero__copy">
-            Responda ao questionario e desbloqueie sua
-            participacao na <strong>campanha exclusiva do GTA 6.</strong>
+        <aside class="home-premium__index" aria-hidden="true">
+          <span>01</span>
+          <i></i>
+          <strong>VICE CITY</strong>
+        </aside>
+
+        <div class="home-premium__content">
+          <p class="home-premium__eyebrow home-premium__reveal" style="--reveal-delay: 80ms">
+            <span>Quiz interativo</span>
+            <i aria-hidden="true"></i>
+            <span>10 perguntas · 2 minutos</span>
           </p>
-          <div class="hero__actions">
-            <button class="rockstar-button" id="startButton">
-              <span>Quero participar</span>
-              <i aria-hidden="true"></i>
+
+          <img
+            class="home-premium__lockup home-premium__reveal"
+            style="--reveal-delay: 150ms"
+            src="/assets/hero-gta-vi-lockup-clean.png"
+            alt="GTA VI"
+            width="1693"
+            height="699"
+          />
+
+          <h1 class="home-premium__title home-premium__reveal" id="homeTitle" style="--reveal-delay: 220ms">
+            <span>Descubra seu lugar</span>
+            <strong>em Vice City.</strong>
+          </h1>
+
+          <p class="home-premium__copy home-premium__reveal" style="--reveal-delay: 300ms">
+            Responda ao questionário e descubra se o seu perfil avança para a próxima etapa desta experiência inspirada em <strong>GTA VI.</strong>
+          </p>
+
+          <div class="home-premium__actions home-premium__reveal" style="--reveal-delay: 380ms">
+            <button class="home-premium__cta" id="startButton" type="button">
+              <span class="home-premium__cta-label">Iniciar experiência</span>
+              <i aria-hidden="true">↗</i>
             </button>
+            <span class="home-premium__tap-hint">Toque para começar</span>
           </div>
+
+          <ul class="home-premium__details home-premium__reveal" style="--reveal-delay: 450ms" aria-label="Detalhes da experiência">
+            <li>10 perguntas</li>
+            <li>Aproximadamente 2 min</li>
+            <li>Cadastro após o quiz</li>
+          </ul>
         </div>
 
-        <footer class="legal-note">
-          Prototipo visual nao oficial. GTA, Rockstar Games e marcas relacionadas pertencem aos respectivos titulares.
+        <footer class="home-premium__legal">
+          Conceito independente e não oficial. GTA, Rockstar Games e marcas relacionadas pertencem aos respectivos titulares.
         </footer>
       </section>
 
@@ -466,30 +517,57 @@ function answerMark() {
 function buildParticles() {
   const particles = document.querySelector('#particles');
   if (!particles) return;
-  particles.innerHTML = Array.from({ length: 38 }, (_, index) => {
+  particles.innerHTML = Array.from({ length: 8 }, (_, index) => {
     const left = Math.round(Math.random() * 100);
     const delay = (Math.random() * 7).toFixed(2);
-    const size = Math.round(2 + Math.random() * 5);
+    const size = Math.round(2 + Math.random() * 3);
     return `<span style="--left:${left}%; --delay:${delay}s; --size:${size}px; --drift:${index % 2 ? 1 : -1};"></span>`;
   }).join('');
 }
 
 function bindIntro() {
-  document.querySelector('#startButton')?.addEventListener('click', async () => {
-    await initSession();
-    await trackPage('quiz');
-    trackClarityEvent('quiz_started', { stage: 'quiz' });
-    await trackLead({ stage: 'quiz', event: 'quiz_started' });
+  const startButton = document.querySelector('#startButton');
+
+  startButton?.addEventListener('click', () => {
+    if (startButton.dataset.pending === 'true') return;
+    startButton.dataset.pending = 'true';
+    startButton.disabled = true;
+    startButton.setAttribute('aria-busy', 'true');
+    startButton.querySelector('.home-premium__cta-label').textContent = 'Preparando experiência';
+
+    trackClarityEvent('quiz_started', { page: 'quiz', stage: 'quiz' });
     switchScreen('quiz');
     renderQuestion(true);
+
+    void Promise.allSettled([
+      trackPage('quiz'),
+      trackLead({ stage: 'quiz', event: 'quiz_started' }),
+    ]);
   });
 
-  document.querySelector('.experience')?.addEventListener('pointermove', (event) => {
-    const x = (event.clientX / window.innerWidth - 0.5).toFixed(3);
-    const y = (event.clientY / window.innerHeight - 0.5).toFixed(3);
-    document.documentElement.style.setProperty('--pointer-x', x);
-    document.documentElement.style.setProperty('--pointer-y', y);
-  });
+  const home = document.querySelector('#home');
+  const canUseParallax = window.matchMedia('(pointer: fine)').matches
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (home && canUseParallax) {
+    let pointerFrame = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+
+    home.addEventListener('pointermove', (event) => {
+      pointerX = event.clientX;
+      pointerY = event.clientY;
+      if (pointerFrame) return;
+
+      pointerFrame = window.requestAnimationFrame(() => {
+        const x = (pointerX / window.innerWidth - 0.5).toFixed(3);
+        const y = (pointerY / window.innerHeight - 0.5).toFixed(3);
+        document.documentElement.style.setProperty('--pointer-x', x);
+        document.documentElement.style.setProperty('--pointer-y', y);
+        pointerFrame = 0;
+      });
+    });
+  }
 }
 
 function switchScreen(name) {
