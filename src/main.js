@@ -3,6 +3,7 @@ import './hero-polish.css';
 import './quiz-polish.css';
 import './lead-flow.css';
 import './desktop-polish.css';
+import './analysis-premium.css';
 
 const quiz = [
   {
@@ -162,11 +163,13 @@ let adminSelectedLeadSession = null;
 let adminLeadPagination = { offset: 0, limit: 200, hasMore: false, total: null };
 let adminLeadFilters = { q: '', from: '', to: '' };
 let siteConfig = { tracking: {}, features: {} };
+let analysisAnimationCleanup = null;
+let analysisTimers = [];
 
 const app = document.querySelector('#app');
 
 function setDocumentScreenMode(mode) {
-  const classes = ['is-home-screen', 'is-quiz-screen'];
+  const classes = ['is-home-screen', 'is-quiz-screen', 'is-analysis-screen'];
   document.documentElement.classList.remove(...classes);
   document.body.classList.remove(...classes);
   if (!mode) return;
@@ -176,9 +179,10 @@ function setDocumentScreenMode(mode) {
 }
 
 function render() {
+  clearAnalysisExperience();
   const route = routeName();
   if (route === 'analise') {
-    setDocumentScreenMode(null);
+    setDocumentScreenMode('analysis');
     renderAnalysisPage();
     return;
   }
@@ -309,26 +313,84 @@ function renderAnalysisPage() {
       ${flowTopbarMarkup()}
       <section class="analysis-shell-rs">
         <article class="analysis-card-rs">
-          <div class="analysis-loader-rs" aria-hidden="true">
-            <span></span>
-            <i></i>
+          <div class="analysis-visual-rs" aria-hidden="true">
+            <div class="analysis-player-rs" id="analysisMotion"></div>
           </div>
-          <p class="data-kicker">Analise em andamento</p>
-          <h1>Analisando seu perfil</h1>
-          <p class="analysis-copy-rs">Estamos cruzando suas respostas, interesses de jogo e compatibilidade inicial para liberar a proxima etapa.</p>
-          <div class="analysis-steps-rs" aria-hidden="true">
-            <span style="--delay:0ms">Validando respostas</span>
-            <span style="--delay:520ms">Calculando perfil</span>
-            <span style="--delay:1040ms">Preparando etapa final</span>
+          <div class="analysis-content-rs" role="status" aria-live="polite">
+            <p class="analysis-status-rs" id="analysisStatus">Análise inteligente em andamento</p>
+            <h1 id="analysisTitle">Montando seu perfil</h1>
+            <p class="analysis-copy-rs">Estamos combinando suas respostas para preparar uma experiência personalizada na próxima etapa.</p>
+            <ol class="analysis-steps-rs" aria-label="Etapas da análise">
+              <li class="analysis-step-rs is-active" data-analysis-step>
+                <i aria-hidden="true"><span>01</span></i><span>Validando suas respostas</span><small>Agora</small>
+              </li>
+              <li class="analysis-step-rs" data-analysis-step>
+                <i aria-hidden="true"><span>02</span></i><span>Calculando compatibilidade</span><small>A seguir</small>
+              </li>
+              <li class="analysis-step-rs" data-analysis-step>
+                <i aria-hidden="true"><span>03</span></i><span>Preparando seu resultado</span><small>A seguir</small>
+              </li>
+            </ol>
+            <div class="analysis-progress-rs" role="progressbar" aria-label="Progresso da análise" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8" id="analysisProgress"><span></span></div>
+            <p class="analysis-privacy-rs">
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v10H6V10Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Suas respostas estão protegidas durante a análise
+            </p>
           </div>
-          <div class="analysis-bar-rs" aria-hidden="true"><span></span></div>
         </article>
       </section>
     </main>
   `;
   initSession();
   trackPage('analise');
-  window.setTimeout(() => navigateTo('/dados'), 4400);
+  mountAnalysisExperience();
+}
+
+async function mountAnalysisExperience() {
+  const target = document.querySelector('#analysisMotion');
+  if (!target) return;
+
+  try {
+    const { mountAnalysisResultPlayer } = await import('./remotion/AnalysisResultPlayer.jsx');
+    if (routeName() !== 'analise' || !target.isConnected) return;
+    analysisAnimationCleanup = mountAnalysisResultPlayer(target);
+  } catch (error) {
+    console.error('Nao foi possivel iniciar a animacao da analise.', error);
+  }
+
+  const steps = Array.from(document.querySelectorAll('[data-analysis-step]'));
+  const status = document.querySelector('#analysisStatus');
+  const title = document.querySelector('#analysisTitle');
+  const progress = document.querySelector('#analysisProgress');
+  const card = document.querySelector('.analysis-card-rs');
+  const updateStep = (activeIndex, value) => {
+    steps.forEach((step, index) => {
+      step.classList.toggle('is-done', index < activeIndex);
+      step.classList.toggle('is-active', index === activeIndex);
+      const label = step.querySelector('small');
+      if (label) label.textContent = index < activeIndex ? 'Concluído' : index === activeIndex ? 'Agora' : 'A seguir';
+    });
+    progress?.setAttribute('aria-valuenow', String(value));
+  };
+
+  analysisTimers.push(window.setTimeout(() => updateStep(1, 58), 1150));
+  analysisTimers.push(window.setTimeout(() => updateStep(2, 86), 2450));
+  analysisTimers.push(window.setTimeout(() => {
+    updateStep(3, 100);
+    card?.classList.add('is-complete');
+    if (status) status.textContent = 'Análise concluída';
+    if (title) title.textContent = 'Perfil pronto';
+  }, 3450));
+  analysisTimers.push(window.setTimeout(() => {
+    if (routeName() === 'analise') navigateTo('/dados');
+  }, 4400));
+}
+
+function clearAnalysisExperience() {
+  analysisTimers.forEach((timer) => window.clearTimeout(timer));
+  analysisTimers = [];
+  if (analysisAnimationCleanup) analysisAnimationCleanup();
+  analysisAnimationCleanup = null;
 }
 
 function dataScoreMarkup(summary = {}) {
