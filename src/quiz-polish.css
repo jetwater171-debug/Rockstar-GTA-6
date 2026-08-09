@@ -466,6 +466,28 @@
     overscroll-behavior: none;
     touch-action: pan-x;
   }
+
+  /* Android browsers can still paint a transient scrollbar while the user
+     tries to drag a locked viewport. Hide that affordance on every quiz
+     container so the experience stays visually fixed. */
+  html.is-quiz-screen,
+  body.is-quiz-screen,
+  body.is-quiz-screen #app,
+  body.is-quiz-screen .experience,
+  body.is-quiz-screen .quiz-screen.screen.is-active {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  html.is-quiz-screen::-webkit-scrollbar,
+  body.is-quiz-screen::-webkit-scrollbar,
+  body.is-quiz-screen #app::-webkit-scrollbar,
+  body.is-quiz-screen .experience::-webkit-scrollbar,
+  body.is-quiz-screen .quiz-screen.screen.is-active::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
 }
 
 @media (max-width: 780px) and (max-height: 640px) {
