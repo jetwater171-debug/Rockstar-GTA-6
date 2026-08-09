@@ -1,4 +1,4 @@
-import { ensureAllowedRequest, requireAdmin, sendJson, supabaseFetch } from '../../lib/api-utils.js';
+import { ensureAllowedRequest, LEADS_TABLE, requireAdmin, sendJson, supabaseFetch } from '../../lib/api-utils.js';
 
 function cleanSearch(value) {
   return String(value || '').trim().replace(/[%(),]/g, '').slice(0, 80);
@@ -13,6 +13,20 @@ function cleanDate(value, endOfDay = false) {
 export default async function handler(req, res) {
   if (!ensureAllowedRequest(req, res, { requireSession: false })) return;
   if (!requireAdmin(req, res)) return;
+
+  const sessionId = String(req.query?.session_id || '').trim().slice(0, 100);
+  if (sessionId) {
+    const [leadResult, pageviewsResult] = await Promise.all([
+      supabaseFetch(`${LEADS_TABLE}?session_id=eq.${encodeURIComponent(sessionId)}&select=*&limit=1`),
+      supabaseFetch(`lead_pageviews?session_id=eq.${encodeURIComponent(sessionId)}&select=page,created_at&order=created_at.asc&limit=1000`)
+    ]);
+    if (leadResult.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+    if (!leadResult.ok) return sendJson(res, 502, { error: 'Falha ao carregar lead.', detail: leadResult.detail });
+    const lead = Array.isArray(leadResult.data) ? leadResult.data[0] : null;
+    if (!lead) return sendJson(res, 404, { error: 'Lead nao encontrado.' });
+    const pageviews = pageviewsResult.ok && Array.isArray(pageviewsResult.data) ? pageviewsResult.data : [];
+    return sendJson(res, 200, { ok: true, data: { ...lead, pageviews } });
+  }
 
   const limit = Math.min(Math.max(Number(req.query?.limit) || 50, 1), 200);
   const offset = Math.max(Number(req.query?.offset) || 0, 0);

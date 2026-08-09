@@ -1063,7 +1063,7 @@ function bindAdminContent() {
       adminSelectedLeadSession = button.dataset.openLead || '';
       renderAdminPanel();
       try {
-        const result = await adminFetch(`/api/admin/leads/${encodeURIComponent(adminSelectedLeadSession)}`);
+        const result = await adminFetch(`/api/admin/leads?session_id=${encodeURIComponent(adminSelectedLeadSession)}`);
         const index = adminLeads.findIndex((lead) => lead.session_id === adminSelectedLeadSession);
         if (index >= 0 && result.data) adminLeads[index] = result.data;
         renderAdminPanel();
