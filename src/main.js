@@ -182,6 +182,13 @@ function render() {
   clearAnalysisExperience();
   const route = routeName();
   if (route === 'analise') {
+    const personal = readJson(storageKeys.personal, {});
+    if (!personal.name || !personal.email || !personal.phone) {
+      window.history.replaceState({}, '', '/dados');
+      setDocumentScreenMode(null);
+      renderDataPage();
+      return;
+    }
     setDocumentScreenMode('analysis');
     renderAnalysisPage();
     return;
@@ -362,7 +369,7 @@ async function mountAnalysisExperience() {
     if (title) title.textContent = 'Perfil analisado';
   }, 3450));
   analysisTimers.push(window.setTimeout(() => {
-    if (routeName() === 'analise') navigateTo('/dados');
+    if (routeName() === 'analise') navigateTo('/processando');
   }, 4400));
 }
 
@@ -645,7 +652,7 @@ async function finishQuiz() {
     quiz_total: total,
   });
   await trackLead({ stage: 'quiz', event: 'quiz_completed', quiz: summary });
-  navigateTo('/analise');
+  navigateTo('/dados');
 }
 
 function bindDataForm() {
@@ -677,7 +684,7 @@ function bindDataForm() {
     }
     status.classList.add('is-ok');
     status.textContent = 'Dados registrados.';
-    window.setTimeout(() => navigateTo('/processando'), 420);
+    window.setTimeout(() => navigateTo('/analise'), 420);
   });
 }
 
