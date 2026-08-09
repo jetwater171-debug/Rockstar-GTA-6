@@ -159,6 +159,9 @@ let adminSettings = null;
 let adminExtras = {};
 let adminCurrentTab = 'overview';
 let adminSelectedLeadSession = null;
+let adminLeadPagination = { offset: 0, limit: 200, hasMore: false, total: null };
+let adminLeadFilters = { q: '', from: '', to: '' };
+let siteConfig = { tracking: {}, features: {} };
 
 const app = document.querySelector('#app');
 
@@ -419,6 +422,7 @@ function renderAdminPage() {
               <button data-admin-tab="backredirects" type="button">Backredirects</button>
               <button data-admin-tab="cloners" type="button">Clonadores</button>
               <button data-admin-tab="blacklist" type="button">Blacklist</button>
+              <button data-admin-tab="audit" type="button">Auditoria</button>
               <button data-admin-tab="pages" type="button">Paginas</button>
             </nav>
             <div class="admin-side-foot-rs">
@@ -436,6 +440,7 @@ function renderAdminPage() {
               <div class="admin-actions-rs">
                 <button class="admin-button-rs admin-button-rs--ghost" id="saveAdminSettings" type="button">Salvar</button>
                 <button class="admin-button-rs" id="refreshAdmin" type="button">Atualizar</button>
+                <button class="admin-button-rs admin-button-rs--ghost" id="adminLogout" type="button">Sair</button>
               </div>
             </div>
             <div class="admin-alert-rs" id="adminStatus">Carregando painel...</div>
@@ -884,6 +889,10 @@ function bindAdmin() {
 
   document.querySelector('#refreshAdmin')?.addEventListener('click', () => loadAdminData({ force: true }));
   document.querySelector('#saveAdminSettings')?.addEventListener('click', saveAdminSettings);
+  document.querySelector('#adminLogout')?.addEventListener('click', async () => {
+    await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }).catch(() => null);
+    window.location.reload();
+  });
   document.querySelectorAll('[data-admin-tab]').forEach((button) => {
     button.addEventListener('click', () => {
       adminCurrentTab = button.dataset.adminTab || 'overview';
@@ -914,11 +923,14 @@ async function adminFetch(path, options = {}) {
 async function loadAdminData({ force = false } = {}) {
   const status = document.querySelector('#adminStatus');
   const q = document.querySelector('#adminSearch')?.value.trim() || '';
+  const from = document.querySelector('#adminLeadsFrom')?.value || '';
+  const to = document.querySelector('#adminLeadsTo')?.value || '';
+  adminLeadFilters = { q, from, to };
   if (status) status.textContent = force ? 'Atualizando dados...' : 'Carregando...';
   try {
-    const [overviewJson, leadsJson, pagesJson, settingsJson, salesJson, gatewaySalesJson, backJson, clonersJson, blacklistJson] = await Promise.all([
+    const [overviewJson, leadsJson, pagesJson, settingsJson, salesJson, gatewaySalesJson, backJson, clonersJson, blacklistJson, auditJson] = await Promise.all([
       adminFetch('/api/admin/overview'),
-      adminFetch(`/api/admin/leads?limit=200&q=${encodeURIComponent(q)}`),
+      adminFetch(`/api/admin/leads?limit=200&offset=0&q=${encodeURIComponent(q)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
       adminFetch('/api/admin/pages'),
       adminFetch('/api/admin/settings'),
       adminFetch('/api/admin/sales-insights'),
@@ -926,9 +938,11 @@ async function loadAdminData({ force = false } = {}) {
       adminFetch('/api/admin/backredirects'),
       adminFetch('/api/admin/clonadores'),
       adminFetch('/api/admin/ip-blacklist'),
+      adminFetch('/api/admin/audit-logs'),
     ]);
     adminOverview = overviewJson;
     adminLeads = Array.isArray(leadsJson.data) ? leadsJson.data : [];
+    adminLeadPagination = leadsJson.pagination || { offset: 0, limit: 200, hasMore: false, total: adminLeads.length };
     adminSettings = settingsJson.settings || {};
     adminExtras = {
       sales: salesJson,
@@ -936,6 +950,7 @@ async function loadAdminData({ force = false } = {}) {
       backredirects: backJson,
       cloners: clonersJson,
       blacklist: blacklistJson,
+      audit: auditJson,
     };
     adminOverview.pagesList = Array.isArray(pagesJson.data) ? pagesJson.data : [];
     renderAdminPanel();
@@ -962,6 +977,7 @@ function renderAdminPanel() {
     backredirects: ['Backredirects', 'Tentativas de volta e pontos de abandono do funil.'],
     cloners: ['Clonadores', 'Sinais de clone, auditoria e risco por IP/user-agent.'],
     blacklist: ['Blacklist', 'Bloqueio manual de IPs suspeitos.'],
+    audit: ['Auditoria', 'Historico de acessos e alteracoes administrativas.'],
     pages: ['Paginas', 'Leitura de pageviews e etapas do funil.'],
   };
   const [title, subtitle] = titles[adminCurrentTab] || titles.overview;
@@ -979,6 +995,7 @@ function renderAdminPanel() {
   else if (adminCurrentTab === 'backredirects') content.innerHTML = backredirectsMarkup();
   else if (adminCurrentTab === 'cloners') content.innerHTML = clonersMarkup();
   else if (adminCurrentTab === 'blacklist') content.innerHTML = blacklistMarkup();
+  else if (adminCurrentTab === 'audit') content.innerHTML = auditMarkup();
   else if (adminCurrentTab === 'pages') content.innerHTML = pagesMarkup();
   else content.innerHTML = overviewMarkup();
   bindAdminContent();
@@ -986,6 +1003,8 @@ function renderAdminPanel() {
 
 function bindAdminContent() {
   document.querySelector('#adminSearch')?.addEventListener('input', debounce(() => loadAdminData(), 320));
+  document.querySelectorAll('#adminLeadsFrom, #adminLeadsTo').forEach((input) => input.addEventListener('change', () => loadAdminData({ force: true })));
+  document.querySelector('#adminLoadMore')?.addEventListener('click', loadMoreAdminLeads);
   document.querySelectorAll('[data-test-integration]').forEach((button) => {
     button.addEventListener('click', async () => {
       const status = document.querySelector('#adminStatus');
@@ -1043,6 +1062,15 @@ function bindAdminContent() {
     button.addEventListener('click', async () => {
       adminSelectedLeadSession = button.dataset.openLead || '';
       renderAdminPanel();
+      try {
+        const result = await adminFetch(`/api/admin/leads/${encodeURIComponent(adminSelectedLeadSession)}`);
+        const index = adminLeads.findIndex((lead) => lead.session_id === adminSelectedLeadSession);
+        if (index >= 0 && result.data) adminLeads[index] = result.data;
+        renderAdminPanel();
+      } catch (error) {
+        const status = document.querySelector('#adminStatus');
+        if (status) status.textContent = error.message || 'Falha ao carregar detalhes do lead.';
+      }
     });
   });
   document.querySelectorAll('[data-close-lead]').forEach((button) => {
@@ -1075,6 +1103,20 @@ function bindAdminContent() {
       const status = document.querySelector('#adminStatus');
       status.textContent = 'Removendo IP...';
       await adminFetch(`/api/admin/ip-blacklist?ip=${encodeURIComponent(button.dataset.removeIp || '')}`, { method: 'DELETE' });
+      adminCurrentTab = 'blacklist';
+      await loadAdminData({ force: true });
+    });
+  });
+  document.querySelectorAll('[data-block-cloner]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const ip = button.dataset.blockCloner || '';
+      if (!ip) return;
+      const status = document.querySelector('#adminStatus');
+      if (status) status.textContent = `Bloqueando ${ip}...`;
+      await adminFetch('/api/admin/ip-blacklist', {
+        method: 'POST',
+        body: JSON.stringify({ ip, reason: 'Bloqueado pela auditoria de clonadores' }),
+      });
       adminCurrentTab = 'blacklist';
       await loadAdminData({ force: true });
     });
@@ -1119,8 +1161,11 @@ function adminLeadsMarkup() {
   const selectedLead = adminLeads.find((lead) => lead.session_id === adminSelectedLeadSession);
   return `
     <div class="admin-toolbar-rs">
-      <input id="adminSearch" placeholder="Buscar nome, email, telefone..." />
-      <span class="admin-muted-rs">${adminLeads.length} registros</span>
+      <input id="adminSearch" placeholder="Buscar nome, email, telefone..." value="${escapeAttr(adminLeadFilters.q)}" />
+      <label class="admin-date-filter-rs"><span>De</span><input id="adminLeadsFrom" type="date" value="${escapeAttr(adminLeadFilters.from)}" /></label>
+      <label class="admin-date-filter-rs"><span>Até</span><input id="adminLeadsTo" type="date" value="${escapeAttr(adminLeadFilters.to)}" /></label>
+      <span class="admin-muted-rs">${adminLeadPagination.total ?? adminLeads.length} registros</span>
+      ${adminLeadPagination.hasMore ? '<button class="admin-row-button-rs" id="adminLoadMore" type="button">Carregar mais</button>' : ''}
     </div>
     <div class="admin-table-wrap-rs">
       <table class="admin-table-rs">
@@ -1130,6 +1175,26 @@ function adminLeadsMarkup() {
     </div>
     ${selectedLead ? leadDetailMarkup(selectedLead) : ''}
   `;
+}
+
+async function loadMoreAdminLeads() {
+  if (!adminLeadPagination.hasMore) return;
+  const button = document.querySelector('#adminLoadMore');
+  const { q, from, to } = adminLeadFilters;
+  const offset = adminLeads.length;
+  if (button) button.disabled = true;
+  try {
+    const result = await adminFetch(`/api/admin/leads?limit=200&offset=${offset}&q=${encodeURIComponent(q)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+    const incoming = Array.isArray(result.data) ? result.data : [];
+    const known = new Set(adminLeads.map((lead) => lead.session_id));
+    adminLeads.push(...incoming.filter((lead) => !known.has(lead.session_id)));
+    adminLeadPagination = result.pagination || { offset, limit: 200, hasMore: incoming.length === 200, total: null };
+    renderAdminPanel();
+  } catch (error) {
+    const status = document.querySelector('#adminStatus');
+    if (status) status.textContent = error.message || 'Falha ao carregar mais leads.';
+    if (button) button.disabled = false;
+  }
 }
 
 function leadRowsMarkup(leads) {
@@ -1692,8 +1757,8 @@ function clonersMarkup() {
     </div>
     <section class="admin-section-rs">
       <div class="admin-section-head-rs"><h2>Sinais agrupados</h2><span>seguranca</span></div>
-      <div class="admin-table-wrap-rs"><table class="admin-table-rs"><thead><tr><th>Chave</th><th>Risco</th><th>Score</th><th>Eventos</th><th>Ultimo</th></tr></thead><tbody>
-        ${groups.length ? groups.map((item) => `<tr><td>${escapeHtml(item.key)}</td><td><span class="admin-chip-rs">${escapeHtml(item.risk)}</span></td><td>${item.score}</td><td>${item.total}</td><td>${formatDate(item.lastEventAt)}</td></tr>`).join('') : '<tr><td colspan="5">Nenhum sinal de clonagem registrado.</td></tr>'}
+      <div class="admin-table-wrap-rs"><table class="admin-table-rs"><thead><tr><th>Chave</th><th>Risco</th><th>Score</th><th>Eventos</th><th>Ultimo</th><th></th></tr></thead><tbody>
+        ${groups.length ? groups.map((item) => `<tr><td>${escapeHtml(item.key)}</td><td><span class="admin-chip-rs">${escapeHtml(item.risk)}</span></td><td>${item.score}</td><td>${item.total}</td><td>${formatDate(item.lastEventAt)}</td><td>${item.ip ? `<button class="admin-row-button-rs" data-block-cloner="${escapeAttr(item.ip)}" type="button">Bloquear IP</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6">Nenhum sinal de clonagem registrado.</td></tr>'}
       </tbody></table></div>
     </section>
   `;
@@ -1989,6 +2054,103 @@ function trackClarityEvent(name, tags = {}) {
   } catch (_error) {}
 }
 
+function auditMarkup() {
+  const rows = adminExtras.audit?.data || [];
+  return `
+    <section class="admin-section-rs">
+      <div class="admin-section-head-rs"><h2>Registro administrativo</h2><span>${rows.length}</span></div>
+      <div class="admin-table-wrap-rs"><table class="admin-table-rs">
+        <thead><tr><th>Ação</th><th>IP</th><th>Detalhes</th><th>Data</th></tr></thead>
+        <tbody>${rows.length ? rows.map((row) => `
+          <tr>
+            <td><span class="admin-chip-rs">${escapeHtml(row.action || '-')}</span></td>
+            <td>${escapeHtml(row.client_ip || '-')}</td>
+            <td><code>${escapeHtml(JSON.stringify(row.detail || {}))}</code></td>
+            <td>${formatDate(row.created_at)}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="4">Nenhum registro de auditoria ainda.</td></tr>'}</tbody>
+      </table></div>
+    </section>
+  `;
+}
+
+function appendTrackingScript(id, src) {
+  if (!id || document.getElementById(id)) return;
+  const script = document.createElement('script');
+  script.id = id;
+  script.async = true;
+  script.src = src;
+  document.head.appendChild(script);
+}
+
+function initConfiguredTracking() {
+  const tracking = siteConfig.tracking || {};
+  if (tracking.browserPixel === false) return;
+
+  const metaId = String(tracking.metaPixel || '').trim();
+  if (/^\d{8,24}$/.test(metaId) && typeof window.fbq !== 'function') {
+    const fbq = function (...args) { fbq.queue.push(args); };
+    fbq.queue = [];
+    fbq.loaded = true;
+    fbq.version = '2.0';
+    window.fbq = fbq;
+    appendTrackingScript('gta-meta-pixel', 'https://connect.facebook.net/en_US/fbevents.js');
+    window.fbq('init', metaId);
+  }
+
+  const tiktokId = String(tracking.tiktokPixel || '').trim();
+  if (/^[A-Z0-9]{10,32}$/i.test(tiktokId) && !window.ttq) {
+    const ttq = [];
+    ttq.methods = ['page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'];
+    ttq.setAndDefer = (target, method) => { target[method] = (...args) => target.push([method, ...args]); };
+    ttq.methods.forEach((method) => ttq.setAndDefer(ttq, method));
+    ttq.load = (id) => appendTrackingScript('gta-tiktok-pixel', `https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${encodeURIComponent(id)}&lib=ttq`);
+    window.ttq = ttq;
+    ttq.load(tiktokId);
+  }
+
+  const googleTag = String(tracking.googleTag || '').trim();
+  if (/^(G|GT|GTM)-[A-Z0-9-]+$/i.test(googleTag) && typeof window.gtag !== 'function') {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    appendTrackingScript('gta-google-tag', `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(googleTag)}`);
+    window.gtag('js', new Date());
+    window.gtag('config', googleTag);
+  }
+}
+
+function trackConfiguredEvent(name, data = {}) {
+  if (siteConfig.tracking?.browserPixel !== false) {
+    try { window.fbq?.('trackCustom', name, data); } catch (_error) {}
+    try { window.ttq?.track?.(name, data); } catch (_error) {}
+    try { window.gtag?.('event', name, data); } catch (_error) {}
+  }
+  if (siteConfig.tracking?.serverEvents === true) {
+    fetch('/api/tracking/event', {
+      method: 'POST',
+      credentials: 'include',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        sessionId: getSessionId(),
+        eventId: `${String(name).toLowerCase()}_${getSessionId()}_${Date.now()}`,
+        sourceUrl: window.location.href,
+        data,
+      }),
+    }).catch(() => null);
+  }
+}
+
+async function loadSiteConfig() {
+  try {
+    const response = await fetch('/api/site/config', { credentials: 'include', cache: 'no-store' });
+    if (!response.ok) return;
+    siteConfig = await response.json();
+    initConfiguredTracking();
+  } catch (_error) {}
+}
+
 async function trackLead(payload = {}) {
   await initSession();
   const body = {
@@ -2006,6 +2168,7 @@ async function trackLead(payload = {}) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    if (response.ok && payload.event) trackConfiguredEvent(payload.event, { stage: payload.stage || routeName() });
     return response.ok ? await response.json() : { ok: false };
   } catch (_error) {
     return { ok: false };
@@ -2015,6 +2178,7 @@ async function trackLead(payload = {}) {
 async function trackPage(page) {
   await initSession();
   trackClarityEvent(`page_view_${page}`, { page, stage: page });
+  trackConfiguredEvent('PageView', { page });
   try {
     await fetch('/api/lead/pageview', {
       method: 'POST',
@@ -2087,4 +2251,5 @@ function resetQuiz() {
 
 window.addEventListener('popstate', render);
 persistUtm();
+loadSiteConfig();
 render();

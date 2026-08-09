@@ -1,4 +1,5 @@
 import { ensureAllowedRequest, readJson, sendJson, supabaseFetch, text } from '../../lib/api-utils.js';
+import { ensureNotBlocked } from '../../lib/ip-blacklist.js';
 
 function normalizePage(value) {
   return String(value || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 80);
@@ -7,6 +8,7 @@ function normalizePage(value) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
   if (!ensureAllowedRequest(req, res, { requireSession: true })) return;
+  if (!await ensureNotBlocked(req, res)) return;
 
   const body = await readJson(req);
   const sessionId = text(body.sessionId || body.session_id, 80);

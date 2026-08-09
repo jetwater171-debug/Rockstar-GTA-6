@@ -1,13 +1,22 @@
 import {
+  adminLoginRateState,
+  clearAdminCookie,
+  clearAdminLoginFailures,
+  clientIp,
   ensureAllowedRequest,
   issueAdminCookie,
+  LEADS_TABLE,
   readJson,
+  recordAdminLoginFailure,
   requireAdmin,
   sendJson,
   supabaseFetch,
   verifyAdminCookie,
   verifyAdminPassword
 } from '../../lib/api-utils.js';
+import { invalidateIpBlacklistCache, isValidIp } from '../../lib/ip-blacklist.js';
+import { officialHosts } from '../../lib/clone-detector.js';
+import { auditAdmin, listAdminAudit } from '../../lib/admin-audit.js';
 
 const gateways = ['sunize', 'paradise', 'atomopay', 'bravopay'];
 const defaultSettings = {
@@ -390,6 +399,22 @@ async function leads(req, res) {
   sendJson(res, 200, { data, summary });
 }
 
+async function leadDetail(req, res, sessionId) {
+  if (req.method !== 'GET') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  const cleanSession = String(sessionId || '').trim().slice(0, 100);
+  if (!cleanSession) return sendJson(res, 400, { error: 'Sessao invalida.' });
+  const [leadResult, pageviewsResult] = await Promise.all([
+    supabaseFetch(`${LEADS_TABLE}?session_id=eq.${encodeURIComponent(cleanSession)}&select=*&limit=1`),
+    supabaseFetch(`lead_pageviews?session_id=eq.${encodeURIComponent(cleanSession)}&select=page,created_at&order=created_at.asc&limit=1000`)
+  ]);
+  if (leadResult.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (!leadResult.ok) return sendJson(res, 502, { error: 'Falha ao carregar lead.', detail: leadResult.detail });
+  const lead = Array.isArray(leadResult.data) ? leadResult.data[0] : null;
+  if (!lead) return sendJson(res, 404, { error: 'Lead nao encontrado.' });
+  const pageviews = pageviewsResult.ok && Array.isArray(pageviewsResult.data) ? pageviewsResult.data : [];
+  return sendJson(res, 200, { ok: true, data: { ...lead, pageviews } });
+}
+
 async function pages(_req, res) {
   let result = await supabaseFetch('pageview_counts?select=*');
   if (!result.ok && !result.missing) result = await supabaseFetch('lead_pageviews?select=*');
@@ -412,6 +437,7 @@ async function settings(req, res) {
     const saved = await saveSettingsValue(next);
     if (saved.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
     if (!saved.ok) return sendJson(res, 502, { error: 'Falha ao salvar configuracoes.', detail: saved.detail });
+    await auditAdmin(req, 'settings_updated', { sections: Object.keys(body.settings || body || {}) });
     return sendJson(res, 200, { ok: true, settings: publicSettings(next) });
   }
   sendJson(res, 405, { error: 'Metodo nao permitido.' });
@@ -624,7 +650,7 @@ async function cloners(_req, res) {
   const map = new Map();
   data.forEach((event) => {
     const payload = asObject(event.payload);
-    const score = Number(payload.score || payload.riskScore || 0);
+    const score = Number(event.risk_score || payload.score || payload.riskScore || 0);
     const key = event.client_ip || payload.ip || event.user_agent || 'desconhecido';
     const current = map.get(key) || { key, ip: event.client_ip || '', userAgent: event.user_agent || '', total: 0, score: 0, lastEventAt: null };
     current.total += 1;
@@ -633,7 +659,7 @@ async function cloners(_req, res) {
     map.set(key, current);
   });
   const groups = Array.from(map.values()).map((item) => ({ ...item, risk: item.score >= 70 ? 'alto' : item.score >= 35 ? 'medio' : 'baixo' }));
-  sendJson(res, 200, { ok: true, data, groups, summary: { total: data.length, high: groups.filter((i) => i.risk === 'alto').length, medium: groups.filter((i) => i.risk === 'medio').length, low: groups.filter((i) => i.risk === 'baixo').length, lastEventAt: data[0]?.created_at || null } });
+  sendJson(res, 200, { ok: true, data, groups, officialHosts: officialHosts(), summary: { total: data.length, high: groups.filter((i) => i.risk === 'alto').length, medium: groups.filter((i) => i.risk === 'medio').length, low: groups.filter((i) => i.risk === 'baixo').length, lastEventAt: data[0]?.created_at || null } });
 }
 
 async function loadBlacklist() {
@@ -659,11 +685,13 @@ async function blacklist(req, res) {
   if (req.method === 'POST') {
     const body = await readJson(req);
     const ip = String(body.ip || '').trim().slice(0, 80);
-    if (!ip) return sendJson(res, 400, { error: 'IP invalido.' });
+    if (!isValidIp(ip)) return sendJson(res, 400, { error: 'IP invalido.' });
     const next = loaded.entries.filter((entry) => entry.ip !== ip);
     next.unshift({ ip, reason: String(body.reason || 'Bloqueio manual').trim().slice(0, 180), sessionId: String(body.sessionId || '').trim().slice(0, 100), createdAt: new Date().toISOString() });
     const saved = await saveBlacklist(next.slice(0, 500));
     if (!saved.ok) return sendJson(res, 502, { error: 'Falha ao salvar blacklist.', detail: saved.detail });
+    invalidateIpBlacklistCache();
+    await auditAdmin(req, 'ip_blocked', { ip, reason: String(body.reason || '') });
     return sendJson(res, 200, { ok: true, entries: next.slice(0, 500) });
   }
   if (req.method === 'DELETE') {
@@ -671,6 +699,8 @@ async function blacklist(req, res) {
     const next = loaded.entries.filter((entry) => entry.ip !== ip);
     const saved = await saveBlacklist(next);
     if (!saved.ok) return sendJson(res, 502, { error: 'Falha ao remover IP.', detail: saved.detail });
+    invalidateIpBlacklistCache();
+    await auditAdmin(req, 'ip_unblocked', { ip });
     return sendJson(res, 200, { ok: true, entries: next });
   }
   sendJson(res, 405, { error: 'Metodo nao permitido.' });
@@ -695,6 +725,81 @@ async function exportLeads(_req, res) {
   res.end(lines.join('\n'));
 }
 
+async function testIntegration(req, res) {
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  const body = await readJson(req);
+  const kind = String(body.kind || '').trim().toLowerCase();
+  const current = await loadSettings();
+  if (!current.ok) return sendJson(res, 502, { error: 'Falha ao carregar configuracoes.' });
+  const settingsValue = current.value || {};
+
+  if (kind === 'pixel') {
+    const tracking = settingsValue.tracking || {};
+    const configured = [
+      tracking.metaPixel ? 'Meta' : '',
+      tracking.tiktokPixel ? 'TikTok' : '',
+      tracking.googleTag ? 'Google' : ''
+    ].filter(Boolean);
+    if (!configured.length) return sendJson(res, 400, { error: 'Configure ao menos um Pixel ID antes do teste.' });
+    return sendJson(res, 200, { ok: true, message: `Tracking ativo: ${configured.join(', ')}. A configuracao publica foi validada.` });
+  }
+
+  if (kind === 'utmfy') {
+    const config = settingsValue.utmfy || {};
+    if (!config.enabled || !config.endpoint || !config.apiKey) {
+      return sendJson(res, 400, { error: 'Ative a UTMfy e configure endpoint e API key antes do teste.' });
+    }
+    const orderId = `gta-admin-test-${Date.now()}`;
+    const now = new Date();
+    const utc = now.toISOString().replace('T', ' ').slice(0, 19);
+    const order = {
+      orderId,
+      platform: config.platform || 'Rockstar GTA VI',
+      paymentMethod: 'pix',
+      status: 'waiting_payment',
+      createdAt: utc,
+      approvedDate: null,
+      refundedAt: null,
+      customer: { name: 'Teste Admin GTA', email: `teste.${Date.now()}@local.dev`, phone: null, document: null, country: 'BR', ip: clientIp(req) },
+      products: [{ id: 'gta_admin_test', name: config.productName || 'Promocao GTA VI', planId: null, planName: null, quantity: 1, priceInCents: 100 }],
+      trackingParameters: { src: 'admin_test', sck: null, utm_source: 'admin_test', utm_campaign: 'utmfy_test', utm_medium: 'dashboard', utm_content: null, utm_term: null },
+      commission: { totalPriceInCents: 100, gatewayFeeInCents: 0, userCommissionInCents: 100, currency: 'BRL' },
+      isTest: true
+    };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12_000);
+    try {
+      const endpoint = String(config.endpoint).trim();
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(/utmify\.com\.br/i.test(endpoint) ? { 'x-api-token': config.apiKey } : { Authorization: `Bearer ${config.apiKey}` })
+        },
+        body: JSON.stringify(order),
+        signal: controller.signal
+      });
+      const detail = await response.text().catch(() => '');
+      if (!response.ok) return sendJson(res, 400, { error: 'UTMfy recusou o teste.', detail: detail.slice(0, 500) });
+      return sendJson(res, 200, { ok: true, message: `UTMfy respondeu com sucesso para o pedido de teste ${orderId}.` });
+    } catch (error) {
+      return sendJson(res, 502, { error: error?.name === 'AbortError' ? 'Timeout ao testar UTMfy.' : 'Falha de rede ao testar UTMfy.' });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return sendJson(res, 400, { error: 'Integracao desconhecida.' });
+}
+
+async function auditLogs(req, res) {
+  if (req.method !== 'GET') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  const result = await listAdminAudit(req.query?.limit);
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (!result.ok) return sendJson(res, 200, { ok: true, data: [], warning: 'Tabela de auditoria ainda nao criada.' });
+  return sendJson(res, 200, { ok: true, data: Array.isArray(result.data) ? result.data : [] });
+}
+
 function routeFromReq(req) {
   if (Array.isArray(req.query?.path)) return req.query.path.join('/');
   if (typeof req.query?.path === 'string') return req.query.path;
@@ -708,15 +813,33 @@ export default async function handler(req, res) {
 
   if (route === 'login') {
     if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+    const rate = adminLoginRateState(req);
+    if (!rate.allowed) {
+      res.setHeader('Retry-After', String(rate.retryAfter));
+      return sendJson(res, 429, { error: 'Muitas tentativas. Aguarde antes de tentar novamente.' });
+    }
     const body = await readJson(req);
-    if (!verifyAdminPassword(body.password || '')) return sendJson(res, 401, { error: 'Senha invalida.' });
-    issueAdminCookie(res);
+    if (!verifyAdminPassword(body.password || '')) {
+      recordAdminLoginFailure(req);
+      return sendJson(res, 401, { error: 'Senha invalida.' });
+    }
+    clearAdminLoginFailures(req);
+    issueAdminCookie(req, res);
+    await auditAdmin(req, 'admin_login_success');
     return sendJson(res, 200, { ok: true });
   }
   if (route === 'me') return verifyAdminCookie(req) ? sendJson(res, 200, { ok: true }) : sendJson(res, 401, { ok: false });
   if (!requireAdmin(req, res)) return;
 
+  if (route === 'logout') {
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+    clearAdminCookie(res);
+    await auditAdmin(req, 'admin_logout');
+    return sendJson(res, 200, { ok: true });
+  }
+
   if (route === 'overview') return overview(req, res);
+  if (route.startsWith('leads/')) return leadDetail(req, res, route.slice('leads/'.length));
   if (route === 'leads') return leads(req, res);
   if (route === 'pages') return pages(req, res);
   if (route === 'settings') return settings(req, res);
@@ -727,10 +850,7 @@ export default async function handler(req, res) {
   if (route === 'clonadores') return cloners(req, res);
   if (route === 'ip-blacklist') return blacklist(req, res);
   if (route === 'leads-export') return exportLeads(req, res);
-  if (route === 'test-integration') {
-    const body = await readJson(req);
-    const kind = String(body.kind || 'integracao').trim();
-    return sendJson(res, 200, { ok: true, message: `${kind} configurado no painel. O disparo real sera conectado quando o checkout/pagamento do funil entrar no ar.` });
-  }
+  if (route === 'test-integration') return testIntegration(req, res);
+  if (route === 'audit-logs') return auditLogs(req, res);
   sendJson(res, 404, { error: 'Rota admin nao encontrada.' });
 }

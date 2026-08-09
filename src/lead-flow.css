@@ -2549,6 +2549,25 @@
   text-transform: uppercase;
 }
 
+.admin-date-filter-rs {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+}
+
+.admin-date-filter-rs span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-date-filter-rs input {
+  min-width: 9.6rem;
+  width: auto;
+}
+
 .admin-modal-open-rs {
   overflow: hidden;
 }

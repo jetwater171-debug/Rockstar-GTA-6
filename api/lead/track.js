@@ -8,6 +8,7 @@ import {
   supabaseFetch,
   text
 } from '../../lib/api-utils.js';
+import { ensureNotBlocked } from '../../lib/ip-blacklist.js';
 
 function cleanObject(input = {}) {
   return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== null && value !== undefined));
@@ -50,6 +51,7 @@ function buildRecord(body, req) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
   if (!ensureAllowedRequest(req, res, { requireSession: true })) return;
+  if (!await ensureNotBlocked(req, res)) return;
 
   const body = await readJson(req);
   const record = buildRecord(body, req);
