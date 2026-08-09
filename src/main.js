@@ -317,25 +317,12 @@ function renderAnalysisPage() {
             <div class="analysis-player-rs" id="analysisMotion"></div>
           </div>
           <div class="analysis-content-rs" role="status" aria-live="polite">
-            <p class="analysis-status-rs" id="analysisStatus">Análise inteligente em andamento</p>
-            <h1 id="analysisTitle">Montando seu perfil</h1>
-            <p class="analysis-copy-rs">Estamos combinando suas respostas para preparar uma experiência personalizada na próxima etapa.</p>
-            <ol class="analysis-steps-rs" aria-label="Etapas da análise">
-              <li class="analysis-step-rs is-active" data-analysis-step>
-                <i aria-hidden="true"><span>01</span></i><span>Validando suas respostas</span><small>Agora</small>
-              </li>
-              <li class="analysis-step-rs" data-analysis-step>
-                <i aria-hidden="true"><span>02</span></i><span>Calculando compatibilidade</span><small>A seguir</small>
-              </li>
-              <li class="analysis-step-rs" data-analysis-step>
-                <i aria-hidden="true"><span>03</span></i><span>Preparando seu resultado</span><small>A seguir</small>
-              </li>
-            </ol>
+            <p class="analysis-status-rs">Análise do perfil</p>
+            <h1 id="analysisTitle">Analisando seu perfil</h1>
+            <p class="analysis-copy-rs">Só um instante enquanto preparamos seu resultado.</p>
+            <div class="analysis-current-rs"><i aria-hidden="true"></i><span id="analysisCurrent">Validando respostas</span></div>
             <div class="analysis-progress-rs" role="progressbar" aria-label="Progresso da análise" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8" id="analysisProgress"><span></span></div>
-            <p class="analysis-privacy-rs">
-              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 10V8a5 5 0 0 1 10 0v2M6 10h12v10H6V10Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Suas respostas estão protegidas durante a análise
-            </p>
+            <p class="analysis-privacy-rs">Processamento seguro</p>
           </div>
         </article>
       </section>
@@ -358,28 +345,21 @@ async function mountAnalysisExperience() {
     console.error('Nao foi possivel iniciar a animacao da analise.', error);
   }
 
-  const steps = Array.from(document.querySelectorAll('[data-analysis-step]'));
-  const status = document.querySelector('#analysisStatus');
+  const current = document.querySelector('#analysisCurrent');
   const title = document.querySelector('#analysisTitle');
   const progress = document.querySelector('#analysisProgress');
   const card = document.querySelector('.analysis-card-rs');
-  const updateStep = (activeIndex, value) => {
-    steps.forEach((step, index) => {
-      step.classList.toggle('is-done', index < activeIndex);
-      step.classList.toggle('is-active', index === activeIndex);
-      const label = step.querySelector('small');
-      if (label) label.textContent = index < activeIndex ? 'Concluído' : index === activeIndex ? 'Agora' : 'A seguir';
-    });
+  const updateStep = (message, value) => {
+    if (current) current.textContent = message;
     progress?.setAttribute('aria-valuenow', String(value));
   };
 
-  analysisTimers.push(window.setTimeout(() => updateStep(1, 58), 1150));
-  analysisTimers.push(window.setTimeout(() => updateStep(2, 86), 2450));
+  analysisTimers.push(window.setTimeout(() => updateStep('Calculando compatibilidade', 58), 1150));
+  analysisTimers.push(window.setTimeout(() => updateStep('Preparando resultado', 86), 2450));
   analysisTimers.push(window.setTimeout(() => {
-    updateStep(3, 100);
+    updateStep('Concluído', 100);
     card?.classList.add('is-complete');
-    if (status) status.textContent = 'Análise concluída';
-    if (title) title.textContent = 'Perfil pronto';
+    if (title) title.textContent = 'Perfil analisado';
   }, 3450));
   analysisTimers.push(window.setTimeout(() => {
     if (routeName() === 'analise') navigateTo('/dados');

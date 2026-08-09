@@ -11,122 +11,73 @@ const clamp = {
 export function AnalysisResultMotion() {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const circumference = 603.19;
+  const circumference = 427.26;
   const progress = Math.round(
-    interpolate(frame, [0, 2.75 * fps, 3.55 * fps], [8, 94, 100], {
+    interpolate(frame, [0, 2.85 * fps, 3.5 * fps], [6, 94, 100], {
       ...clamp,
       easing: Easing.bezier(0.16, 1, 0.3, 1),
     }),
   );
 
   return (
-    <AbsoluteFill
-      style={{
-        alignItems: 'center',
-        backgroundColor: 'transparent',
-        justifyContent: 'center',
-      }}
-    >
+    <AbsoluteFill style={{ alignItems: 'center', backgroundColor: 'transparent', justifyContent: 'center' }}>
       <div
         style={{
-          height: 286,
+          height: 190,
           position: 'relative',
-          scale: interpolate(frame, [0, 0.55 * fps], [0.82, 1], {
+          scale: interpolate(frame, [0, 0.45 * fps], [0.92, 1], {
             ...clamp,
-            easing: Easing.spring({ damping: 180 }),
+            easing: Easing.spring({ damping: 200 }),
             output: 'perceptual-scale',
           }),
-          width: 286,
+          width: 190,
         }}
       >
         <div
           style={{
             backgroundColor: '#ffd629',
             borderRadius: '50%',
-            filter: 'blur(34px)',
-            inset: 39,
-            opacity: interpolate(frame, [0, 2.8 * fps, 3.25 * fps, 4.35 * fps], [0.08, 0.14, 0.46, 0.28], {
+            filter: 'blur(24px)',
+            inset: 38,
+            opacity: interpolate(frame, [0, 2.9 * fps, 3.35 * fps], [0.025, 0.06, 0.16], {
               ...clamp,
               easing: Easing.bezier(0.16, 1, 0.3, 1),
             }),
             position: 'absolute',
-            scale: interpolate(frame, [0, 2.8 * fps, 3.3 * fps], [0.72, 0.92, 1.22], {
-              ...clamp,
-              easing: Easing.spring({ damping: 160 }),
-              output: 'perceptual-scale',
-            }),
           }}
         />
 
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 286 286"
-          style={{
-            height: '100%',
-            overflow: 'visible',
-            rotate: `${interpolate(frame, [0, 2.9 * fps], [-92, 508], {
-              ...clamp,
-              easing: Easing.bezier(0.42, 0, 0.58, 1),
-            })}deg`,
-            width: '100%',
-          }}
-        >
-          <circle cx="143" cy="143" r="112" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="2" />
-          <circle cx="143" cy="143" r="96" fill="rgba(5,5,5,.92)" stroke="rgba(255,255,255,.1)" strokeWidth="2" />
+        <svg aria-hidden="true" viewBox="0 0 190 190" style={{ height: '100%', overflow: 'visible', width: '100%' }}>
+          <circle cx="95" cy="95" r="68" fill="rgba(5,5,5,.94)" stroke="rgba(255,255,255,.11)" strokeWidth="2" />
           <circle
-            cx="143"
-            cy="143"
-            r="96"
-            fill="none"
-            pathLength="100"
-            stroke="#ffd629"
-            strokeDasharray="18 82"
-            strokeLinecap="round"
-            strokeWidth="9"
-            style={{
-              filter: 'drop-shadow(0 0 10px rgba(255,214,41,.58))',
-              opacity: interpolate(frame, [0, 2.7 * fps, 3.15 * fps], [1, 1, 0], {
-                ...clamp,
-                easing: Easing.bezier(0.16, 1, 0.3, 1),
-              }),
-            }}
-          />
-        </svg>
-
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 286 286"
-          style={{ height: '100%', inset: 0, overflow: 'visible', position: 'absolute', width: '100%' }}
-        >
-          <circle
-            cx="143"
-            cy="143"
-            r="96"
+            cx="95"
+            cy="95"
+            r="68"
             fill="none"
             stroke="#ffd629"
             strokeDasharray={circumference}
-            strokeDashoffset={interpolate(frame, [0.2 * fps, 3 * fps], [circumference, 0], {
+            strokeDashoffset={interpolate(frame, [0.15 * fps, 3 * fps], [circumference, 0], {
               ...clamp,
               easing: Easing.bezier(0.16, 1, 0.3, 1),
             })}
             strokeLinecap="round"
-            strokeWidth="9"
-            style={{ filter: 'drop-shadow(0 0 9px rgba(255,214,41,.4))' }}
-            transform="rotate(-90 143 143)"
+            strokeWidth="5"
+            style={{ filter: 'drop-shadow(0 0 4px rgba(255,214,41,.26))' }}
+            transform="rotate(-90 95 95)"
           />
           <circle
-            cx="143"
-            cy="143"
-            r="82"
+            cx="95"
+            cy="95"
+            r="59"
             fill="#ffd629"
             style={{
-              opacity: interpolate(frame, [2.82 * fps, 3.25 * fps], [0, 1], {
+              opacity: interpolate(frame, [2.92 * fps, 3.3 * fps], [0, 1], {
                 ...clamp,
                 easing: Easing.bezier(0.16, 1, 0.3, 1),
               }),
-              scale: interpolate(frame, [2.82 * fps, 3.25 * fps, 3.7 * fps], [0.72, 1.06, 1], {
+              scale: interpolate(frame, [2.92 * fps, 3.3 * fps], [0.88, 1], {
                 ...clamp,
-                easing: Easing.spring({ damping: 180 }),
+                easing: Easing.spring({ damping: 200 }),
                 output: 'perceptual-scale',
               }),
               transformBox: 'fill-box',
@@ -134,18 +85,18 @@ export function AnalysisResultMotion() {
             }}
           />
           <path
-            d="M101 145 L132 174 L190 111"
+            d="M65 96 L86 116 L126 73"
             fill="none"
             pathLength="100"
-            stroke="#070707"
+            stroke="#080808"
             strokeDasharray="100"
-            strokeDashoffset={interpolate(frame, [3.15 * fps, 3.72 * fps], [100, 0], {
+            strokeDashoffset={interpolate(frame, [3.18 * fps, 3.72 * fps], [100, 0], {
               ...clamp,
               easing: Easing.bezier(0.16, 1, 0.3, 1),
             })}
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="17"
+            strokeWidth="11"
           />
         </svg>
 
@@ -156,17 +107,17 @@ export function AnalysisResultMotion() {
             flexDirection: 'column',
             inset: 0,
             justifyContent: 'center',
-            opacity: interpolate(frame, [0, 2.65 * fps, 3 * fps], [1, 1, 0], {
+            opacity: interpolate(frame, [0, 2.72 * fps, 3.02 * fps], [1, 1, 0], {
               ...clamp,
               easing: Easing.bezier(0.16, 1, 0.3, 1),
             }),
             position: 'absolute',
           }}
         >
-          <strong style={{ color: '#fff', fontFamily: 'Arial, sans-serif', fontSize: 54, fontWeight: 900, lineHeight: 0.9 }}>
+          <strong style={{ color: '#fff', fontFamily: 'Arial, sans-serif', fontSize: 32, fontWeight: 850, lineHeight: 1 }}>
             {progress}
           </strong>
-          <span style={{ color: 'rgba(255,255,255,.5)', fontFamily: 'Arial, sans-serif', fontSize: 13, fontWeight: 800, letterSpacing: 2.4, marginTop: 12 }}>
+          <span style={{ color: 'rgba(255,255,255,.38)', fontFamily: 'Arial, sans-serif', fontSize: 8, fontWeight: 750, letterSpacing: 1.7, marginTop: 7 }}>
             ANALISANDO
           </span>
         </div>
@@ -184,8 +135,8 @@ export function mountAnalysisResultPlayer(target) {
       autoPlay={false}
       clickToPlay={false}
       component={AnalysisResultMotion}
-      compositionHeight={320}
-      compositionWidth={320}
+      compositionHeight={240}
+      compositionWidth={240}
       controls={false}
       durationInFrames={132}
       fps={30}
