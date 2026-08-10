@@ -2030,9 +2030,17 @@ function navigateTo(path) {
   render();
 }
 
-async function initSession() {
-  if (!sessionReady) {
-    sessionReady = fetch('/api/site/session', { credentials: 'include' }).catch(() => null);
+async function initSession({ force = false } = {}) {
+  if (force || !sessionReady) {
+    sessionReady = fetch('/api/site/session', { credentials: 'include', cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) sessionReady = null;
+        return response;
+      })
+      .catch(() => {
+        sessionReady = null;
+        return null;
+      });
   }
   getSessionId();
   return sessionReady;
@@ -2201,7 +2209,7 @@ async function loadSiteConfig() {
 }
 
 async function trackLead(payload = {}) {
-  await initSession();
+  await initSession({ force: payload.event === 'personal_submitted' });
   const body = {
     sessionId: getSessionId(),
     utm: readJson(storageKeys.utm, {}),
@@ -2211,16 +2219,27 @@ async function trackLead(payload = {}) {
     ...payload,
   };
   try {
-    const response = await fetch('/api/lead/track', {
+    const send = () => fetch('/api/lead/track', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+    let response = await send();
+    if (response.status === 401) {
+      await initSession({ force: true });
+      response = await send();
+    } else if (response.status >= 500) {
+      await new Promise((resolve) => window.setTimeout(resolve, 240));
+      response = await send();
+    }
+    const result = await response.json().catch(() => ({}));
     if (response.ok && payload.event) trackConfiguredEvent(payload.event, { stage: payload.stage || routeName() });
-    return response.ok ? await response.json() : { ok: false };
+    return response.ok
+      ? result
+      : { ok: false, status: response.status, reason: result.reason || result.error || 'request_failed' };
   } catch (_error) {
-    return { ok: false };
+    return { ok: false, reason: 'network_error' };
   }
 }
 
