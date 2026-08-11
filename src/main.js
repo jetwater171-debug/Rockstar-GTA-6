@@ -105,7 +105,6 @@ const gtaOffers = [
     id: 'standard',
     tag: 'Standard',
     title: 'GTA VI Standard',
-    description: 'A experiência completa da campanha de Jason e Lucia, com o retorno a Vice City e uma jornada pelo estado de Leonida.',
     price: 207.98,
     oldPrice: 349.9,
     badge: 'Jogo base',
@@ -119,7 +118,6 @@ const gtaOffers = [
     id: 'ultimate',
     tag: 'Ultimate',
     title: 'GTA VI Ultimate',
-    description: 'O jogo base acompanhado da coleção oficial de veículos, armas, roupas, propriedades e atividades extras da história.',
     price: 289.3,
     oldPrice: 499.9,
     badge: 'Mais completa',
@@ -780,7 +778,7 @@ function offerCardMarkup(offer) {
       ${offer.exclusive ? '<div class="offer-exclusive-rs">Oferta especial liberada para este perfil</div>' : ''}
       <div class="offer-card-copy-rs">
         <h2>${escapeHtml(offer.title)}</h2>
-        <p>${escapeHtml(offer.description)}</p>
+        ${offer.description ? `<p>${escapeHtml(offer.description)}</p>` : ''}
         <ul class="offer-benefits-rs">
           ${(offer.details || []).map((detail) => `<li>${escapeHtml(detail)}</li>`).join('')}
         </ul>
