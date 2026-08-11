@@ -22,7 +22,7 @@ async function loadTracking() {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido.' });
   if (!ensureAllowedRequest(req, res, { requireSession: true })) return;
   if (!await ensureNotBlocked(req, res)) return;
 

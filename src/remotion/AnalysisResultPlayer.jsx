@@ -13,10 +13,7 @@ export function AnalysisResultMotion() {
   const { fps } = useVideoConfig();
   const circumference = 427.26;
   const progress = Math.round(
-    interpolate(frame, [0, 2.85 * fps, 3.5 * fps], [6, 94, 100], {
-      ...clamp,
-      easing: Easing.bezier(0.16, 1, 0.3, 1),
-    }),
+    interpolate(frame, [0, 4.2 * fps], [0, 100], clamp),
   );
 
   return (
@@ -56,10 +53,7 @@ export function AnalysisResultMotion() {
             fill="none"
             stroke="#ffd629"
             strokeDasharray={circumference}
-            strokeDashoffset={interpolate(frame, [0.15 * fps, 3 * fps], [circumference, 0], {
-              ...clamp,
-              easing: Easing.bezier(0.16, 1, 0.3, 1),
-            })}
+            strokeDashoffset={interpolate(frame, [0, 4.2 * fps], [circumference, 0], clamp)}
             strokeLinecap="round"
             strokeWidth="5"
             style={{ filter: 'drop-shadow(0 0 4px rgba(255,214,41,.26))' }}
@@ -71,11 +65,11 @@ export function AnalysisResultMotion() {
             r="59"
             fill="#ffd629"
             style={{
-              opacity: interpolate(frame, [2.92 * fps, 3.3 * fps], [0, 1], {
+              opacity: interpolate(frame, [3.95 * fps, 4.3 * fps], [0, 1], {
                 ...clamp,
                 easing: Easing.bezier(0.16, 1, 0.3, 1),
               }),
-              scale: interpolate(frame, [2.92 * fps, 3.3 * fps], [0.88, 1], {
+              scale: interpolate(frame, [3.95 * fps, 4.3 * fps], [0.88, 1], {
                 ...clamp,
                 easing: Easing.spring({ damping: 200 }),
                 output: 'perceptual-scale',
@@ -90,7 +84,7 @@ export function AnalysisResultMotion() {
             pathLength="100"
             stroke="#080808"
             strokeDasharray="100"
-            strokeDashoffset={interpolate(frame, [3.18 * fps, 3.72 * fps], [100, 0], {
+            strokeDashoffset={interpolate(frame, [4.08 * fps, 4.36 * fps], [100, 0], {
               ...clamp,
               easing: Easing.bezier(0.16, 1, 0.3, 1),
             })}
@@ -107,7 +101,7 @@ export function AnalysisResultMotion() {
             flexDirection: 'column',
             inset: 0,
             justifyContent: 'center',
-            opacity: interpolate(frame, [0, 2.72 * fps, 3.02 * fps], [1, 1, 0], {
+            opacity: interpolate(frame, [0, 3.98 * fps, 4.16 * fps], [1, 1, 0], {
               ...clamp,
               easing: Easing.bezier(0.16, 1, 0.3, 1),
             }),
@@ -126,7 +120,7 @@ export function AnalysisResultMotion() {
   );
 }
 
-export function mountAnalysisResultPlayer(target) {
+export function mountAnalysisResultPlayer(target, { autoStart = true, durationMs = 4400 } = {}) {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const root = createRoot(target);
   const playerRef = createRef();
@@ -149,15 +143,25 @@ export function mountAnalysisResultPlayer(target) {
     />,
   );
 
-  const startedAt = performance.now();
-  const timeline = window.setInterval(() => {
-    const nextFrame = reducedMotion ? 131 : Math.min(131, Math.floor(((performance.now() - startedAt) / 1000) * 30));
-    playerRef.current?.seekTo(nextFrame);
-    if (nextFrame >= 131) window.clearInterval(timeline);
-  }, 1000 / 30);
+  let timeline = 0;
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    const startedAt = performance.now();
+    timeline = window.setInterval(() => {
+      const ratio = reducedMotion ? 1 : Math.min(1, (performance.now() - startedAt) / durationMs);
+      const nextFrame = Math.min(131, Math.floor(ratio * 131));
+      playerRef.current?.seekTo(nextFrame);
+      if (nextFrame >= 131) window.clearInterval(timeline);
+    }, 1000 / 30);
+  };
 
-  return () => {
-    window.clearInterval(timeline);
+  const cleanup = () => {
+    if (timeline) window.clearInterval(timeline);
     root.unmount();
   };
+  cleanup.start = start;
+  if (autoStart) start();
+  return cleanup;
 }

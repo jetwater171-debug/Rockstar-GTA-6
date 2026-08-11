@@ -1,0 +1,322 @@
+/* Unified VSL + profile verification, loaded after every legacy polish layer. */
+.processing-screen {
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 214, 41, 0.07), transparent 28rem),
+    radial-gradient(circle at 88% 72%, rgba(255, 81, 174, 0.05), transparent 32rem),
+    #050505;
+  color: #fff;
+  min-height: 100svh;
+  overflow-x: hidden;
+  padding: 6.5rem clamp(1rem, 4vw, 3rem) 2rem;
+}
+
+.processing-screen .flow-topbar-rs {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9), transparent);
+  box-shadow: none;
+  min-height: 5.5rem;
+}
+
+.processing-screen .processing-shell-rs {
+  display: grid;
+  gap: 1.1rem;
+  margin: 0 auto;
+  width: min(100%, 66rem);
+}
+
+.processing-screen .processing-card-rs--unified {
+  -webkit-backdrop-filter: blur(28px) saturate(125%);
+  backdrop-filter: blur(28px) saturate(125%);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.015) 52%),
+    rgba(8, 8, 8, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 2rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 2.2rem 6rem rgba(0, 0, 0, 0.62);
+  display: block;
+  overflow: hidden;
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  text-align: left;
+  width: 100%;
+}
+
+.processing-screen .processing-card-rs--unified::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  content: "";
+  height: 1px;
+  left: 14%;
+  opacity: 0.6;
+  position: absolute;
+  top: 0;
+  width: 72%;
+}
+
+.processing-intro-rs {
+  margin: 0 auto 1.6rem;
+  max-width: 44rem;
+  text-align: center;
+}
+
+.processing-screen .processing-kicker-rs {
+  color: #ffd629;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.45rem;
+}
+
+.processing-screen .processing-card-rs--unified h1 {
+  font-family: "Barlow Condensed", Impact, Anton, sans-serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  letter-spacing: -0.015em;
+  line-height: 0.9;
+  margin: 0;
+  text-align: center;
+}
+
+.processing-screen .processing-copy-rs {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: clamp(0.9rem, 1.4vw, 1rem);
+  line-height: 1.5;
+  margin: 0.75rem auto 0;
+  max-width: 38rem;
+  text-align: center;
+}
+
+.processing-screen .processing-stage-rs--unified {
+  align-items: center;
+  display: grid;
+  gap: clamp(1.4rem, 4vw, 3.5rem);
+  grid-template-columns: minmax(15rem, 20rem) minmax(18rem, 1fr);
+  margin: 0 auto;
+  max-width: 52rem;
+}
+
+.processing-screen .processing-video-shell-rs {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.45rem;
+  box-shadow: none;
+  max-width: 20rem;
+  padding: 0.65rem;
+  width: 100%;
+}
+
+.processing-screen .processing-video-rs {
+  aspect-ratio: 9 / 16;
+  border: 2px solid rgba(255, 214, 41, 0.75);
+  border-radius: 1.1rem;
+  box-shadow: 0 0 0 0.25rem rgba(255, 214, 41, 0.08);
+  max-height: 31rem;
+  max-width: 100%;
+  position: relative;
+}
+
+.processing-video-rs.is-playing img {
+  animation: processingVslMotion 8.5s ease-in-out forwards;
+}
+
+.processing-video-rs.is-playing .processing-play-rs {
+  opacity: 0;
+  pointer-events: none;
+  scale: 0.82;
+}
+
+.processing-video-rs.is-playing .processing-video-caption-rs small {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.processing-video-timeline-rs {
+  background: rgba(255, 255, 255, 0.18);
+  bottom: 0;
+  height: 3px;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  right: 0;
+  z-index: 5;
+}
+
+.processing-video-timeline-rs span {
+  background: #ffd629;
+  display: block;
+  height: 100%;
+  width: 0;
+}
+
+.processing-video-rs.is-playing .processing-video-timeline-rs span {
+  animation: processingVslTimeline 8.5s linear forwards;
+}
+
+.processing-analysis-rs {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 25rem;
+  text-align: center;
+}
+
+.processing-analysis-motion-rs {
+  aspect-ratio: 1;
+  margin-bottom: 0.7rem;
+  width: clamp(8.5rem, 16vw, 11rem);
+}
+
+.processing-analysis-label-rs {
+  color: #ffd629;
+  font-family: "Barlow Condensed", Arial, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.13em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.processing-analysis-rs > strong {
+  color: #fff;
+  font-family: "Barlow Condensed", Impact, sans-serif;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 0.5rem;
+  max-width: 18ch;
+  text-transform: uppercase;
+}
+
+.processing-analysis-rs > p:not(.processing-analysis-label-rs) {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  margin: 0.65rem 0 0;
+  max-width: 26rem;
+}
+
+.processing-profile-progress-rs {
+  background: rgba(255, 255, 255, 0.11);
+  border-radius: 999px;
+  height: 3px;
+  margin-top: 1.2rem;
+  max-width: 19rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.processing-profile-progress-rs span {
+  background: #ffd629;
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  width: 0;
+}
+
+.processing-analysis-rs output {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.72rem;
+  font-weight: 750;
+  margin-top: 0.5rem;
+}
+
+.processing-screen .processing-footer-rs {
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 0.72rem;
+}
+
+@keyframes processingVslMotion {
+  0% { filter: saturate(0.82) brightness(0.8); transform: scale(1.04); }
+  45% { filter: saturate(1) brightness(0.92); transform: scale(1.1) translateY(-1.5%); }
+  100% { filter: saturate(1.08) brightness(0.86); transform: scale(1.07) translateY(1%); }
+}
+
+@keyframes processingVslTimeline {
+  to { width: 100%; }
+}
+
+@media (max-width: 720px) {
+  .processing-screen {
+    padding: 5.6rem 0.8rem max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .processing-screen .flow-topbar-rs {
+    min-height: 4.75rem;
+  }
+
+  .processing-screen .processing-card-rs--unified {
+    border-radius: 1.45rem;
+    padding: 1rem;
+  }
+
+  .processing-intro-rs {
+    margin-bottom: 1.1rem;
+  }
+
+  .processing-screen .processing-card-rs--unified h1 {
+    font-size: clamp(1.95rem, 9vw, 2.35rem);
+  }
+
+  .processing-screen .processing-copy-rs {
+    font-size: 0.86rem;
+  }
+
+  .processing-screen .processing-stage-rs--unified {
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+
+  .processing-screen .processing-video-shell-rs {
+    margin: 0 auto;
+    max-width: 15.5rem;
+  }
+
+  .processing-screen .processing-video-rs {
+    max-height: 34svh;
+  }
+
+  .processing-analysis-rs {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 1.1rem;
+    display: grid;
+    gap: 0.25rem 0.8rem;
+    grid-template-columns: 5.7rem minmax(0, 1fr);
+    min-height: 0;
+    padding: 0.8rem;
+    text-align: left;
+  }
+
+  .processing-analysis-motion-rs {
+    grid-row: 1 / 6;
+    margin: 0;
+    width: 5.7rem;
+  }
+
+  .processing-analysis-label-rs {
+    align-self: end;
+  }
+
+  .processing-analysis-rs > strong {
+    font-size: 1.28rem;
+    margin-top: 0.1rem;
+  }
+
+  .processing-analysis-rs > p:not(.processing-analysis-label-rs) {
+    font-size: 0.76rem;
+    line-height: 1.35;
+    margin-top: 0.1rem;
+  }
+
+  .processing-profile-progress-rs {
+    margin-top: 0.35rem;
+    max-width: none;
+  }
+
+  .processing-analysis-rs output {
+    margin-top: 0.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .processing-video-rs.is-playing img {
+    animation-duration: 1ms;
+  }
+}

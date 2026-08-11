@@ -20,10 +20,10 @@ export default async function handler(req, res) {
       supabaseFetch(`${LEADS_TABLE}?session_id=eq.${encodeURIComponent(sessionId)}&select=*&limit=1`),
       supabaseFetch(`lead_pageviews?session_id=eq.${encodeURIComponent(sessionId)}&select=page,created_at&order=created_at.asc&limit=1000`)
     ]);
-    if (leadResult.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+    if (leadResult.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
     if (!leadResult.ok) return sendJson(res, 502, { error: 'Falha ao carregar lead.', detail: leadResult.detail });
     const lead = Array.isArray(leadResult.data) ? leadResult.data[0] : null;
-    if (!lead) return sendJson(res, 404, { error: 'Lead nao encontrado.' });
+    if (!lead) return sendJson(res, 404, { error: 'Lead não encontrado.' });
     const pageviews = pageviewsResult.ok && Array.isArray(pageviewsResult.data) ? pageviewsResult.data : [];
     return sendJson(res, 200, { ok: true, data: { ...lead, pageviews } });
   }
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     result = await supabaseFetch(`leads?${params.toString()}`, { headers: { Prefer: 'count=exact' } });
   }
 
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!result.ok) return sendJson(res, 502, { error: 'Falha ao buscar leads.', detail: result.detail });
   const data = Array.isArray(result.data) ? result.data : [];
   const contentRange = result.response?.headers?.get?.('content-range') || '';

@@ -6,7 +6,7 @@ function normalizePage(value) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido.' });
   if (!ensureAllowedRequest(req, res, { requireSession: true })) return;
   if (!await ensureNotBlocked(req, res)) return;
 
@@ -22,6 +22,6 @@ export default async function handler(req, res) {
   });
 
   if (result.missing) return sendJson(res, 202, { ok: false, reason: result.detail });
-  if (!result.ok) return sendJson(res, 502, { ok: false, error: 'Falha ao registrar pagina.', detail: result.detail });
+  if (!result.ok) return sendJson(res, 502, { ok: false, error: 'Falha ao registrar página.', detail: result.detail });
   sendJson(res, 200, { ok: true });
 }

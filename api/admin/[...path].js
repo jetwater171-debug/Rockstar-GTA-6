@@ -21,7 +21,7 @@ import { auditAdmin, listAdminAudit } from '../../lib/admin-audit.js';
 const gateways = ['sunize', 'paradise', 'atomopay', 'bravopay'];
 const defaultSettings = {
   tracking: { metaPixel: '', metaAccessToken: '', tiktokPixel: '', googleTag: '', browserPixel: true, serverEvents: false },
-  utmfy: { enabled: false, apiKey: '', endpoint: 'https://api.utmify.com.br/api-credentials/orders', productName: 'Promocao GTA VI', platform: 'Rockstar GTA VI' },
+  utmfy: { enabled: false, apiKey: '', endpoint: 'https://api.utmify.com.br/api-credentials/orders', productName: 'Promoção GTA VI', platform: 'Rockstar GTA VI' },
   gateways: {
     active: 'sunize',
     activeGateway: 'sunize',
@@ -44,7 +44,7 @@ const defaultSettings = {
     },
     bravopay: { enabled: false, baseUrl: 'https://bravopay.club/api/v1', apiKey: '', webhookSecret: '', expiresIn: 3600, description: '' }
   },
-  funnel: { promotionName: 'Promocao exclusiva GTA VI', nextStepUrl: '', leadCaptureEnabled: true },
+  funnel: { promotionName: 'Promoção exclusiva GTA VI', nextStepUrl: '', leadCaptureEnabled: true },
   public: {
     country: 'Brasil',
     minAge: 18,
@@ -52,7 +52,7 @@ const defaultSettings = {
     gender: 'todos',
     devices: 'iPhone, Android, PlayStation, Xbox',
     interests: 'GTA V, GTA Online, Rockstar Games, mundo aberto',
-    recommendation: 'Criar publico quente com quem concluiu o quiz e lookalike baseado nos leads qualificados.'
+    recommendation: 'Criar público quente com quem concluiu o quiz e lookalike baseado nos leads qualificados.'
   },
   backredirects: { enabled: true, home: '/admin', quiz: '/dados', dados: '/' }
 };
@@ -338,7 +338,7 @@ async function overview(req, res) {
     fetchLeads(500),
     supabaseFetch('lead_pageviews?select=page,created_at&order=created_at.desc&limit=2000')
   ]);
-  if (leadsResult.missing || pagesResult.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (leadsResult.missing || pagesResult.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!leadsResult.ok) return sendJson(res, 502, { error: 'Falha ao buscar leads.', detail: leadsResult.detail });
   const leads = Array.isArray(leadsResult.data) ? leadsResult.data : [];
   const pageviews = pagesResult.ok && Array.isArray(pagesResult.data) ? pagesResult.data : [];
@@ -371,7 +371,7 @@ async function leads(req, res) {
     fetchLeads(limit, req.query?.q),
     supabaseFetch('lead_pageviews?select=session_id,page,created_at&order=created_at.asc&limit=5000')
   ]);
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!result.ok) return sendJson(res, 502, { error: 'Falha ao buscar leads.', detail: result.detail });
   const pageviews = pageviewsResult.ok && Array.isArray(pageviewsResult.data) ? pageviewsResult.data : [];
   const pageviewsBySession = pageviews.reduce((map, item) => {
@@ -400,17 +400,17 @@ async function leads(req, res) {
 }
 
 async function leadDetail(req, res, sessionId) {
-  if (req.method !== 'GET') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  if (req.method !== 'GET') return sendJson(res, 405, { error: 'Método não permitido.' });
   const cleanSession = String(sessionId || '').trim().slice(0, 100);
-  if (!cleanSession) return sendJson(res, 400, { error: 'Sessao invalida.' });
+  if (!cleanSession) return sendJson(res, 400, { error: 'Sessão inválida.' });
   const [leadResult, pageviewsResult] = await Promise.all([
     supabaseFetch(`${LEADS_TABLE}?session_id=eq.${encodeURIComponent(cleanSession)}&select=*&limit=1`),
     supabaseFetch(`lead_pageviews?session_id=eq.${encodeURIComponent(cleanSession)}&select=page,created_at&order=created_at.asc&limit=1000`)
   ]);
-  if (leadResult.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (leadResult.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!leadResult.ok) return sendJson(res, 502, { error: 'Falha ao carregar lead.', detail: leadResult.detail });
   const lead = Array.isArray(leadResult.data) ? leadResult.data[0] : null;
-  if (!lead) return sendJson(res, 404, { error: 'Lead nao encontrado.' });
+  if (!lead) return sendJson(res, 404, { error: 'Lead não encontrado.' });
   const pageviews = pageviewsResult.ok && Array.isArray(pageviewsResult.data) ? pageviewsResult.data : [];
   return sendJson(res, 200, { ok: true, data: { ...lead, pageviews } });
 }
@@ -418,16 +418,16 @@ async function leadDetail(req, res, sessionId) {
 async function pages(_req, res) {
   let result = await supabaseFetch('pageview_counts?select=*');
   if (!result.ok && !result.missing) result = await supabaseFetch('lead_pageviews?select=*');
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
-  if (!result.ok) return sendJson(res, 502, { error: 'Falha ao buscar paginas.', detail: result.detail });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
+  if (!result.ok) return sendJson(res, 502, { error: 'Falha ao buscar páginas.', detail: result.detail });
   sendJson(res, 200, { data: Array.isArray(result.data) ? result.data : [] });
 }
 
 async function settings(req, res) {
   if (req.method === 'GET') {
     const current = await loadSettings();
-    if (current.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
-    if (!current.ok) return sendJson(res, 502, { error: 'Falha ao carregar configuracoes.', detail: current.detail });
+    if (current.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
+    if (!current.ok) return sendJson(res, 502, { error: 'Falha ao carregar configurações.', detail: current.detail });
     return sendJson(res, 200, { ok: true, settings: publicSettings(current.value), updatedAt: current.updatedAt });
   }
   if (req.method === 'POST') {
@@ -435,18 +435,18 @@ async function settings(req, res) {
     const current = await loadSettings();
     const next = normalizeGatewaySettings(mergeDeep(current.ok ? current.value : defaultSettings, body.settings || body || {}));
     const saved = await saveSettingsValue(next);
-    if (saved.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
-    if (!saved.ok) return sendJson(res, 502, { error: 'Falha ao salvar configuracoes.', detail: saved.detail });
+    if (saved.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
+    if (!saved.ok) return sendJson(res, 502, { error: 'Falha ao salvar configurações.', detail: saved.detail });
     await auditAdmin(req, 'settings_updated', { sections: Object.keys(body.settings || body || {}) });
     return sendJson(res, 200, { ok: true, settings: publicSettings(next) });
   }
-  sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  sendJson(res, 405, { error: 'Método não permitido.' });
 }
 
 async function salesInsights(_req, res) {
   const result = await fetchLeads(5000);
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
-  if (!result.ok) return sendJson(res, 502, { error: 'Falha ao montar publico.', detail: result.detail });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
+  if (!result.ok) return sendJson(res, 502, { error: 'Falha ao montar público.', detail: result.detail });
   const rows = Array.isArray(result.data) ? result.data : [];
   const source = new Map(), campaign = new Map(), device = new Map(), city = new Map(), expectation = new Map();
   let qualified = 0, contacts = 0, paid = 0, revenue = 0, lastSaleAt = null;
@@ -472,8 +472,8 @@ async function salesInsights(_req, res) {
     summary: { totalLeads: rows.length, contacts, qualified, paid, totalRevenue: revenue, lastSaleAt, conversion: rows.length ? Math.round((qualified / rows.length) * 1000) / 10 : 0 },
     data: { sources: ranking(source, rows.length), campaigns: ranking(campaign, rows.length), devices: ranking(device, rows.length), cities: ranking(city, rows.length), expectations: ranking(expectation, rows.length) },
     audience: {
-      headline: 'Publico recomendado para Meta/TikTok',
-      recommendation: 'Priorize leads que concluiram o quiz, jogaram GTA V/GTA Online e escolheram PlayStation, Xbox ou iPhone/Android como plataforma principal.',
+      headline: 'Público recomendado para Meta/TikTok',
+      recommendation: 'Priorize leads que concluíram o quiz, jogaram GTA V/GTA Online e escolheram PlayStation, Xbox ou iPhone/Android como plataforma principal.',
       customAudience: 'Suba todos os leads com telefone/email e crie lookalike 1% Brasil a partir dos qualificados.',
       exclusion: 'Exclua visitantes sem contato e leads marcados como review quando houver volume suficiente.'
     }
@@ -482,7 +482,7 @@ async function salesInsights(_req, res) {
 
 async function gatewaySales(_req, res) {
   const result = await fetchLeads(5000);
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!result.ok) return sendJson(res, 502, { error: 'Falha ao montar vendas.', detail: result.detail });
   const summary = new Map(gateways.map((name) => [name, { gateway: name, gatewayLabel: gatewayLabel(name), salesCount: 0, grossRevenue: 0, lastPaidAt: '' }]));
   const items = [];
@@ -503,7 +503,7 @@ async function gatewaySales(_req, res) {
 }
 
 async function gatewayTestPix(req, res) {
-  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido.' });
   const body = await readJson(req);
   const amount = parseGatewayTestAmount(body.amount);
   if (!amount) return sendJson(res, 400, { error: 'Informe um valor valido a partir de R$ 1,00.' });
@@ -511,7 +511,7 @@ async function gatewayTestPix(req, res) {
   if (!selected.length) return sendJson(res, 400, { error: 'Selecione ao menos um gateway para testar.' });
 
   const current = await loadSettings();
-  if (current.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (current.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!current.ok) return sendJson(res, 502, { error: 'Falha ao carregar gateways.', detail: current.detail });
 
   const settings = normalizeGatewaySettings(current.value || {});
@@ -545,7 +545,7 @@ async function gatewayTestPix(req, res) {
       let payload = null;
       if (gateway === 'sunize') {
         if (!baseUrl(config) || !pickText(config.apiKey) || !pickText(config.apiSecret, config.secret)) {
-          return { ...baseResult, detail: 'Credenciais Sunize nao configuradas.' };
+          return { ...baseResult, detail: 'Credenciais Sunize não configuradas.' };
         }
         payload = {
           external_id: testKey,
@@ -556,7 +556,7 @@ async function gatewayTestPix(req, res) {
           customer: { name: baseCustomer.name, email: baseCustomer.email, phone: baseCustomer.phoneE164, document_type: 'CPF', document: baseCustomer.document }
         };
       } else if (gateway === 'paradise') {
-        if (!baseUrl(config) || !pickText(config.apiKey)) return { ...baseResult, detail: 'Credenciais Paradise nao configuradas.' };
+        if (!baseUrl(config) || !pickText(config.apiKey)) return { ...baseResult, detail: 'Credenciais Paradise não configuradas.' };
         payload = {
           amount: Math.max(1, Math.round(amount * 100)),
           description: pickText(config.description) || 'Teste manual de gateway via admin',
@@ -569,7 +569,7 @@ async function gatewayTestPix(req, res) {
         const offerHash = pickText(config.offerHash);
         const productHash = pickText(config.productHash);
         if (!baseUrl(config) || !pickText(config.apiToken, config.apiKey) || !offerHash || !productHash) {
-          return { ...baseResult, detail: 'Credenciais AtomoPay nao configuradas.' };
+          return { ...baseResult, detail: 'Credenciais AtomoPay não configuradas.' };
         }
         payload = {
           amount: Math.max(1, Math.round(amount * 100)),
@@ -582,7 +582,7 @@ async function gatewayTestPix(req, res) {
           tracking: { src: 'admin_gateway_test', utm_source: 'admin_gateway_test', utm_medium: 'dashboard', utm_campaign: testKey }
         };
       } else {
-        if (!baseUrl(config) || !pickText(config.apiKey)) return { ...baseResult, detail: 'Credenciais Bravo Pay nao configuradas.' };
+        if (!baseUrl(config) || !pickText(config.apiKey)) return { ...baseResult, detail: 'Credenciais Bravo Pay não configuradas.' };
         payload = {
           amount_cents: Math.max(500, Math.round(amount * 100)),
           method: 'pix',
@@ -612,7 +612,7 @@ async function gatewayTestPix(req, res) {
         statusRaw: parsed.status,
         externalId: parsed.externalId || testKey,
         detail: (!parsed.paymentCode && !parsed.paymentCodeBase64 && !parsed.paymentQrUrl)
-          ? 'Gateway criou a transacao, mas nao devolveu QR/copia-e-cola na resposta.'
+          ? 'Gateway criou a transação, mas não devolveu QR/copia-e-cola na resposta.'
           : ''
       };
     } catch (error) {
@@ -626,7 +626,7 @@ async function gatewayTestPix(req, res) {
 
 async function backredirects(_req, res) {
   const result = await supabaseFetch('lead_pageviews?select=page,created_at&order=created_at.desc&limit=5000');
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!result.ok) return sendJson(res, 502, { error: 'Falha ao buscar backredirects.', detail: result.detail });
   const counts = new Map();
   (Array.isArray(result.data) ? result.data : []).forEach((row) => counts.set(pageKey(row.page), Number(counts.get(pageKey(row.page)) || 0) + 1));
@@ -644,7 +644,7 @@ async function backredirects(_req, res) {
 
 async function cloners(_req, res) {
   const result = await supabaseFetch('security_clone_events?select=*&order=created_at.desc&limit=500');
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!result.ok) return sendJson(res, 200, { ok: true, data: [], groups: [], summary: { total: 0, high: 0, medium: 0, low: 0, lastEventAt: null } });
   const data = Array.isArray(result.data) ? result.data : [];
   const map = new Map();
@@ -679,7 +679,7 @@ async function saveBlacklist(entries) {
 
 async function blacklist(req, res) {
   const loaded = await loadBlacklist();
-  if (loaded.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
+  if (loaded.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
   if (!loaded.ok) return sendJson(res, 502, { error: 'Falha ao buscar blacklist.', detail: loaded.detail });
   if (req.method === 'GET') return sendJson(res, 200, { ok: true, entries: loaded.entries });
   if (req.method === 'POST') {
@@ -703,7 +703,7 @@ async function blacklist(req, res) {
     await auditAdmin(req, 'ip_unblocked', { ip });
     return sendJson(res, 200, { ok: true, entries: next });
   }
-  sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  sendJson(res, 405, { error: 'Método não permitido.' });
 }
 
 async function exportLeads(_req, res) {
@@ -726,11 +726,11 @@ async function exportLeads(_req, res) {
 }
 
 async function testIntegration(req, res) {
-  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido.' });
   const body = await readJson(req);
   const kind = String(body.kind || '').trim().toLowerCase();
   const current = await loadSettings();
-  if (!current.ok) return sendJson(res, 502, { error: 'Falha ao carregar configuracoes.' });
+  if (!current.ok) return sendJson(res, 502, { error: 'Falha ao carregar configurações.' });
   const settingsValue = current.value || {};
 
   if (kind === 'pixel') {
@@ -741,7 +741,7 @@ async function testIntegration(req, res) {
       tracking.googleTag ? 'Google' : ''
     ].filter(Boolean);
     if (!configured.length) return sendJson(res, 400, { error: 'Configure ao menos um Pixel ID antes do teste.' });
-    return sendJson(res, 200, { ok: true, message: `Tracking ativo: ${configured.join(', ')}. A configuracao publica foi validada.` });
+    return sendJson(res, 200, { ok: true, message: `Tracking ativo: ${configured.join(', ')}. A configuração pública foi validada.` });
   }
 
   if (kind === 'utmfy') {
@@ -761,7 +761,7 @@ async function testIntegration(req, res) {
       approvedDate: null,
       refundedAt: null,
       customer: { name: 'Teste Admin GTA', email: `teste.${Date.now()}@local.dev`, phone: null, document: null, country: 'BR', ip: clientIp(req) },
-      products: [{ id: 'gta_admin_test', name: config.productName || 'Promocao GTA VI', planId: null, planName: null, quantity: 1, priceInCents: 100 }],
+      products: [{ id: 'gta_admin_test', name: config.productName || 'Promoção GTA VI', planId: null, planName: null, quantity: 1, priceInCents: 100 }],
       trackingParameters: { src: 'admin_test', sck: null, utm_source: 'admin_test', utm_campaign: 'utmfy_test', utm_medium: 'dashboard', utm_content: null, utm_term: null },
       commission: { totalPriceInCents: 100, gatewayFeeInCents: 0, userCommissionInCents: 100, currency: 'BRL' },
       isTest: true
@@ -789,14 +789,14 @@ async function testIntegration(req, res) {
     }
   }
 
-  return sendJson(res, 400, { error: 'Integracao desconhecida.' });
+  return sendJson(res, 400, { error: 'Integração desconhecida.' });
 }
 
 async function auditLogs(req, res) {
-  if (req.method !== 'GET') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+  if (req.method !== 'GET') return sendJson(res, 405, { error: 'Método não permitido.' });
   const result = await listAdminAudit(req.query?.limit);
-  if (result.missing) return sendJson(res, 500, { error: 'Supabase nao configurado.' });
-  if (!result.ok) return sendJson(res, 200, { ok: true, data: [], warning: 'Tabela de auditoria ainda nao criada.' });
+  if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
+  if (!result.ok) return sendJson(res, 200, { ok: true, data: [], warning: 'Tabela de auditoria ainda não criada.' });
   return sendJson(res, 200, { ok: true, data: Array.isArray(result.data) ? result.data : [] });
 }
 
@@ -812,7 +812,7 @@ export default async function handler(req, res) {
   const route = routeFromReq(req);
 
   if (route === 'login') {
-    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido.' });
     const rate = adminLoginRateState(req);
     if (!rate.allowed) {
       res.setHeader('Retry-After', String(rate.retryAfter));
@@ -821,7 +821,7 @@ export default async function handler(req, res) {
     const body = await readJson(req);
     if (!verifyAdminPassword(body.password || '')) {
       recordAdminLoginFailure(req);
-      return sendJson(res, 401, { error: 'Senha invalida.' });
+      return sendJson(res, 401, { error: 'Senha inválida.' });
     }
     clearAdminLoginFailures(req);
     issueAdminCookie(req, res);
@@ -832,7 +832,7 @@ export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return;
 
   if (route === 'logout') {
-    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
+    if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido.' });
     clearAdminCookie(res);
     await auditAdmin(req, 'admin_logout');
     return sendJson(res, 200, { ok: true });
@@ -852,5 +852,5 @@ export default async function handler(req, res) {
   if (route === 'leads-export') return exportLeads(req, res);
   if (route === 'test-integration') return testIntegration(req, res);
   if (route === 'audit-logs') return auditLogs(req, res);
-  sendJson(res, 404, { error: 'Rota admin nao encontrada.' });
+  sendJson(res, 404, { error: 'Rota admin não encontrada.' });
 }
