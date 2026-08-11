@@ -106,7 +106,7 @@ const gtaOffers = [
     tag: 'Standard',
     title: 'GTA VI Standard',
     price: 207.98,
-    oldPrice: 349.9,
+    oldPrice: 449.9,
     badge: 'Jogo base',
     details: [
       'Edição digital para PS5 ou Xbox Series X|S',
@@ -119,7 +119,7 @@ const gtaOffers = [
     tag: 'Ultimate',
     title: 'GTA VI Ultimate',
     price: 289.3,
-    oldPrice: 499.9,
+    oldPrice: 649.9,
     badge: 'Mais completa',
     details: [
       'Todo o conteúdo da Edição Standard',
@@ -133,7 +133,7 @@ const gtaOffers = [
     title: 'GTA VI Acesso Antecipado',
     description: 'Tudo o que vem na Edição Ultimate, com acesso promocional planejado para começar sete dias antes da liberação geral.',
     price: 359.9,
-    oldPrice: 599.9,
+    oldPriceLabel: 'Sem preço estimado',
     badge: 'Liberado para você',
     exclusive: true,
     featured: true,
@@ -784,7 +784,7 @@ function offerCardMarkup(offer) {
         </ul>
       </div>
       <div class="offer-price-rs">
-        <span>${formatMoney(offer.oldPrice)}</span>
+        <span class="${offer.oldPrice ? '' : 'offer-price-label-rs'}">${offer.oldPrice ? formatMoney(offer.oldPrice) : escapeHtml(offer.oldPriceLabel || '')}</span>
         <strong>${formatMoney(offer.price)}</strong>
       </div>
       <button class="offer-select-rs" type="button" data-offer-select="${offer.id}">

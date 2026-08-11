@@ -159,6 +159,13 @@
   order: 2;
 }
 
+.offer-screen-rs .offer-price-rs .offer-price-label-rs {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
 .offer-screen-rs .offer-price-rs strong {
   font-size: clamp(2.2rem, 9vw, 3rem);
 }
