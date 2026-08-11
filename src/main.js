@@ -7,26 +7,26 @@ import './analysis-premium.css';
 
 const quiz = [
   {
-    eyebrow: 'Experiencia',
-    question: 'Voce ja jogou GTA V?',
+    eyebrow: 'Experiência',
+    question: 'Você já jogou GTA V?',
     options: [
       { icon: 'V', label: 'Sim, joguei bastante', points: 2 },
       { icon: 'GT', label: 'Joguei um pouco', points: 1 },
-      { icon: '01', label: 'Ainda nao joguei', points: 0 },
+      { icon: '01', label: 'Ainda não joguei', points: 0 },
     ],
   },
   {
     eyebrow: 'GTA Online',
-    question: 'Voce ja entrou no GTA Online?',
+    question: 'Você já entrou no GTA Online?',
     options: [
-      { icon: 'ON', label: 'Sim, jogo ou ja joguei online', points: 2 },
-      { icon: 'RP', label: 'Conheco, mas joguei pouco', points: 1 },
+      { icon: 'ON', label: 'Sim, jogo ou já joguei online', points: 2 },
+      { icon: 'RP', label: 'Conheço, mas joguei pouco', points: 1 },
       { icon: 'OFF', label: 'Nunca joguei online', points: 0 },
     ],
   },
   {
     eyebrow: 'Expectativa',
-    question: 'Qual e sua expectativa para GTA VI?',
+    question: 'Qual é sua expectativa para GTA VI?',
     options: [
       { icon: 'VI', label: 'Muito alta, estou acompanhando tudo', points: 2 },
       { icon: 'VIP', label: 'Alta, quero ver as novidades', points: 1 },
@@ -35,16 +35,16 @@ const quiz = [
   },
   {
     eyebrow: 'Interesse',
-    question: 'O que mais chama sua atencao em GTA VI?',
+    question: 'O que mais chama sua atenção em GTA VI?',
     options: [
-      { icon: 'ST', label: 'Historia, Lucia e Jason', points: 2 },
-      { icon: 'MAP', label: 'Mundo aberto e exploracao', points: 2 },
+      { icon: 'ST', label: 'História, Lucia e Jason', points: 2 },
+      { icon: 'MAP', label: 'Mundo aberto e exploração', points: 2 },
       { icon: 'ON', label: 'Modo online e novidades futuras', points: 1 },
     ],
   },
   {
     eyebrow: 'Plataforma',
-    question: 'Em qual plataforma voce pretende jogar primeiro?',
+    question: 'Em qual plataforma você pretende jogar primeiro?',
     options: [
       { icon: 'PS', label: 'PlayStation', points: 2 },
       { icon: 'XB', label: 'Xbox', points: 2 },
@@ -53,47 +53,38 @@ const quiz = [
   },
   {
     eyebrow: 'Perfil',
-    question: 'Qual estilo de jogador combina mais com voce?',
+    question: 'Qual estilo de jogador combina mais com você?',
     options: [
-      { icon: 'EXP', label: 'Exploro mapa, missoes e detalhes', points: 2 },
-      { icon: 'ACT', label: 'Gosto de acao, carros e desafios', points: 2 },
-      { icon: 'CAS', label: 'Jogo casualmente quando da', points: 1 },
+      { icon: 'EXP', label: 'Exploro mapa, missões e detalhes', points: 2 },
+      { icon: 'ACT', label: 'Gosto de ação, carros e desafios', points: 2 },
+      { icon: 'CAS', label: 'Jogo casualmente quando dá', points: 1 },
     ],
   },
   {
-    eyebrow: 'Frequencia',
-    question: 'Com que frequencia voce joga games de mundo aberto?',
+    eyebrow: 'Frequência',
+    question: 'Com que frequência você joga games de mundo aberto?',
     options: [
       { icon: '7D', label: 'Toda semana', points: 2 },
-      { icon: '30', label: 'Algumas vezes por mes', points: 1 },
+      { icon: '30', label: 'Algumas vezes por mês', points: 1 },
       { icon: 'LOW', label: 'Raramente', points: 0 },
     ],
   },
   {
     eyebrow: 'Rockstar',
-    question: 'Voce costuma acompanhar lancamentos da Rockstar?',
+    question: 'Você costuma acompanhar lançamentos da Rockstar?',
     options: [
-      { icon: 'R*', label: 'Sim, acompanho noticias e trailers', points: 2 },
+      { icon: 'R*', label: 'Sim, acompanho notícias e trailers', points: 2 },
       { icon: 'VI', label: 'Acompanho principalmente GTA VI', points: 1 },
-      { icon: 'NO', label: 'Nao acompanho muito', points: 0 },
+      { icon: 'NO', label: 'Não acompanho muito', points: 0 },
     ],
   },
   {
-    eyebrow: 'Promocao',
-    question: 'Se for selecionado, voce participaria da proxima etapa?',
+    eyebrow: 'Promoção',
+    question: 'Se for selecionado, você participaria da próxima etapa?',
     options: [
       { icon: 'OK', label: 'Sim, quero participar', points: 2 },
       { icon: 'INFO', label: 'Sim, quero ver os detalhes', points: 1 },
       { icon: 'WAIT', label: 'Talvez depois', points: 0 },
-    ],
-  },
-  {
-    eyebrow: 'Final',
-    question: 'Voce quer receber novidades e acesso a proxima fase?',
-    options: [
-      { icon: 'VIP', label: 'Quero receber a proxima etapa', points: 2 },
-      { icon: 'NEWS', label: 'Quero receber novidades primeiro', points: 1 },
-      { icon: 'LATER', label: 'Prefiro decidir depois', points: 0 },
     ],
   },
 ];
@@ -399,6 +390,7 @@ function dataScoreMarkup(summary = {}) {
 }
 
 function dataFormMarkup(personal) {
+  const phoneValue = String(personal.phone || '').replace(/\D/g, '').slice(0, 11);
   return `
     <form class="data-form" id="leadForm" data-clarity-mask="true">
       <div class="data-form-grid-rs">
@@ -411,8 +403,8 @@ function dataFormMarkup(personal) {
           <input id="leadEmail" name="email" value="${escapeAttr(personal.email || '')}" type="email" autocomplete="email" required />
         </label>
         <label class="field-rs data-field-wide-rs">
-          <span>WhatsApp</span>
-          <input id="leadPhone" name="phone" value="${escapeAttr(personal.phone || '')}" inputmode="tel" autocomplete="tel" required />
+          <span>Número</span>
+          <input id="leadPhone" name="phone" value="${escapeAttr(phoneValue)}" type="tel" inputmode="numeric" autocomplete="tel-national" minlength="10" maxlength="11" pattern="[0-9]{10,11}" title="Digite um telefone com DDD, usando 10 ou 11 números" required />
         </label>
       </div>
       <button class="data-submit" type="submit">Continuar</button>
@@ -581,7 +573,7 @@ function renderQuestion(skipTransition = false) {
       <h2>${item.question}</h2>
       <div class="answers">
         ${item.options.map((option, index) => `
-          <button class="answer" data-index="${index}">
+          <button class="answer" data-index="${index}" type="button">
             <span class="answer__icon" aria-hidden="true">${answerMark()}</span>
             <span class="answer__text">${optionLabel(option)}</span>
           </button>
@@ -656,6 +648,10 @@ async function finishQuiz() {
 function bindDataForm() {
   const form = document.querySelector('#leadForm');
   const status = document.querySelector('#leadStatus');
+  const phoneInput = document.querySelector('#leadPhone');
+  phoneInput?.addEventListener('input', () => {
+    phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 11);
+  });
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
     status.className = 'form-status-rs';
@@ -664,12 +660,19 @@ function bindDataForm() {
     const personal = {
       name: document.querySelector('#leadName')?.value.trim() || '',
       email: document.querySelector('#leadEmail')?.value.trim() || '',
-      phone: document.querySelector('#leadPhone')?.value.trim() || '',
+      phone: phoneInput?.value.replace(/\D/g, '').slice(0, 11) || '',
     };
     if (!personal.name || !personal.email || !personal.phone) {
       trackClarityEvent('personal_submit_invalid', { stage: 'dados' });
       status.classList.add('is-error');
       status.textContent = 'Preencha nome, email e telefone para continuar.';
+      return;
+    }
+    if (!/^\d{10,11}$/.test(personal.phone)) {
+      trackClarityEvent('personal_submit_invalid', { stage: 'dados', field: 'phone' });
+      status.classList.add('is-error');
+      status.textContent = 'Digite um número de telefone com DDD (10 ou 11 números).';
+      phoneInput?.focus();
       return;
     }
     writeJson(storageKeys.personal, personal);
