@@ -83,12 +83,9 @@
 }
 
 .processing-screen .processing-stage-rs--unified {
-  align-items: center;
-  display: grid;
-  gap: clamp(1.4rem, 4vw, 3.5rem);
-  grid-template-columns: minmax(15rem, 20rem) minmax(18rem, 1fr);
+  display: block;
   margin: 0 auto;
-  max-width: 52rem;
+  max-width: 20rem;
 }
 
 .processing-screen .processing-video-shell-rs {
@@ -121,82 +118,36 @@
   scale: 0.82;
 }
 
-.processing-video-rs.is-playing .processing-video-caption-rs small {
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.processing-video-timeline-rs {
-  background: rgba(255, 255, 255, 0.18);
+.processing-analysis-overlay-rs {
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.94) 58%);
   bottom: 0;
-  height: 3px;
   left: 0;
-  overflow: hidden;
+  padding: 4.5rem 0.9rem 0.85rem;
   position: absolute;
   right: 0;
-  z-index: 5;
+  z-index: 6;
 }
 
-.processing-video-timeline-rs span {
-  background: #ffd629;
+.processing-analysis-overlay-rs > strong {
+  color: #fff;
   display: block;
-  height: 100%;
-  width: 0;
-}
-
-.processing-video-rs.is-playing .processing-video-timeline-rs span {
-  animation: processingVslTimeline 8.5s linear forwards;
-}
-
-.processing-analysis-rs {
-  align-items: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 25rem;
-  text-align: center;
-}
-
-.processing-analysis-motion-rs {
-  aspect-ratio: 1;
-  margin-bottom: 0.7rem;
-  width: clamp(8.5rem, 16vw, 11rem);
-}
-
-.processing-analysis-label-rs {
-  color: #ffd629;
   font-family: "Barlow Condensed", Arial, sans-serif;
   font-size: 0.72rem;
   font-weight: 850;
-  letter-spacing: 0.13em;
-  margin: 0;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
   text-transform: uppercase;
-}
-
-.processing-analysis-rs > strong {
-  color: #fff;
-  font-family: "Barlow Condensed", Impact, sans-serif;
-  font-size: clamp(1.65rem, 3vw, 2.25rem);
-  font-weight: 900;
-  line-height: 1;
-  margin-top: 0.5rem;
-  max-width: 18ch;
-  text-transform: uppercase;
-}
-
-.processing-analysis-rs > p:not(.processing-analysis-label-rs) {
-  color: rgba(255, 255, 255, 0.48);
-  font-size: 0.86rem;
-  line-height: 1.45;
-  margin: 0.65rem 0 0;
-  max-width: 26rem;
+  white-space: nowrap;
 }
 
 .processing-profile-progress-rs {
-  background: rgba(255, 255, 255, 0.11);
+  background: rgba(255, 255, 255, 0.24);
   border-radius: 999px;
-  height: 3px;
-  margin-top: 1.2rem;
-  max-width: 19rem;
+  height: 4px;
+  margin-top: 0.5rem;
   overflow: hidden;
   width: 100%;
 }
@@ -207,13 +158,7 @@
   display: block;
   height: 100%;
   width: 0;
-}
-
-.processing-analysis-rs output {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.72rem;
-  font-weight: 750;
-  margin-top: 0.5rem;
+  transition: width 90ms linear;
 }
 
 .processing-screen .processing-footer-rs {
@@ -225,10 +170,6 @@
   0% { filter: saturate(0.82) brightness(0.8); transform: scale(1.04); }
   45% { filter: saturate(1) brightness(0.92); transform: scale(1.1) translateY(-1.5%); }
   100% { filter: saturate(1.08) brightness(0.86); transform: scale(1.07) translateY(1%); }
-}
-
-@keyframes processingVslTimeline {
-  to { width: 100%; }
 }
 
 @media (max-width: 720px) {
@@ -258,8 +199,7 @@
   }
 
   .processing-screen .processing-stage-rs--unified {
-    gap: 1rem;
-    grid-template-columns: 1fr;
+    max-width: 16rem;
   }
 
   .processing-screen .processing-video-shell-rs {
@@ -268,50 +208,11 @@
   }
 
   .processing-screen .processing-video-rs {
-    max-height: 34svh;
+    max-height: 52svh;
   }
 
-  .processing-analysis-rs {
-    align-items: center;
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 1.1rem;
-    display: grid;
-    gap: 0.25rem 0.8rem;
-    grid-template-columns: 5.7rem minmax(0, 1fr);
-    min-height: 0;
-    padding: 0.8rem;
-    text-align: left;
-  }
-
-  .processing-analysis-motion-rs {
-    grid-row: 1 / 6;
-    margin: 0;
-    width: 5.7rem;
-  }
-
-  .processing-analysis-label-rs {
-    align-self: end;
-  }
-
-  .processing-analysis-rs > strong {
-    font-size: 1.28rem;
-    margin-top: 0.1rem;
-  }
-
-  .processing-analysis-rs > p:not(.processing-analysis-label-rs) {
-    font-size: 0.76rem;
-    line-height: 1.35;
-    margin-top: 0.1rem;
-  }
-
-  .processing-profile-progress-rs {
-    margin-top: 0.35rem;
-    max-width: none;
-  }
-
-  .processing-analysis-rs output {
-    margin-top: 0.1rem;
+  .processing-analysis-overlay-rs {
+    padding: 4rem 0.75rem 0.72rem;
   }
 }
 

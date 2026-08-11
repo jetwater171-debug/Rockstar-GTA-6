@@ -154,7 +154,6 @@ let adminSelectedLeadSession = null;
 let adminLeadPagination = { offset: 0, limit: 200, hasMore: false, total: null };
 let adminLeadFilters = { q: '', from: '', to: '' };
 let siteConfig = { tracking: {}, features: {} };
-let processingAnimationCleanup = null;
 let processingRaf = 0;
 let processingStarted = false;
 
@@ -644,22 +643,12 @@ function renderProcessingPage() {
                 <button class="processing-play-rs" type="button" aria-label="Assistir ao vídeo">
                   <span></span>
                 </button>
-                <div class="processing-video-caption-rs">
-                  <small>Comunicado da promoção</small>
-                  <b>Toque para assistir</b>
+                <div class="processing-analysis-overlay-rs" aria-live="polite">
+                  <strong id="processingStatus">Toque para iniciar a análise</strong>
+                  <div class="processing-profile-progress-rs" id="processingProfileProgress" role="progressbar" aria-label="Progresso da verificação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
                 </div>
-                <div class="processing-video-timeline-rs" aria-hidden="true"><span></span></div>
               </div>
             </div>
-
-            <aside class="processing-analysis-rs" aria-live="polite">
-              <div class="processing-analysis-motion-rs" id="processingAnalysisMotion" aria-hidden="true"></div>
-              <p class="processing-analysis-label-rs">Verificação do perfil</p>
-              <strong id="processingStatus">Aguardando o vídeo</strong>
-              <p id="processingAnalysisCopy">A análise começa junto com o comunicado.</p>
-              <div class="processing-profile-progress-rs" id="processingProfileProgress" role="progressbar" aria-label="Progresso da verificação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
-              <output id="processingPercent">0%</output>
-            </aside>
           </div>
         </article>
         <footer class="processing-footer-rs">Projeto independente. Não afiliado à Rockstar Games.</footer>
@@ -668,32 +657,15 @@ function renderProcessingPage() {
   `;
   initSession();
   trackPage('processando');
-  mountProcessingAnimation();
   bindProcessingPage();
-}
-
-async function mountProcessingAnimation() {
-  const target = document.querySelector('#processingAnalysisMotion');
-  if (!target) return;
-  try {
-    const { mountAnalysisResultPlayer } = await import('./remotion/AnalysisResultPlayer.jsx');
-    if (routeName() !== 'processando' || !target.isConnected) return;
-    processingAnimationCleanup = mountAnalysisResultPlayer(target, { autoStart: false, durationMs: 8500 });
-    if (processingStarted) processingAnimationCleanup.start?.();
-  } catch (error) {
-    console.error('Não foi possível iniciar a animação da análise.', error);
-  }
 }
 
 function bindProcessingPage() {
   const playButton = document.querySelector('.processing-play-rs');
   const video = document.querySelector('.processing-video-rs');
-  const caption = document.querySelector('.processing-video-caption-rs b');
   const status = document.querySelector('#processingStatus');
-  const analysisCopy = document.querySelector('#processingAnalysisCopy');
   const progress = document.querySelector('#processingProfileProgress');
   const progressFill = progress?.querySelector('span');
-  const percent = document.querySelector('#processingPercent');
   let completed = false;
   const goOffers = async (event = 'vsl_completed') => {
     if (completed || routeName() !== 'processando') return;
@@ -716,9 +688,6 @@ function bindProcessingPage() {
     playButton.setAttribute('aria-label', 'Vídeo em andamento');
     playButton.disabled = true;
     video?.classList.add('is-playing');
-    processingAnimationCleanup?.start?.();
-    if (caption) caption.textContent = 'Análise em andamento';
-    if (analysisCopy) analysisCopy.textContent = 'Estamos comparando suas respostas com os critérios da promoção.';
 
     const stages = [
       { at: 0, message: 'Validando suas respostas' },
@@ -735,7 +704,6 @@ function bindProcessingPage() {
       const value = Math.round(ratio * 100);
       const currentStage = [...stages].reverse().find((stage) => ratio >= stage.at) || stages[0];
       if (status) status.textContent = currentStage.message;
-      if (percent) percent.textContent = `${value}%`;
       if (progressFill) progressFill.style.width = `${value}%`;
       progress?.setAttribute('aria-valuenow', String(value));
       if (ratio < 1) {
@@ -743,8 +711,7 @@ function bindProcessingPage() {
         return;
       }
       video?.classList.add('is-complete');
-      if (caption) caption.textContent = 'Perfil aprovado';
-      if (analysisCopy) analysisCopy.textContent = 'Verificação concluída. Liberando sua seleção.';
+      if (status) status.textContent = 'Perfil adequado para a promoção';
       goOffers('vsl_completed');
     };
     processingRaf = window.requestAnimationFrame(tick);
@@ -755,8 +722,6 @@ function clearProcessingExperience() {
   if (processingRaf) window.cancelAnimationFrame(processingRaf);
   processingRaf = 0;
   processingStarted = false;
-  if (processingAnimationCleanup) processingAnimationCleanup();
-  processingAnimationCleanup = null;
 }
 
 function renderOffersPage() {
