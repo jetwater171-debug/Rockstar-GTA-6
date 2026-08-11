@@ -123,7 +123,6 @@ const gtaOffers = [
     price: 289.3,
     oldPrice: 499.9,
     badge: 'Mais completa',
-    featured: true,
     details: [
       'Todo o conteúdo da Edição Standard',
       'Veículos exclusivos, como Grotti Cheetah e Vapid Dominator Buggy',
@@ -132,17 +131,19 @@ const gtaOffers = [
   },
   {
     id: 'early',
-    tag: 'Pré-venda',
-    title: 'GTA VI Ultimate + Pré-venda',
-    description: 'A Edição Ultimate com os benefícios oficiais reservados para a pré-venda digital do jogo.',
+    tag: '7 dias antes',
+    title: 'GTA VI Acesso Antecipado',
+    description: 'Tudo o que vem na Edição Ultimate, com acesso promocional planejado para começar sete dias antes da liberação geral.',
     price: 359.9,
     oldPrice: 599.9,
-    badge: 'Pacote completo',
+    badge: 'Liberado para você',
+    exclusive: true,
+    featured: true,
     premium: true,
     details: [
       'Todo o conteúdo da Edição Ultimate',
-      'Vintage Vice City Pack: carro, garagem, roupas e penteados',
-      'Pré-carregamento em 12 de novembro e 1 mês de GTA+',
+      'Mesmos veículos, armas, roupas, lojas e propriedades adicionais',
+      'Acesso promocional planejado para 7 dias antes do lançamento geral*',
     ],
   },
 ];
@@ -752,7 +753,7 @@ function renderOffersPage() {
 
         <aside class="offer-facts-note-rs" aria-label="Informação sobre GTA Online">
           <strong>GTA Online e GTA+</strong>
-          <p>GTA VI foi anunciado como uma experiência para um jogador. Até agora, nenhum modo online de GTA VI foi confirmado. O mês de GTA+ da pré-venda é um benefício separado, ligado ao GTA Online atual.</p>
+          <p>GTA VI foi anunciado como uma experiência para um jogador e nenhum modo online de GTA VI foi confirmado. *O acesso antecipado é uma condição promocional desta campanha, sujeita à confirmação e disponibilidade; não é uma edição oficial anunciada pela Rockstar.</p>
         </aside>
 
         <p class="offer-disclaimer-rs">Projeto independente e não afiliado à Rockstar Games. Valores e disponibilidade fazem parte desta experiência promocional.</p>
@@ -782,6 +783,7 @@ function offerCardMarkup(offer) {
         <span>${escapeHtml(offer.badge)}</span>
         <b>${escapeHtml(offer.tag)}</b>
       </div>
+      ${offer.exclusive ? '<div class="offer-exclusive-rs">Oferta especial liberada para este perfil</div>' : ''}
       <div class="offer-card-copy-rs">
         <h2>${escapeHtml(offer.title)}</h2>
         <p>${escapeHtml(offer.description)}</p>

@@ -38,8 +38,21 @@
 
 .offer-screen-rs .offer-card-rs--premium {
   background:
-    radial-gradient(circle at 100% 0%, rgba(255, 45, 236, 0.1), transparent 44%),
+    radial-gradient(circle at 100% 0%, rgba(255, 45, 236, 0.18), transparent 48%),
+    radial-gradient(circle at 0% 0%, rgba(255, 214, 41, 0.14), transparent 46%),
     #0c0c0c;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 214, 41, 0.28),
+    0 0 2.5rem rgba(255, 214, 41, 0.12),
+    0 1.4rem 3.4rem rgba(0, 0, 0, 0.46);
+}
+
+.offer-screen-rs .offer-card-rs--premium::after {
+  background: linear-gradient(90deg, #ffd629, #ff35e7);
+  content: "";
+  height: 0.25rem;
+  inset: 0 0 auto;
+  position: absolute;
 }
 
 .offer-screen-rs .offer-card-top-rs {
@@ -65,6 +78,37 @@
   min-height: 0;
   order: 1;
   padding: 0;
+}
+
+.offer-exclusive-rs {
+  align-items: center;
+  background: linear-gradient(90deg, #ffd629, #ffdf55);
+  border-radius: 0.7rem;
+  color: #050505;
+  display: flex;
+  font-size: 0.7rem;
+  font-weight: 950;
+  justify-content: center;
+  letter-spacing: 0.055em;
+  min-height: 2.15rem;
+  order: 1;
+  padding: 0.5rem 0.75rem;
+  position: relative;
+  text-align: center;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.offer-exclusive-rs + .offer-card-copy-rs {
+  order: 2;
+}
+
+.offer-exclusive-rs ~ .offer-price-rs {
+  order: 3;
+}
+
+.offer-exclusive-rs ~ .offer-select-rs {
+  order: 4;
 }
 
 .offer-screen-rs .offer-card-copy-rs h2 {
@@ -161,6 +205,10 @@
 
   .offer-screen-rs .offer-card-rs {
     min-height: 29rem;
+  }
+
+  .offer-screen-rs .offer-card-rs--premium {
+    transform: translateY(-0.45rem);
   }
 
   .offer-screen-rs .offer-card-copy-rs h2 {
