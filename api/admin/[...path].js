@@ -289,16 +289,10 @@ async function loadSettings() {
 }
 
 async function saveSettingsValue(next) {
-  const patch = await supabaseFetch('app_settings?key=eq.admin_config', {
-    method: 'PATCH',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({ value: next, updated_at: new Date().toISOString() })
-  });
-  if (patch.ok) return patch;
-  return supabaseFetch('app_settings', {
+  return supabaseFetch('app_settings?on_conflict=key', {
     method: 'POST',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({ key: 'admin_config', value: next })
+    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify({ key: 'admin_config', value: next, updated_at: new Date().toISOString() })
   });
 }
 
