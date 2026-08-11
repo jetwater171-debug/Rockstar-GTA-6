@@ -2072,6 +2072,27 @@ body.is-home-screen .experience .hero.screen .topbar__logo {
   transform: translateX(-50%);
 }
 
+body.is-home-screen .experience .hero.screen .topbar__disclaimer {
+  color: rgba(255, 255, 255, 0.62);
+  font-family: "Barlow Condensed", Arial, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  position: absolute;
+  right: clamp(1rem, 3vw, 2.5rem);
+  text-transform: uppercase;
+  top: clamp(1.55rem, 3svh, 2rem);
+}
+
+@media (max-width: 780px) {
+  body.is-home-screen .experience .hero.screen .topbar__disclaimer {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    right: 0.8rem;
+    top: 1.1rem;
+  }
+}
+
 body.is-home-screen .hero__invite,
 body.is-home-screen .hero__actions {
   justify-content: center;

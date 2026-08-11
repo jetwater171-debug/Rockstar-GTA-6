@@ -229,6 +229,7 @@ function renderExperience() {
 
         <header class="topbar">
           <div class="topbar__logo">${brandMark('symbol')}</div>
+          <span class="topbar__disclaimer">Projeto não oficial</span>
         </header>
 
         <div class="hero__content">
@@ -255,9 +256,6 @@ function renderExperience() {
           </div>
         </div>
 
-        <footer class="legal-note">
-          Prototipo visual nao oficial. GTA, Rockstar Games e marcas relacionadas pertencem aos respectivos titulares.
-        </footer>
       </section>
 
       <section class="quiz-screen screen" id="quiz" aria-label="Quiz GTA VI">
