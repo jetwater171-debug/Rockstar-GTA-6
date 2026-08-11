@@ -5,6 +5,7 @@ import './lead-flow.css';
 import './desktop-polish.css';
 import './processing-unified.css';
 import './offers-clean.css';
+import './checkout-clean.css';
 
 const quiz = [
   {
@@ -95,6 +96,8 @@ const storageKeys = {
   quiz: 'gta6_quiz_summary',
   personal: 'gta6_personal_data',
   utm: 'gta6_utm_payload',
+  selectedOffer: 'gta6_selected_offer',
+  sandboxOrder: 'gta6_sandbox_order',
 };
 
 const gatewayKeys = ['sunize', 'paradise', 'atomopay', 'bravopay'];
@@ -162,6 +165,11 @@ let adminLeadFilters = { q: '', from: '', to: '' };
 let siteConfig = { tracking: {}, features: {} };
 let processingRaf = 0;
 let processingStarted = false;
+let checkoutSubmitting = false;
+let checkoutOfferFallbackId = '';
+let transientSessionId = '';
+let checkoutRequestController = null;
+let checkoutRenderToken = 0;
 
 const app = document.querySelector('#app');
 
@@ -178,6 +186,12 @@ function setDocumentScreenMode(mode) {
 function render() {
   clearProcessingExperience();
   const route = routeName();
+  if (route !== 'checkout') {
+    checkoutRenderToken += 1;
+    checkoutRequestController?.abort();
+    checkoutRequestController = null;
+    checkoutSubmitting = false;
+  }
   if (route === 'analise') {
     const personal = readJson(storageKeys.personal, {});
     if (!personal.name || !personal.email || !personal.phone) {
@@ -204,6 +218,11 @@ function render() {
   if (route === 'ofertas') {
     setDocumentScreenMode(null);
     renderOffersPage();
+    return;
+  }
+  if (route === 'checkout') {
+    setDocumentScreenMode(null);
+    renderCheckoutPage();
     return;
   }
   if (route === 'admin') {
@@ -796,17 +815,19 @@ function offerCardMarkup(offer) {
 
 function bindOffersPage() {
   document.querySelectorAll('[data-offer-select]').forEach((button) => {
-    button.addEventListener('click', async () => {
+    button.addEventListener('click', () => {
       const offer = gtaOffers.find((item) => item.id === button.dataset.offerSelect);
-      if (!offer) return;
-      localStorage.setItem('gta6_selected_offer', JSON.stringify(offer));
+      if (!offer || button.disabled) return;
+      checkoutOfferFallbackId = offer.id;
+      writeJson(storageKeys.selectedOffer, { id: offer.id });
+      removeSessionJson(storageKeys.sandboxOrder);
       document.querySelectorAll('[data-offer-card]').forEach((card) => card.classList.remove('is-selected'));
       button.closest('[data-offer-card]')?.classList.add('is-selected');
       document.querySelectorAll('[data-offer-select]').forEach((item) => {
         item.textContent = 'Escolher';
-        item.disabled = false;
+        item.disabled = true;
       });
-      button.textContent = 'Selecionado';
+      button.textContent = 'Abrindo checkout...';
       button.disabled = true;
       trackClarityEvent('offer_selected', {
         stage: 'ofertas',
@@ -814,15 +835,559 @@ function bindOffersPage() {
         selected_offer_title: offer.title,
         selected_offer_price: offer.price,
       });
-      await trackLead({
+      void trackLead({
         stage: 'ofertas',
         event: 'offer_selected',
-        offer,
+        offer: { id: offer.id, title: offer.title, price: offer.price },
         personal: readJson(storageKeys.personal, {}),
         quiz: readJson(storageKeys.quiz, null),
       });
+      window.setTimeout(() => navigateTo('/checkout'), 120);
     });
   });
+}
+
+function selectedCheckoutOffer() {
+  const saved = readJson(storageKeys.selectedOffer, null);
+  const offerId = saved?.id || checkoutOfferFallbackId;
+  return gtaOffers.find((offer) => offer.id === offerId) || null;
+}
+
+function checkoutTopbarMarkup() {
+  return `
+    <header class="checkout-topbar-rs">
+      <div class="checkout-topbar-inner-rs">
+        <button class="checkout-back-rs" type="button" data-checkout-back aria-label="Voltar para as ofertas">
+          <span>Voltar</span>
+        </button>
+        <div class="checkout-brand-rs">${brandMark('quiz')}</div>
+        <span class="checkout-mode-rs"><i aria-hidden="true"></i> Sandbox</span>
+      </div>
+    </header>
+  `;
+}
+
+function checkoutSummaryMarkup(offer) {
+  const earlyNotice = offer.id === 'early'
+    ? '<p class="checkout-offer-detail-rs">Benefício promocional planejado, ainda não oficial.</p>'
+    : '';
+  return `
+    <aside class="checkout-summary-rs" aria-label="Resumo da simulação">
+      <p class="checkout-summary-title-rs">Resumo</p>
+      <div class="checkout-offer-name-rs">
+        <span>${escapeHtml(offer.tag)}</span>
+        <h2 data-checkout-offer-title>${escapeHtml(offer.title)}</h2>
+        ${earlyNotice}
+      </div>
+      <ul class="checkout-feature-list-rs">
+        ${(offer.details || []).map((detail) => `<li><b aria-hidden="true">R*</b><span>${escapeHtml(detail)}</span></li>`).join('')}
+      </ul>
+      <div class="checkout-totals-rs">
+        <div><span>Subtotal</span><strong>${formatMoney(offer.price)}</strong></div>
+        <div><span>Taxas</span><strong>R$ 0,00</strong></div>
+        <div class="checkout-total-rs"><span>Total simulado</span><strong data-checkout-offer-price>${formatMoney(offer.price)}</strong></div>
+      </div>
+      <p class="checkout-microcopy-rs">Valor único demonstrativo. Nenhum pagamento será processado.</p>
+      <button class="checkout-change-rs" type="button" data-checkout-change>Trocar edição</button>
+    </aside>
+  `;
+}
+
+function checkoutFormMarkup(offer, personal = {}) {
+  const phone = String(personal.phone || '').replace(/\D/g, '').slice(0, 11);
+  return `
+    <section class="checkout-grid-rs" id="checkoutStage" data-checkout-result>
+      <article class="checkout-card-rs">
+        <div class="checkout-section-head-rs">
+          <span>01</span>
+          <div>
+            <h2>Seus dados</h2>
+            <p>Confira as informações usadas nesta demonstração.</p>
+          </div>
+        </div>
+        <form class="checkout-form-rs" id="checkoutForm" data-clarity-mask="true" novalidate>
+          <div class="checkout-fields-rs">
+            <label class="checkout-field-rs" for="checkoutName">
+              <span class="checkout-label-rs">Nome completo</span>
+              <input class="checkout-input-rs" id="checkoutName" name="name" value="${escapeAttr(personal.name || '')}" autocomplete="name" aria-describedby="checkoutNameError" required />
+              <small class="checkout-error-rs" id="checkoutNameError"></small>
+            </label>
+            <label class="checkout-field-rs" for="checkoutEmail">
+              <span class="checkout-label-rs">E-mail</span>
+              <input class="checkout-input-rs" id="checkoutEmail" name="email" value="${escapeAttr(personal.email || '')}" type="email" inputmode="email" autocomplete="email" aria-describedby="checkoutEmailError" required />
+              <small class="checkout-error-rs" id="checkoutEmailError"></small>
+            </label>
+            <label class="checkout-field-rs" for="checkoutPhone" data-span="full">
+              <span class="checkout-label-rs">Número</span>
+              <input class="checkout-input-rs" id="checkoutPhone" name="phone" value="${escapeAttr(phone)}" type="tel" inputmode="numeric" autocomplete="tel-national" minlength="10" maxlength="11" aria-describedby="checkoutPhoneError" required />
+              <small class="checkout-error-rs" id="checkoutPhoneError"></small>
+            </label>
+          </div>
+
+          <div class="checkout-section-head-rs checkout-section-head-rs--payment">
+            <span>02</span>
+            <div>
+              <h2>Pagamento</h2>
+              <p>Escolha disponível neste ambiente.</p>
+            </div>
+          </div>
+          <div class="checkout-method-rs" aria-label="Pix demonstrativo selecionado">
+            <span class="checkout-method-icon-rs" aria-hidden="true">PIX</span>
+            <span class="checkout-method-copy-rs"><strong>Pix demonstrativo</strong><span>Código de teste gerado na hora</span></span>
+          </div>
+
+          <div class="checkout-status-rs" id="checkoutStatus" role="status" aria-live="polite"></div>
+          <button class="checkout-submit-rs" type="submit" data-checkout-submit>
+            Gerar Pix demonstrativo de ${formatMoney(offer.price)}
+          </button>
+          <p class="checkout-microcopy-rs">A cobrança só existiria se um código Pix real fosse pago. Este ambiente não gera códigos pagáveis.</p>
+        </form>
+      </article>
+      ${checkoutSummaryMarkup(offer)}
+    </section>
+  `;
+}
+
+function renderCheckoutPage({ trackView = true } = {}) {
+  checkoutRequestController?.abort();
+  checkoutRequestController = null;
+  checkoutSubmitting = false;
+  const renderToken = ++checkoutRenderToken;
+  const offer = selectedCheckoutOffer();
+  const personal = readJson(storageKeys.personal, {});
+  const quizSummary = readJson(storageKeys.quiz, null);
+  app.innerHTML = `
+    <main class="checkout-screen-rs" data-page="checkout" data-checkout-mode="sandbox">
+      ${checkoutTopbarMarkup()}
+      <section class="checkout-shell-rs">
+        ${offer ? `
+          <header class="checkout-heading-rs">
+            <p class="checkout-kicker-rs">Checkout demonstrativo</p>
+            <h1>Revise e simule seu pedido</h1>
+            <p>Confirme a edição e gere uma prévia segura do fluxo via Pix.</p>
+          </header>
+          <div class="checkout-sandbox-banner-rs" role="note">
+            <div><strong>Ambiente de demonstração</strong><p>Nenhum Pix real será gerado e nenhum valor será cobrado.</p></div>
+          </div>
+          ${checkoutFormMarkup(offer, personal)}
+        ` : `
+          <article class="checkout-empty-rs">
+            <div class="checkout-brand-rs">${brandMark('quiz')}</div>
+            <p class="checkout-kicker-rs">Nenhuma edição selecionada</p>
+            <h1>Escolha sua edição primeiro</h1>
+            <p>Volte para as ofertas e selecione uma opção para abrir a demonstração do checkout.</p>
+            <button class="checkout-submit-rs" type="button" data-checkout-change>Ver ofertas</button>
+          </article>
+        `}
+        <footer class="checkout-footer-rs">
+          <strong>Simulação — não pagar.</strong>
+          <span>Projeto independente, sem vínculo com a Rockstar Games. Nenhuma venda é realizada nesta página.</span>
+        </footer>
+      </section>
+    </main>
+  `;
+
+  initSession();
+  if (trackView) {
+    void trackPage('checkout');
+    trackClarityEvent('checkout_viewed', { stage: 'checkout', sandbox: true, offer_id: offer?.id || 'none' });
+    void trackLead({
+      stage: 'checkout',
+      event: 'checkout_viewed',
+      sandbox: true,
+      offer: offer ? { id: offer.id, title: offer.title, price: offer.price } : null,
+      personal,
+      quiz: quizSummary,
+    });
+  }
+  bindCheckoutPage(offer, renderToken);
+}
+
+function bindCheckoutPage(offer, renderToken) {
+  document.querySelector('[data-checkout-back]')?.addEventListener('click', () => navigateTo('/ofertas'));
+  document.querySelectorAll('[data-checkout-change]').forEach((button) => {
+    button.addEventListener('click', () => navigateTo('/ofertas'));
+  });
+  if (!offer) return;
+
+  const resumed = activeSandboxOrder(offer);
+  if (resumed) {
+    renderSandboxPixState(offer, resumed, true);
+    return;
+  }
+
+  const form = document.querySelector('#checkoutForm');
+  const phone = document.querySelector('#checkoutPhone');
+  phone?.addEventListener('input', () => {
+    phone.value = phone.value.replace(/\D/g, '').slice(0, 11);
+    clearCheckoutFieldError(phone);
+  });
+  form?.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('input', () => clearCheckoutFieldError(input));
+    input.addEventListener('blur', () => validateCheckoutInput(input));
+  });
+  form?.addEventListener('submit', (event) => handleCheckoutSubmit(event, offer, renderToken));
+}
+
+function checkoutFieldMessage(input) {
+  const value = input.value.trim();
+  if (input.name === 'name' && !validCheckoutName(value)) return 'Digite seu nome completo.';
+  if (input.name === 'email' && !validCheckoutEmail(value)) return 'Digite um e-mail válido.';
+  if (input.name === 'phone' && !validCheckoutPhone(value)) return 'Digite um número de telefone válido com DDD.';
+  return '';
+}
+
+function validCheckoutName(value) {
+  if (value.length < 3 || value.length > 120) return false;
+  if (!/^[\p{L}\p{M} .\-'’]+$/u.test(value)) return false;
+  return (value.match(/\p{L}/gu) || []).length >= 2;
+}
+
+function validCheckoutEmail(value) {
+  const email = value.toLowerCase();
+  if (!email || email.length > 254 || /[\s\p{Cc}\p{Cf}]/u.test(email)) return false;
+  const parts = email.split('@');
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts;
+  if (!local || local.length > 64 || local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false;
+  if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(local)) return false;
+  const labels = domain.split('.');
+  return domain.length <= 253 && labels.length > 1 && labels.every((label) => (
+    label.length >= 1
+    && label.length <= 63
+    && /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(label)
+  ));
+}
+
+function validCheckoutPhone(value) {
+  const phone = String(value || '').replace(/\D/g, '');
+  return /^[1-9]\d(?:9\d{8}|[2-5]\d{7})$/.test(phone);
+}
+
+function setCheckoutFieldError(input, message = '') {
+  const error = document.querySelector(`#${input.id}Error`);
+  input.setAttribute('aria-invalid', message ? 'true' : 'false');
+  input.closest('.checkout-field-rs')?.classList.toggle('is-error', Boolean(message));
+  if (error) error.textContent = message;
+}
+
+function clearCheckoutFieldError(input) {
+  setCheckoutFieldError(input, '');
+}
+
+function validateCheckoutInput(input) {
+  const message = checkoutFieldMessage(input);
+  setCheckoutFieldError(input, message);
+  return !message;
+}
+
+function checkoutCustomer(form) {
+  const inputs = [...form.querySelectorAll('input[name]')];
+  const valid = inputs.map(validateCheckoutInput).every(Boolean);
+  if (!valid) {
+    inputs.find((input) => input.getAttribute('aria-invalid') === 'true')?.focus();
+    return null;
+  }
+  return {
+    name: form.elements.name.value.trim().replace(/\s+/g, ' '),
+    email: form.elements.email.value.trim().toLowerCase(),
+    phone: form.elements.phone.value.replace(/\D/g, '').slice(0, 11),
+  };
+}
+
+function abortableRequest(promise, signal) {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(new DOMException('Request aborted', 'AbortError'));
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(new DOMException('Request aborted', 'AbortError'));
+    signal.addEventListener('abort', abort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener('abort', abort);
+        resolve(value);
+      },
+      (error) => {
+        signal.removeEventListener('abort', abort);
+        reject(error);
+      },
+    );
+  });
+}
+
+async function requestSandboxOrder(offerId, customer, signal) {
+  const send = () => fetch('/api/checkout/sandbox', {
+    method: 'POST',
+    credentials: 'include',
+    signal,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ offerId, customer }),
+  });
+  await abortableRequest(initSession(), signal);
+  let response = await send();
+  if (response.status === 401) {
+    await abortableRequest(initSession({ force: true }), signal);
+    response = await send();
+  }
+  const data = await response.json().catch(() => ({}));
+  const validResponse = data.sandbox === true
+    && data.mode === 'sandbox'
+    && data.order?.status === 'demo_pending'
+    && typeof data.order?.id === 'string'
+    && data.order.id.startsWith('demo_')
+    && data.order?.offer?.id === offerId
+    && typeof data.order.offer.title === 'string'
+    && Number.isInteger(data.order.offer.amountCents)
+    && data.order.offer.amountCents > 0
+    && data.order.offer.currency === 'BRL'
+    && data.pix?.isReal === false
+    && typeof data.pix?.copyPaste === 'string'
+    && data.pix.copyPaste.startsWith('DEMO-PIX-')
+    && data.pix.copyPaste.endsWith('-NAO-PAGAR')
+    && Number.isFinite(Date.parse(data.pix?.expiresAt || ''));
+  if (!response.ok || !validResponse) {
+    throw new Error(data.error || 'Não foi possível gerar a demonstração agora.');
+  }
+  return data;
+}
+
+async function handleCheckoutSubmit(event, offer, renderToken) {
+  event.preventDefault();
+  if (checkoutSubmitting) return;
+  const form = event.currentTarget;
+  const status = document.querySelector('#checkoutStatus');
+  const button = form.querySelector('[data-checkout-submit]');
+  const customer = checkoutCustomer(form);
+  if (!customer) {
+    if (status) status.textContent = 'Revise os campos destacados.';
+    trackClarityEvent('checkout_validation_failed', { stage: 'checkout', sandbox: true, offer_id: offer.id });
+    return;
+  }
+
+  checkoutSubmitting = true;
+  if (button) {
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.textContent = 'Gerando demonstração...';
+  }
+  if (status) {
+    status.className = 'checkout-status-rs';
+    status.textContent = 'Preparando seu código de teste...';
+  }
+  writeJson(storageKeys.personal, { ...readJson(storageKeys.personal, {}), ...customer });
+  trackClarityEvent('checkout_submit_started', { stage: 'checkout', sandbox: true, offer_id: offer.id });
+
+  checkoutRequestController?.abort();
+  const controller = new AbortController();
+  checkoutRequestController = controller;
+  let timedOut = false;
+  const timeoutId = window.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, 12000);
+
+  try {
+    const data = await requestSandboxOrder(offer.id, customer, controller.signal);
+    const isCurrentCheckout = renderToken === checkoutRenderToken
+      && routeName() === 'checkout'
+      && selectedCheckoutOffer()?.id === offer.id;
+    if (!isCurrentCheckout || controller.signal.aborted) return;
+    writeSessionJson(storageKeys.sandboxOrder, data);
+    trackClarityEvent('checkout_sandbox_created', {
+      stage: 'checkout',
+      sandbox: true,
+      offer_id: data.order.offer.id,
+      amount_cents: data.order.offer.amountCents,
+    });
+    void trackLead({
+      stage: 'checkout',
+      event: 'checkout_sandbox_created',
+      sandbox: true,
+      order: { id: data.order.id, status: data.order.status },
+      offer: data.order.offer,
+      personal: readJson(storageKeys.personal, {}),
+      quiz: readJson(storageKeys.quiz, null),
+    });
+    renderSandboxPixState(offer, data);
+  } catch (error) {
+    const isCurrentCheckout = renderToken === checkoutRenderToken && routeName() === 'checkout';
+    if (!isCurrentCheckout || (!timedOut && controller.signal.aborted)) return;
+    if (timedOut) sessionReady = null;
+    checkoutSubmitting = false;
+    if (button?.isConnected) {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      button.textContent = `Gerar Pix demonstrativo de ${formatMoney(offer.price)}`;
+    }
+    if (status?.isConnected) {
+      status.className = 'checkout-status-rs is-error';
+      status.textContent = timedOut
+        ? 'A conexão demorou demais. Confira sua internet e tente novamente.'
+        : (error.message || 'Não foi possível gerar a demonstração. Tente novamente.');
+    }
+    trackClarityEvent('checkout_error', { stage: 'checkout', sandbox: true, offer_id: offer.id });
+  } finally {
+    window.clearTimeout(timeoutId);
+    if (checkoutRequestController === controller) checkoutRequestController = null;
+  }
+}
+
+function sandboxQrMarkup(seed = '') {
+  let state = [...String(seed)].reduce((sum, char) => (sum + char.charCodeAt(0)) >>> 0, 2166136261);
+  const isFinder = (x, y, ox, oy) => x >= ox && x < ox + 7 && y >= oy && y < oy + 7
+    && (x === ox || x === ox + 6 || y === oy || y === oy + 6 || (x >= ox + 2 && x <= ox + 4 && y >= oy + 2 && y <= oy + 4));
+  const modules = [];
+  for (let y = 0; y < 21; y += 1) {
+    for (let x = 0; x < 21; x += 1) {
+      const finderZone = (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
+      const finder = isFinder(x, y, 0, 0) || isFinder(x, y, 14, 0) || isFinder(x, y, 0, 14);
+      state = (Math.imul(state ^ (x + 31 * y + 1), 16777619) + 1013904223) >>> 0;
+      if (finder || (!finderZone && state % 3 === 0)) modules.push(`<rect x="${x}" y="${y}" width="1" height="1" />`);
+    }
+  }
+  return `
+    <div class="checkout-demo-qr-wrap-rs">
+      <svg class="checkout-demo-qr-rs" viewBox="0 0 21 21" role="img" aria-label="Prévia visual de QR code não escaneável">${modules.join('')}</svg>
+      <strong>DEMO</strong>
+    </div>
+  `;
+}
+
+function renderSandboxPixState(offer, data, resumed = false) {
+  checkoutSubmitting = false;
+  const stage = document.querySelector('#checkoutStage');
+  if (!stage) return;
+  const confirmedOffer = {
+    ...offer,
+    title: data.order?.offer?.title || offer.title,
+    price: Number(data.order?.offer?.amountCents || Math.round(offer.price * 100)) / 100,
+  };
+  const orderId = String(data.order?.id || 'demo').slice(-12).toUpperCase();
+  stage.className = 'checkout-pix-layout-rs';
+  stage.innerHTML = `
+    <article class="checkout-card-rs checkout-pix-card-rs">
+      <div class="checkout-section-head-rs">
+        <span>✓</span>
+        <div>
+          <p class="checkout-kicker-rs">Pix demonstrativo</p>
+          <h2>Código de teste gerado</h2>
+          <p>${resumed ? 'Retomamos sua demonstração neste aparelho.' : 'A prévia está pronta. Nenhum pagamento real foi criado.'}</p>
+        </div>
+      </div>
+      <div class="checkout-sandbox-banner-rs checkout-sandbox-banner-rs--compact" role="note">
+        <div><strong>Não pagar</strong><p>Este código não pertence à rede Pix.</p></div>
+      </div>
+      <div class="checkout-demo-qr-rs-shell">
+        ${sandboxQrMarkup(data.order?.id)}
+        <div>
+          <small>Total simulado</small>
+          <strong>${formatMoney(Number(data.order?.offer?.amountCents || 0) / 100)}</strong>
+          <span>${escapeHtml(data.order?.offer?.title || offer.title)}</span>
+          <em>Prévia visual não escaneável</em>
+        </div>
+      </div>
+      <label class="checkout-label-rs" for="sandboxPixCode">Código demonstrativo</label>
+      <div class="checkout-copy-row-rs">
+        <input class="checkout-copy-input-rs" id="sandboxPixCode" data-demo-pix-code value="${escapeAttr(data.pix?.copyPaste || '')}" readonly />
+        <button class="checkout-copy-button-rs" type="button" data-copy-demo-code>Copiar</button>
+      </div>
+      <div class="checkout-status-rs" id="checkoutPixStatus" role="status" aria-live="polite"></div>
+      <button class="checkout-submit-rs" type="button" data-simulate-paid>Simular confirmação</button>
+      <button class="checkout-link-button-rs" type="button" data-new-sandbox>Gerar uma nova demonstração</button>
+    </article>
+    ${checkoutSummaryMarkup(confirmedOffer)}
+  `;
+
+  stage.querySelector('[data-checkout-change]')?.addEventListener('click', () => navigateTo('/ofertas'));
+  stage.querySelector('[data-copy-demo-code]')?.addEventListener('click', copySandboxCode);
+  stage.querySelector('[data-new-sandbox]')?.addEventListener('click', () => {
+    removeSessionJson(storageKeys.sandboxOrder);
+    renderCheckoutPage({ trackView: false });
+  });
+  stage.querySelector('[data-simulate-paid]')?.addEventListener('click', () => renderSandboxSuccess(confirmedOffer, data, orderId));
+  stage.querySelector('[data-copy-demo-code]')?.focus({ preventScroll: true });
+}
+
+async function copySandboxCode(event) {
+  const button = event.currentTarget;
+  const input = document.querySelector('[data-demo-pix-code]');
+  const status = document.querySelector('#checkoutPixStatus');
+  if (!input) return;
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(input.value);
+    else {
+      input.select();
+      document.execCommand('copy');
+    }
+    button.textContent = 'Copiado';
+    if (status) status.textContent = 'Código demonstrativo copiado.';
+    trackClarityEvent('checkout_demo_code_copied', { stage: 'checkout', sandbox: true });
+    window.setTimeout(() => { if (button.isConnected) button.textContent = 'Copiar'; }, 1800);
+  } catch (_error) {
+    input.select();
+    if (status) status.textContent = 'Selecione o código e copie manualmente.';
+  }
+}
+
+function renderSandboxSuccess(offer, data, orderId) {
+  const stage = document.querySelector('#checkoutStage');
+  if (!stage) return;
+  removeSessionJson(storageKeys.sandboxOrder);
+  stage.className = 'checkout-pix-layout-rs';
+  stage.innerHTML = `
+    <article class="checkout-card-rs checkout-success-rs" tabindex="-1">
+      <div class="checkout-success-icon-rs" aria-hidden="true"><span></span></div>
+      <p class="checkout-kicker-rs">Demonstração concluída</p>
+      <h2>Fluxo confirmado com sucesso</h2>
+      <p>Você chegou ao fim do checkout sandbox. Nenhum pagamento real foi realizado e nenhum pedido comercial foi criado.</p>
+      <div class="checkout-order-id-rs"><span>Referência de teste</span><strong>${escapeHtml(orderId)}</strong></div>
+      <button class="checkout-submit-rs" type="button" data-checkout-success-back>Voltar às ofertas</button>
+      <button class="checkout-link-button-rs" type="button" data-checkout-success-restart>Refazer demonstração</button>
+    </article>
+    ${checkoutSummaryMarkup(offer)}
+  `;
+  trackClarityEvent('checkout_sandbox_completed', {
+    stage: 'checkout',
+    sandbox: true,
+    offer_id: data.order?.offer?.id || offer.id,
+  });
+  void trackLead({
+    stage: 'checkout',
+    event: 'checkout_sandbox_completed',
+    sandbox: true,
+    order: { id: data.order?.id, status: 'demo_completed' },
+    offer: data.order?.offer,
+    personal: readJson(storageKeys.personal, {}),
+    quiz: readJson(storageKeys.quiz, null),
+  });
+  stage.querySelector('[data-checkout-change]')?.addEventListener('click', () => navigateTo('/ofertas'));
+  stage.querySelector('[data-checkout-success-back]')?.addEventListener('click', () => navigateTo('/ofertas'));
+  stage.querySelector('[data-checkout-success-restart]')?.addEventListener('click', () => renderCheckoutPage({ trackView: false }));
+  stage.querySelector('.checkout-success-rs')?.focus({ preventScroll: true });
+}
+
+function activeSandboxOrder(offer) {
+  const data = readSessionJson(storageKeys.sandboxOrder, null);
+  const expiresAt = Date.parse(data?.pix?.expiresAt || '');
+  const createdAt = Date.parse(data?.order?.createdAt || '');
+  const expectedAmount = Math.round(Number(offer.price || 0) * 100);
+  const valid = data?.sandbox === true
+    && data?.mode === 'sandbox'
+    && data?.pix?.isReal === false
+    && data?.order?.offer?.id === offer.id
+    && data?.order?.offer?.title === offer.title
+    && data?.order?.offer?.currency === 'BRL'
+    && data?.order?.offer?.amountCents === expectedAmount
+    && /^demo_[a-f0-9]{32}$/.test(data?.order?.id || '')
+    && /^DEMO-PIX-[A-F0-9]+-\d+-NAO-PAGAR$/.test(data?.pix?.copyPaste || '')
+    && Number.isFinite(createdAt)
+    && Number.isFinite(expiresAt)
+    && expiresAt - createdAt === 15 * 60 * 1000
+    && createdAt <= Date.now() + 60 * 1000
+    && expiresAt <= Date.now() + 16 * 60 * 1000
+    && expiresAt > Date.now();
+  if (valid) return data;
+  removeSessionJson(storageKeys.sandboxOrder);
+  return null;
 }
 
 function bindAdmin() {
@@ -1941,6 +2506,7 @@ function routeName() {
   if (path === '/dados') return 'dados';
   if (path === '/processando') return 'processando';
   if (path === '/ofertas') return 'ofertas';
+  if (path === '/checkout') return 'checkout';
   if (path === '/admin') return 'admin';
   return 'home';
 }
@@ -1948,6 +2514,7 @@ function routeName() {
 function navigateTo(path) {
   window.history.pushState({}, '', path);
   render();
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
 }
 
 async function initSession({ force = false } = {}) {
@@ -1967,12 +2534,19 @@ async function initSession({ force = false } = {}) {
 }
 
 function getSessionId() {
-  let sessionId = localStorage.getItem(storageKeys.session);
-  if (!sessionId) {
-    sessionId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    localStorage.setItem(storageKeys.session, sessionId);
+  try {
+    let sessionId = localStorage.getItem(storageKeys.session);
+    if (!sessionId) {
+      sessionId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      localStorage.setItem(storageKeys.session, sessionId);
+    }
+    transientSessionId = sessionId;
+  } catch (_error) {
+    if (!transientSessionId) {
+      transientSessionId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
   }
-  return sessionId;
+  return transientSessionId;
 }
 
 function clarityValue(value) {
@@ -2012,7 +2586,8 @@ function setClarityContext(page = routeName()) {
     setClarityTag('quiz_total', quiz.total);
   }
 
-  const offer = readJson('gta6_selected_offer', null);
+  const savedOffer = readJson(storageKeys.selectedOffer, null);
+  const offer = gtaOffers.find((item) => item.id === savedOffer?.id);
   if (offer) {
     setClarityTag('selected_offer_id', offer.id);
     setClarityTag('selected_offer_title', offer.title);
@@ -2097,10 +2672,26 @@ function initConfiguredTracking() {
 }
 
 function trackConfiguredEvent(name, data = {}) {
+  const rawName = String(name || '').trim();
+  const normalizedName = rawName.toLowerCase();
+  const metaStandardName = {
+    pageview: 'PageView',
+    quiz_started: 'ViewContent',
+    quiz_completed: 'Lead',
+    personal_submitted: 'CompleteRegistration',
+    personal_data_submitted: 'CompleteRegistration',
+    offer_selected: 'InitiateCheckout',
+    purchase: 'Purchase',
+  }[normalizedName] || '';
+  const eventId = `evt_${normalizedName.replace(/[^a-z0-9_]+/g, '_').slice(0, 48) || 'event'}_${
+    crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`
+  }`.slice(0, 120);
   if (siteConfig.tracking?.browserPixel !== false) {
-    try { window.fbq?.('trackCustom', name, data); } catch (_error) {}
-    try { window.ttq?.track?.(name, data); } catch (_error) {}
-    try { window.gtag?.('event', name, data); } catch (_error) {}
+    try {
+      window.fbq?.(metaStandardName ? 'track' : 'trackCustom', metaStandardName || rawName, data, { eventID: eventId });
+    } catch (_error) {}
+    try { window.ttq?.track?.(rawName, data); } catch (_error) {}
+    try { window.gtag?.('event', rawName, data); } catch (_error) {}
   }
   if (siteConfig.tracking?.serverEvents === true) {
     fetch('/api/tracking/event', {
@@ -2111,7 +2702,7 @@ function trackConfiguredEvent(name, data = {}) {
       body: JSON.stringify({
         name,
         sessionId: getSessionId(),
-        eventId: `${String(name).toLowerCase()}_${getSessionId()}_${Date.now()}`,
+        eventId,
         sourceUrl: window.location.href,
         data,
       }),
@@ -2198,7 +2789,36 @@ function readJson(key, fallback) {
 }
 
 function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+function readSessionJson(key, fallback) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch (_error) {
+    return fallback;
+  }
+}
+
+function writeSessionJson(key, value) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
+function removeSessionJson(key) {
+  try {
+    sessionStorage.removeItem(key);
+  } catch (_error) {}
 }
 
 function escapeHtml(value) {

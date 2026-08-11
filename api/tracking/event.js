@@ -6,6 +6,7 @@ const EVENT_NAMES = new Map([
   ['pageview', 'PageView'],
   ['quiz_started', 'ViewContent'],
   ['quiz_completed', 'Lead'],
+  ['personal_submitted', 'CompleteRegistration'],
   ['personal_data_submitted', 'CompleteRegistration'],
   ['offer_selected', 'InitiateCheckout'],
   ['purchase', 'Purchase']
