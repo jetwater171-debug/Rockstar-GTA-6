@@ -140,18 +140,18 @@
 }
 
 .offer-screen-rs .offer-benefits-rs li::before {
-  background: transparent;
+  -webkit-mask: url("/assets/rockstar-logo-white-user-transparent.webp") center / contain no-repeat;
+  background: #ffd629;
   border: 0;
-  border-bottom: 0.17rem solid #ffd629;
   border-radius: 0;
-  border-right: 0.17rem solid #ffd629;
   content: "";
-  height: 0.7rem;
-  left: 0.12rem;
+  height: 1rem;
+  left: 0;
+  mask: url("/assets/rockstar-logo-white-user-transparent.webp") center / contain no-repeat;
   position: absolute;
-  top: 0.02rem;
-  transform: rotate(45deg);
-  width: 0.38rem;
+  top: 0.05rem;
+  transform: none;
+  width: 1rem;
 }
 
 .offer-screen-rs .offer-price-rs {
