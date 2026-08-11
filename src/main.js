@@ -441,12 +441,12 @@ function brand(variant) {
 }
 
 function brandMark(variant = 'default') {
-  const src = variant === 'symbol' || variant === 'quiz' ? '/assets/rockstar-logo-white-user-transparent.png' : '/assets/rockstar-logo.png';
+  const src = variant === 'symbol' || variant === 'quiz' ? '/assets/rockstar-logo-white-user-transparent.webp' : '/assets/rockstar-logo.webp';
   return `<img class="brand-mark brand-mark--${variant}" src="${src}" alt="Rockstar Games" />`;
 }
 
 function answerMark() {
-  return '<img class="answer-logo" src="/assets/rockstar-logo-white-user-transparent.png" alt="" />';
+  return '<img class="answer-logo" src="/assets/rockstar-logo-white-user-transparent.webp" alt="" />';
 }
 
 function buildParticles() {
@@ -751,12 +751,6 @@ function renderOffersPage() {
           ${gtaOffers.map(offerCardMarkup).join('')}
         </section>
 
-        <aside class="offer-facts-note-rs" aria-label="Informação sobre GTA Online">
-          <strong>GTA Online e GTA+</strong>
-          <p>GTA VI foi anunciado como uma experiência para um jogador e nenhum modo online de GTA VI foi confirmado. *O acesso antecipado é uma condição promocional desta campanha, sujeita à confirmação e disponibilidade; não é uma edição oficial anunciada pela Rockstar.</p>
-        </aside>
-
-        <p class="offer-disclaimer-rs">Projeto independente e não afiliado à Rockstar Games. Valores e disponibilidade fazem parte desta experiência promocional.</p>
       </section>
     </main>
   `;
