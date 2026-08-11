@@ -861,7 +861,7 @@ function checkoutTopbarMarkup() {
           <span>Voltar</span>
         </button>
         <div class="checkout-brand-rs">${brandMark('quiz')}</div>
-        <span class="checkout-mode-rs"><i aria-hidden="true"></i> Sandbox</span>
+        <span class="checkout-mode-rs">Sandbox</span>
       </div>
     </header>
   `;
@@ -873,13 +873,16 @@ function checkoutSummaryMarkup(offer) {
     : '';
   return `
     <aside class="checkout-summary-rs" aria-label="Resumo da simulação">
-      <p class="checkout-summary-title-rs">Resumo</p>
+      <h2 class="checkout-summary-title-rs">Resumo</h2>
       <div class="checkout-offer-name-rs">
         <span>${escapeHtml(offer.tag)}</span>
-        <h2 data-checkout-offer-title>${escapeHtml(offer.title)}</h2>
+        <h3 data-checkout-offer-title>${escapeHtml(offer.title)}</h3>
         ${earlyNotice}
       </div>
-      <ul class="checkout-feature-list-rs">
+      <button class="checkout-benefits-toggle-rs" type="button" data-checkout-benefits-toggle aria-expanded="false" aria-controls="checkoutBenefits-${offer.id}">
+        <span>Ver o que está incluído</span><i aria-hidden="true"></i>
+      </button>
+      <ul class="checkout-feature-list-rs" id="checkoutBenefits-${offer.id}">
         ${(offer.details || []).map((detail) => `<li><b aria-hidden="true">R*</b><span>${escapeHtml(detail)}</span></li>`).join('')}
       </ul>
       <div class="checkout-totals-rs">
@@ -1004,6 +1007,7 @@ function renderCheckoutPage({ trackView = true } = {}) {
 }
 
 function bindCheckoutPage(offer, renderToken) {
+  bindCheckoutSummaryControls();
   document.querySelector('[data-checkout-back]')?.addEventListener('click', () => navigateTo('/ofertas'));
   document.querySelectorAll('[data-checkout-change]').forEach((button) => {
     button.addEventListener('click', () => navigateTo('/ofertas'));
@@ -1027,6 +1031,19 @@ function bindCheckoutPage(offer, renderToken) {
     input.addEventListener('blur', () => validateCheckoutInput(input));
   });
   form?.addEventListener('submit', (event) => handleCheckoutSubmit(event, offer, renderToken));
+}
+
+function bindCheckoutSummaryControls(root = document) {
+  root.querySelectorAll('[data-checkout-benefits-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const summary = button.closest('.checkout-summary-rs');
+      const expanded = !summary?.classList.contains('is-expanded');
+      summary?.classList.toggle('is-expanded', expanded);
+      button.setAttribute('aria-expanded', String(expanded));
+      const label = button.querySelector('span');
+      if (label) label.textContent = expanded ? 'Ocultar itens incluídos' : 'Ver o que está incluído';
+    });
+  });
 }
 
 function checkoutFieldMessage(input) {
@@ -1298,6 +1315,7 @@ function renderSandboxPixState(offer, data, resumed = false) {
   `;
 
   stage.querySelector('[data-checkout-change]')?.addEventListener('click', () => navigateTo('/ofertas'));
+  bindCheckoutSummaryControls(stage);
   stage.querySelector('[data-copy-demo-code]')?.addEventListener('click', copySandboxCode);
   stage.querySelector('[data-new-sandbox]')?.addEventListener('click', () => {
     removeSessionJson(storageKeys.sandboxOrder);
@@ -1360,6 +1378,7 @@ function renderSandboxSuccess(offer, data, orderId) {
     quiz: readJson(storageKeys.quiz, null),
   });
   stage.querySelector('[data-checkout-change]')?.addEventListener('click', () => navigateTo('/ofertas'));
+  bindCheckoutSummaryControls(stage);
   stage.querySelector('[data-checkout-success-back]')?.addEventListener('click', () => navigateTo('/ofertas'));
   stage.querySelector('[data-checkout-success-restart]')?.addEventListener('click', () => renderCheckoutPage({ trackView: false }));
   stage.querySelector('.checkout-success-rs')?.focus({ preventScroll: true });
