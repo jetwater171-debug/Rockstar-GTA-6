@@ -4,6 +4,7 @@ import './quiz-polish.css';
 import './lead-flow.css';
 import './desktop-polish.css';
 import './processing-unified.css';
+import './offers-clean.css';
 
 const quiz = [
   {
@@ -104,39 +105,45 @@ const gtaOffers = [
     id: 'standard',
     tag: 'Standard',
     title: 'GTA VI Standard',
-    subtitle: 'Jogo base',
-    description: 'Acesso à edição principal vinculada ao perfil aprovado.',
+    description: 'A experiência completa da campanha de Jason e Lucia, com o retorno a Vice City e uma jornada pelo estado de Leonida.',
     price: 207.98,
     oldPrice: 349.9,
-    badge: 'Selecionado',
-    image: '/assets/gta-vi-poster.jpg',
-    details: ['Jogo base digital', 'Perfil vinculado ao cadastro aprovado', 'Liberação após confirmação da etapa final'],
+    badge: 'Jogo base',
+    details: [
+      'Edição digital para PS5 ou Xbox Series X|S',
+      'Campanha completa para um jogador com Jason e Lucia',
+      'Lançamento oficial em 19 de novembro de 2026',
+    ],
   },
   {
     id: 'ultimate',
     tag: 'Ultimate',
     title: 'GTA VI Ultimate',
-    subtitle: 'Conteúdo extra',
-    description: 'Inclui pacote digital, bônus de início e prioridade na próxima etapa.',
+    description: 'O jogo base acompanhado da coleção oficial de veículos, armas, roupas, propriedades e atividades extras da história.',
     price: 289.3,
     oldPrice: 499.9,
-    badge: 'Mais escolhido',
-    image: '/assets/gta-vi-lucia-jason-phone.jpg',
+    badge: 'Mais completa',
     featured: true,
-    details: ['Inclui conteúdo digital extra', 'Prioridade na fila de liberação', 'Bônus inicial vinculado ao perfil'],
+    details: [
+      'Todo o conteúdo da Edição Standard',
+      'Veículos exclusivos, como Grotti Cheetah e Vapid Dominator Buggy',
+      'Armas, estilos, oficinas, lojas e propriedades adicionais',
+    ],
   },
   {
     id: 'early',
-    tag: 'Antecipado',
-    title: 'GTA VI Acesso Antecipado',
-    subtitle: '7 dias antes',
-    description: 'Libere a edição com acesso uma semana antes da liberação geral.',
+    tag: 'Pré-venda',
+    title: 'GTA VI Ultimate + Pré-venda',
+    description: 'A Edição Ultimate com os benefícios oficiais reservados para a pré-venda digital do jogo.',
     price: 359.9,
     oldPrice: 599.9,
-    badge: 'Prioridade máxima',
-    image: '/assets/gta-vi-lucia-jason-expanded.png',
+    badge: 'Pacote completo',
     premium: true,
-    details: ['Acesso 7 dias antes da liberação geral', 'Prioridade máxima na validação', 'Pacote completo com benefícios digitais'],
+    details: [
+      'Todo o conteúdo da Edição Ultimate',
+      'Vintage Vice City Pack: carro, garagem, roupas e penteados',
+      'Pré-carregamento em 12 de novembro e 1 mês de GTA+',
+    ],
   },
 ];
 
@@ -743,6 +750,11 @@ function renderOffersPage() {
           ${gtaOffers.map(offerCardMarkup).join('')}
         </section>
 
+        <aside class="offer-facts-note-rs" aria-label="Informação sobre GTA Online">
+          <strong>GTA Online e GTA+</strong>
+          <p>GTA VI foi anunciado como uma experiência para um jogador. Até agora, nenhum modo online de GTA VI foi confirmado. O mês de GTA+ da pré-venda é um benefício separado, ligado ao GTA Online atual.</p>
+        </aside>
+
         <p class="offer-disclaimer-rs">Projeto independente e não afiliado à Rockstar Games. Valores e disponibilidade fazem parte desta experiência promocional.</p>
       </section>
     </main>
@@ -769,13 +781,6 @@ function offerCardMarkup(offer) {
       <div class="offer-card-top-rs">
         <span>${escapeHtml(offer.badge)}</span>
         <b>${escapeHtml(offer.tag)}</b>
-      </div>
-      <div class="offer-product-rs" aria-hidden="true">
-        <div class="offer-product-box-rs">
-          <img class="offer-art-rs" src="${offer.image}" alt="" />
-          <img src="/assets/gta-vi-logo-user-clean.png" alt="" />
-          <small>${escapeHtml(offer.subtitle)}</small>
-        </div>
       </div>
       <div class="offer-card-copy-rs">
         <h2>${escapeHtml(offer.title)}</h2>
