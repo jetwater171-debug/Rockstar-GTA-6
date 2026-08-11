@@ -85,7 +85,7 @@
 .processing-screen .processing-stage-rs--unified {
   display: block;
   margin: 0 auto;
-  max-width: 20rem;
+  max-width: 38rem;
 }
 
 .processing-screen .processing-video-shell-rs {
@@ -93,6 +93,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1.45rem;
   box-shadow: none;
+  margin: 0 auto;
   max-width: 20rem;
   padding: 0.65rem;
   width: 100%;
@@ -118,26 +119,21 @@
   scale: 0.82;
 }
 
-.processing-analysis-overlay-rs {
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.94) 58%);
-  bottom: 0;
-  left: 0;
-  padding: 4.5rem 0.9rem 0.85rem;
-  position: absolute;
-  right: 0;
-  z-index: 6;
+.processing-analysis-strip-rs {
+  margin: 0 auto 1.25rem;
+  width: 100%;
 }
 
-.processing-analysis-overlay-rs > strong {
+.processing-analysis-strip-rs > strong {
   color: #fff;
   display: block;
   font-family: "Barlow Condensed", Arial, sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 850;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
   line-height: 1.2;
   overflow: hidden;
-  text-align: left;
+  text-align: center;
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
@@ -146,8 +142,8 @@
 .processing-profile-progress-rs {
   background: rgba(255, 255, 255, 0.24);
   border-radius: 999px;
-  height: 4px;
-  margin-top: 0.5rem;
+  height: 8px;
+  margin-top: 0.65rem;
   overflow: hidden;
   width: 100%;
 }
@@ -199,7 +195,7 @@
   }
 
   .processing-screen .processing-stage-rs--unified {
-    max-width: 16rem;
+    max-width: 100%;
   }
 
   .processing-screen .processing-video-shell-rs {
@@ -211,8 +207,13 @@
     max-height: 52svh;
   }
 
-  .processing-analysis-overlay-rs {
-    padding: 4rem 0.75rem 0.72rem;
+  .processing-analysis-strip-rs {
+    margin-bottom: 1rem;
+    padding: 0 0.15rem;
+  }
+
+  .processing-analysis-strip-rs > strong {
+    font-size: 0.72rem;
   }
 }
 

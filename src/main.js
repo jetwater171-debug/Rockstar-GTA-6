@@ -636,6 +636,10 @@ function renderProcessingPage() {
           </header>
 
           <div class="processing-stage-rs processing-stage-rs--unified">
+            <div class="processing-analysis-strip-rs" aria-live="polite">
+              <strong id="processingStatus">Toque no vídeo para iniciar a análise</strong>
+              <div class="processing-profile-progress-rs" id="processingProfileProgress" role="progressbar" aria-label="Progresso da verificação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+            </div>
             <div class="processing-video-shell-rs">
               <div class="processing-video-rs" role="group" aria-label="Vídeo explicativo da próxima etapa">
                 <img src="/assets/gta-vi-poster.jpg" alt="" />
@@ -643,10 +647,6 @@ function renderProcessingPage() {
                 <button class="processing-play-rs" type="button" aria-label="Assistir ao vídeo">
                   <span></span>
                 </button>
-                <div class="processing-analysis-overlay-rs" aria-live="polite">
-                  <strong id="processingStatus">Toque para iniciar a análise</strong>
-                  <div class="processing-profile-progress-rs" id="processingProfileProgress" role="progressbar" aria-label="Progresso da verificação" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
-                </div>
               </div>
             </div>
           </div>
