@@ -17,6 +17,7 @@ import {
 import { invalidateIpBlacklistCache, isValidIp } from '../../lib/ip-blacklist.js';
 import { officialHosts } from '../../lib/clone-detector.js';
 import { auditAdmin, listAdminAudit } from '../../lib/admin-audit.js';
+import { getGatewayTransaction } from '../../lib/checkout-payments.js';
 
 const gateways = ['sunize', 'paradise', 'atomopay', 'bravopay'];
 const defaultSettings = {
@@ -26,8 +27,8 @@ const defaultSettings = {
     active: 'sunize',
     activeGateway: 'sunize',
     gatewayOrder: ['sunize', 'paradise', 'atomopay', 'bravopay'],
-    sunize: { enabled: false, baseUrl: 'https://api.sunize.com.br/v1', apiKey: '', apiSecret: '' },
-    paradise: { enabled: false, baseUrl: 'https://multi.paradisepags.com', apiKey: '', productHash: '', orderbumpHash: '', source: 'api_externa', description: '' },
+    sunize: { enabled: false, baseUrl: 'https://api.sunize.com.br/v1', apiKey: '', apiSecret: '', webhookToken: '', postbackUrl: '' },
+    paradise: { enabled: false, baseUrl: 'https://multi.paradisepags.com', apiKey: '', productHash: '', orderbumpHash: '', source: 'api_externa', description: '', webhookToken: '', postbackUrl: '' },
     atomopay: {
       enabled: false,
       baseUrl: 'https://api.atomopay.com.br/api/public/v1',
@@ -40,9 +41,10 @@ const defaultSettings = {
       correiosProductHash: '',
       expressoOfferHash: '',
       expressoProductHash: '',
-      webhookToken: ''
+      webhookToken: '',
+      postbackUrl: ''
     },
-    bravopay: { enabled: false, baseUrl: 'https://bravopay.club/api/v1', apiKey: '', webhookSecret: '', expiresIn: 3600, description: '' }
+    bravopay: { enabled: false, baseUrl: 'https://bravopay.club/api/v1', apiKey: '', webhookSecret: '', webhookToken: '', postbackUrl: '', expiresIn: 3600, description: '' }
   },
   funnel: { promotionName: 'Promoção exclusiva GTA VI', nextStepUrl: '', leadCaptureEnabled: true },
   public: {
@@ -192,6 +194,32 @@ async function requestGatewayCreate(gateway, config = {}, payload = {}, testKey 
     },
     body: JSON.stringify(payload)
   }, timeoutMs);
+}
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function hydrateGatewayTestPix(gateway, config, parsed) {
+  if (!parsed?.txid || parsed.paymentCode || parsed.paymentCodeBase64 || parsed.paymentQrUrl) return parsed;
+  let hydrated = { ...parsed };
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (attempt > 0) await wait(350 * attempt);
+    const result = await getGatewayTransaction({
+      gateway,
+      config: { ...config, timeoutMs: Math.max(1200, Math.min(Number(config.timeoutMs || 12000), 4000)) },
+      txid: parsed.txid
+    }).catch(() => null);
+    if (!result?.response?.ok) continue;
+    const statusPix = normalizePixResponse(result.data || {});
+    hydrated = {
+      ...hydrated,
+      paymentCode: hydrated.paymentCode || statusPix.paymentCode,
+      paymentCodeBase64: hydrated.paymentCodeBase64 || statusPix.paymentCodeBase64,
+      paymentQrUrl: hydrated.paymentQrUrl || statusPix.paymentQrUrl,
+      status: hydrated.status || statusPix.status
+    };
+    if (hydrated.paymentCode || hydrated.paymentCodeBase64 || hydrated.paymentQrUrl) break;
+  }
+  return hydrated;
 }
 
 function mergeDeep(base, patch) {
@@ -594,24 +622,33 @@ async function gatewayTestPix(req, res) {
         };
       }
 
-      const { response, data } = await requestGatewayCreate(gateway, config, payload, testKey);
+      let { response, data } = await requestGatewayCreate(gateway, config, payload, testKey);
+      if (gateway === 'sunize' && Number(response?.status || 0) === 400 && payload.ip) {
+        const noIpPayload = { ...payload };
+        delete noIpPayload.ip;
+        const retry = await requestGatewayCreate(gateway, config, noIpPayload, testKey);
+        response = retry.response;
+        data = retry.data;
+      }
       if (!response?.ok || data?.success === false || data?.hasError === true || data?.error) {
         const detail = typeof data?.error === 'object'
           ? pickText(data.error.message, data.error.code)
           : pickText(data?.error, data?.message, data?.details, `HTTP ${response?.status || 0}`);
         return { ...baseResult, detail };
       }
-      const parsed = normalizePixResponse(data || {});
+      const createdPix = normalizePixResponse(data || {});
+      const parsed = await hydrateGatewayTestPix(gateway, config, createdPix);
+      const hasPixVisual = Boolean(parsed.paymentCode || parsed.paymentCodeBase64 || parsed.paymentQrUrl);
       return {
         ...baseResult,
-        ok: true,
+        ok: hasPixVisual,
         txid: parsed.txid,
         paymentCode: parsed.paymentCode,
         paymentCodeBase64: parsed.paymentCodeBase64,
         paymentQrUrl: parsed.paymentQrUrl,
         statusRaw: parsed.status,
         externalId: parsed.externalId || testKey,
-        detail: (!parsed.paymentCode && !parsed.paymentCodeBase64 && !parsed.paymentQrUrl)
+        detail: !hasPixVisual
           ? 'Gateway criou a transação, mas não devolveu QR/copia-e-cola na resposta.'
           : ''
       };

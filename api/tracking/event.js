@@ -9,6 +9,7 @@ const EVENT_NAMES = new Map([
   ['personal_submitted', 'CompleteRegistration'],
   ['personal_data_submitted', 'CompleteRegistration'],
   ['offer_selected', 'InitiateCheckout'],
+  ['add_payment_info', 'AddPaymentInfo'],
   ['purchase', 'Purchase']
 ]);
 

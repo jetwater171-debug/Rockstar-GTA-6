@@ -6,6 +6,7 @@ import './desktop-polish.css';
 import './processing-unified.css';
 import './offers-clean.css';
 import './checkout-clean.css';
+import QRCode from 'qrcode';
 
 const quiz = [
   {
@@ -97,7 +98,7 @@ const storageKeys = {
   personal: 'gta6_personal_data',
   utm: 'gta6_utm_payload',
   selectedOffer: 'gta6_selected_offer',
-  sandboxOrder: 'gta6_sandbox_order',
+  checkoutOrder: 'gta6_checkout_order',
 };
 
 const gatewayKeys = ['sunize', 'paradise', 'atomopay', 'bravopay'];
@@ -170,6 +171,8 @@ let checkoutOfferFallbackId = '';
 let transientSessionId = '';
 let checkoutRequestController = null;
 let checkoutRenderToken = 0;
+let checkoutStatusTimer = 0;
+let checkoutStatusController = null;
 
 const app = document.querySelector('#app');
 
@@ -190,6 +193,10 @@ function render() {
     checkoutRenderToken += 1;
     checkoutRequestController?.abort();
     checkoutRequestController = null;
+    window.clearTimeout(checkoutStatusTimer);
+    checkoutStatusTimer = 0;
+    checkoutStatusController?.abort();
+    checkoutStatusController = null;
     checkoutSubmitting = false;
   }
   if (route === 'analise') {
@@ -820,7 +827,7 @@ function bindOffersPage() {
       if (!offer || button.disabled) return;
       checkoutOfferFallbackId = offer.id;
       writeJson(storageKeys.selectedOffer, { id: offer.id });
-      removeSessionJson(storageKeys.sandboxOrder);
+      removeSessionJson(storageKeys.checkoutOrder);
       document.querySelectorAll('[data-offer-card]').forEach((card) => card.classList.remove('is-selected'));
       button.closest('[data-offer-card]')?.classList.add('is-selected');
       document.querySelectorAll('[data-offer-select]').forEach((item) => {
@@ -861,7 +868,7 @@ function checkoutTopbarMarkup() {
           <span>Voltar</span>
         </button>
         <div class="checkout-brand-rs">${brandMark('quiz')}</div>
-        <span class="checkout-mode-rs">Sandbox</span>
+        <span class="checkout-mode-rs">Pagamento seguro</span>
       </div>
     </header>
   `;
@@ -872,7 +879,7 @@ function checkoutSummaryMarkup(offer) {
     ? '<p class="checkout-offer-detail-rs">Benefício promocional planejado, ainda não oficial.</p>'
     : '';
   return `
-    <aside class="checkout-summary-rs" aria-label="Resumo da simulação">
+    <aside class="checkout-summary-rs" aria-label="Resumo do pedido">
       <h2 class="checkout-summary-title-rs">Resumo</h2>
       <div class="checkout-offer-name-rs">
         <span>${escapeHtml(offer.tag)}</span>
@@ -888,9 +895,9 @@ function checkoutSummaryMarkup(offer) {
       <div class="checkout-totals-rs">
         <div><span>Subtotal</span><strong>${formatMoney(offer.price)}</strong></div>
         <div><span>Taxas</span><strong>R$ 0,00</strong></div>
-        <div class="checkout-total-rs"><span>Total simulado</span><strong data-checkout-offer-price>${formatMoney(offer.price)}</strong></div>
+        <div class="checkout-total-rs"><span>Total</span><strong data-checkout-offer-price>${formatMoney(offer.price)}</strong></div>
       </div>
-      <p class="checkout-microcopy-rs">Valor único demonstrativo. Nenhum pagamento será processado.</p>
+      <p class="checkout-microcopy-rs">Valor final validado no servidor antes da criação da cobrança.</p>
       <button class="checkout-change-rs" type="button" data-checkout-change>Trocar edição</button>
     </aside>
   `;
@@ -898,6 +905,7 @@ function checkoutSummaryMarkup(offer) {
 
 function checkoutFormMarkup(offer, personal = {}) {
   const phone = String(personal.phone || '').replace(/\D/g, '').slice(0, 11);
+  const cpf = String(personal.cpf || '').replace(/\D/g, '').slice(0, 11);
   return `
     <section class="checkout-grid-rs" id="checkoutStage" data-checkout-result>
       <article class="checkout-card-rs">
@@ -905,7 +913,7 @@ function checkoutFormMarkup(offer, personal = {}) {
           <span>01</span>
           <div>
             <h2>Seus dados</h2>
-            <p>Confira as informações usadas nesta demonstração.</p>
+            <p>Confira as informações usadas no pedido.</p>
           </div>
         </div>
         <form class="checkout-form-rs" id="checkoutForm" data-clarity-mask="true" novalidate>
@@ -920,10 +928,15 @@ function checkoutFormMarkup(offer, personal = {}) {
               <input class="checkout-input-rs" id="checkoutEmail" name="email" value="${escapeAttr(personal.email || '')}" type="email" inputmode="email" autocomplete="email" aria-describedby="checkoutEmailError" required />
               <small class="checkout-error-rs" id="checkoutEmailError"></small>
             </label>
-            <label class="checkout-field-rs" for="checkoutPhone" data-span="full">
+            <label class="checkout-field-rs" for="checkoutPhone">
               <span class="checkout-label-rs">Número</span>
               <input class="checkout-input-rs" id="checkoutPhone" name="phone" value="${escapeAttr(phone)}" type="tel" inputmode="numeric" autocomplete="tel-national" minlength="10" maxlength="11" aria-describedby="checkoutPhoneError" required />
               <small class="checkout-error-rs" id="checkoutPhoneError"></small>
+            </label>
+            <label class="checkout-field-rs" for="checkoutCpf">
+              <span class="checkout-label-rs">CPF</span>
+              <input class="checkout-input-rs" id="checkoutCpf" name="cpf" value="${escapeAttr(cpf)}" type="text" inputmode="numeric" autocomplete="off" minlength="11" maxlength="11" aria-describedby="checkoutCpfError" required />
+              <small class="checkout-error-rs" id="checkoutCpfError"></small>
             </label>
           </div>
 
@@ -931,19 +944,19 @@ function checkoutFormMarkup(offer, personal = {}) {
             <span>02</span>
             <div>
               <h2>Pagamento</h2>
-              <p>Escolha disponível neste ambiente.</p>
+              <p>Pagamento instantâneo processado pelo gateway ativo.</p>
             </div>
           </div>
-          <div class="checkout-method-rs" aria-label="Pix demonstrativo selecionado">
+          <div class="checkout-method-rs" aria-label="Pix selecionado">
             <span class="checkout-method-icon-rs" aria-hidden="true">PIX</span>
-            <span class="checkout-method-copy-rs"><strong>Pix demonstrativo</strong><span>Código de teste gerado na hora</span></span>
+            <span class="checkout-method-copy-rs"><strong>Pix</strong><span>QR Code e copia e cola gerados na hora</span></span>
           </div>
 
           <div class="checkout-status-rs" id="checkoutStatus" role="status" aria-live="polite"></div>
           <button class="checkout-submit-rs" type="submit" data-checkout-submit>
-            Gerar Pix demonstrativo de ${formatMoney(offer.price)}
+            Gerar Pix de ${formatMoney(offer.price)}
           </button>
-          <p class="checkout-microcopy-rs">A cobrança só existiria se um código Pix real fosse pago. Este ambiente não gera códigos pagáveis.</p>
+          <p class="checkout-microcopy-rs">A confirmação é automática após o pagamento.</p>
         </form>
       </article>
       ${checkoutSummaryMarkup(offer)}
@@ -960,17 +973,17 @@ function renderCheckoutPage({ trackView = true } = {}) {
   const personal = readJson(storageKeys.personal, {});
   const quizSummary = readJson(storageKeys.quiz, null);
   app.innerHTML = `
-    <main class="checkout-screen-rs" data-page="checkout" data-checkout-mode="sandbox">
+    <main class="checkout-screen-rs" data-page="checkout" data-checkout-mode="production">
       ${checkoutTopbarMarkup()}
       <section class="checkout-shell-rs">
         ${offer ? `
           <header class="checkout-heading-rs">
-            <p class="checkout-kicker-rs">Checkout demonstrativo</p>
-            <h1>Revise e simule seu pedido</h1>
-            <p>Confirme a edição e gere uma prévia segura do fluxo via Pix.</p>
+            <p class="checkout-kicker-rs">Checkout</p>
+            <h1>Revise e confirme seu pedido</h1>
+            <p>Confirme a edição e gere o pagamento via Pix.</p>
           </header>
           <div class="checkout-sandbox-banner-rs" role="note">
-            <div><strong>Ambiente de demonstração</strong><p>Nenhum Pix real será gerado e nenhum valor será cobrado.</p></div>
+            <div><strong>Pagamento protegido</strong><p>Preço validado no servidor e confirmação automática pelo gateway.</p></div>
           </div>
           ${checkoutFormMarkup(offer, personal)}
         ` : `
@@ -978,13 +991,13 @@ function renderCheckoutPage({ trackView = true } = {}) {
             <div class="checkout-brand-rs">${brandMark('quiz')}</div>
             <p class="checkout-kicker-rs">Nenhuma edição selecionada</p>
             <h1>Escolha sua edição primeiro</h1>
-            <p>Volte para as ofertas e selecione uma opção para abrir a demonstração do checkout.</p>
+            <p>Volte para as ofertas e selecione uma opção para abrir o checkout.</p>
             <button class="checkout-submit-rs" type="button" data-checkout-change>Ver ofertas</button>
           </article>
         `}
         <footer class="checkout-footer-rs">
-          <strong>Simulação — não pagar.</strong>
-          <span>Projeto independente, sem vínculo com a Rockstar Games. Nenhuma venda é realizada nesta página.</span>
+          <strong>Ambiente seguro.</strong>
+          <span>O pedido é confirmado somente após a aprovação do pagamento.</span>
         </footer>
       </section>
     </main>
@@ -993,11 +1006,10 @@ function renderCheckoutPage({ trackView = true } = {}) {
   initSession();
   if (trackView) {
     void trackPage('checkout');
-    trackClarityEvent('checkout_viewed', { stage: 'checkout', sandbox: true, offer_id: offer?.id || 'none' });
+    trackClarityEvent('checkout_viewed', { stage: 'checkout', offer_id: offer?.id || 'none' });
     void trackLead({
       stage: 'checkout',
       event: 'checkout_viewed',
-      sandbox: true,
       offer: offer ? { id: offer.id, title: offer.title, price: offer.price } : null,
       personal,
       quiz: quizSummary,
@@ -1014,17 +1026,22 @@ function bindCheckoutPage(offer, renderToken) {
   });
   if (!offer) return;
 
-  const resumed = activeSandboxOrder(offer);
+  const resumed = activeCheckoutOrder(offer);
   if (resumed) {
-    renderSandboxPixState(offer, resumed, true);
+    void renderCheckoutPixState(offer, resumed, true);
     return;
   }
 
   const form = document.querySelector('#checkoutForm');
   const phone = document.querySelector('#checkoutPhone');
+  const cpf = document.querySelector('#checkoutCpf');
   phone?.addEventListener('input', () => {
     phone.value = phone.value.replace(/\D/g, '').slice(0, 11);
     clearCheckoutFieldError(phone);
+  });
+  cpf?.addEventListener('input', () => {
+    cpf.value = cpf.value.replace(/\D/g, '').slice(0, 11);
+    clearCheckoutFieldError(cpf);
   });
   form?.querySelectorAll('input').forEach((input) => {
     input.addEventListener('input', () => clearCheckoutFieldError(input));
@@ -1051,6 +1068,7 @@ function checkoutFieldMessage(input) {
   if (input.name === 'name' && !validCheckoutName(value)) return 'Digite seu nome completo.';
   if (input.name === 'email' && !validCheckoutEmail(value)) return 'Digite um e-mail válido.';
   if (input.name === 'phone' && !validCheckoutPhone(value)) return 'Digite um número de telefone válido com DDD.';
+  if (input.name === 'cpf' && !validCheckoutCpf(value)) return 'Digite um CPF válido.';
   return '';
 }
 
@@ -1081,6 +1099,18 @@ function validCheckoutPhone(value) {
   return /^[1-9]\d(?:9\d{8}|[2-5]\d{7})$/.test(phone);
 }
 
+function validCheckoutCpf(value) {
+  const cpf = String(value || '').replace(/\D/g, '');
+  if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+  const digit = (length) => {
+    let sum = 0;
+    for (let index = 0; index < length; index += 1) sum += Number(cpf[index]) * (length + 1 - index);
+    const remainder = (sum * 10) % 11;
+    return (remainder === 10 ? 0 : remainder) === Number(cpf[length]);
+  };
+  return digit(9) && digit(10);
+}
+
 function setCheckoutFieldError(input, message = '') {
   const error = document.querySelector(`#${input.id}Error`);
   input.setAttribute('aria-invalid', message ? 'true' : 'false');
@@ -1109,6 +1139,7 @@ function checkoutCustomer(form) {
     name: form.elements.name.value.trim().replace(/\s+/g, ' '),
     email: form.elements.email.value.trim().toLowerCase(),
     phone: form.elements.phone.value.replace(/\D/g, '').slice(0, 11),
+    cpf: form.elements.cpf.value.replace(/\D/g, '').slice(0, 11),
   };
 }
 
@@ -1131,13 +1162,13 @@ function abortableRequest(promise, signal) {
   });
 }
 
-async function requestSandboxOrder(offerId, customer, signal) {
-  const send = () => fetch('/api/checkout/sandbox', {
+async function requestCheckoutOrder(offerId, customer, signal) {
+  const send = () => fetch('/api/checkout/create', {
     method: 'POST',
     credentials: 'include',
     signal,
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ offerId, customer }),
+    body: JSON.stringify({ offerId, customer, sessionId: getSessionId(), utm: readJson(storageKeys.utm, {}) }),
   });
   await abortableRequest(initSession(), signal);
   let response = await send();
@@ -1146,23 +1177,20 @@ async function requestSandboxOrder(offerId, customer, signal) {
     response = await send();
   }
   const data = await response.json().catch(() => ({}));
-  const validResponse = data.sandbox === true
-    && data.mode === 'sandbox'
-    && data.order?.status === 'demo_pending'
+  const validResponse = data.mode === 'production'
+    && data.order?.status
     && typeof data.order?.id === 'string'
-    && data.order.id.startsWith('demo_')
     && data.order?.offer?.id === offerId
     && typeof data.order.offer.title === 'string'
     && Number.isInteger(data.order.offer.amountCents)
     && data.order.offer.amountCents > 0
     && data.order.offer.currency === 'BRL'
-    && data.pix?.isReal === false
-    && typeof data.pix?.copyPaste === 'string'
-    && data.pix.copyPaste.startsWith('DEMO-PIX-')
-    && data.pix.copyPaste.endsWith('-NAO-PAGAR')
+    && data.pix?.isReal === true
+    && typeof data.pix?.txid === 'string'
+    && Boolean(data.pix?.paymentCode || data.pix?.paymentCodeBase64 || data.pix?.paymentQrUrl)
     && Number.isFinite(Date.parse(data.pix?.expiresAt || ''));
   if (!response.ok || !validResponse) {
-    throw new Error(data.error || 'Não foi possível gerar a demonstração agora.');
+    throw new Error(data.error || 'Não foi possível gerar o Pix agora.');
   }
   return data;
 }
@@ -1176,7 +1204,7 @@ async function handleCheckoutSubmit(event, offer, renderToken) {
   const customer = checkoutCustomer(form);
   if (!customer) {
     if (status) status.textContent = 'Revise os campos destacados.';
-    trackClarityEvent('checkout_validation_failed', { stage: 'checkout', sandbox: true, offer_id: offer.id });
+    trackClarityEvent('checkout_validation_failed', { stage: 'checkout', offer_id: offer.id });
     return;
   }
 
@@ -1184,14 +1212,14 @@ async function handleCheckoutSubmit(event, offer, renderToken) {
   if (button) {
     button.disabled = true;
     button.setAttribute('aria-busy', 'true');
-    button.textContent = 'Gerando demonstração...';
+    button.textContent = 'Gerando Pix...';
   }
   if (status) {
     status.className = 'checkout-status-rs';
-    status.textContent = 'Preparando seu código de teste...';
+    status.textContent = 'Conectando ao gateway e gerando seu Pix...';
   }
   writeJson(storageKeys.personal, { ...readJson(storageKeys.personal, {}), ...customer });
-  trackClarityEvent('checkout_submit_started', { stage: 'checkout', sandbox: true, offer_id: offer.id });
+  trackClarityEvent('checkout_submit_started', { stage: 'checkout', offer_id: offer.id });
 
   checkoutRequestController?.abort();
   const controller = new AbortController();
@@ -1203,28 +1231,36 @@ async function handleCheckoutSubmit(event, offer, renderToken) {
   }, 12000);
 
   try {
-    const data = await requestSandboxOrder(offer.id, customer, controller.signal);
+    const data = await requestCheckoutOrder(offer.id, customer, controller.signal);
     const isCurrentCheckout = renderToken === checkoutRenderToken
       && routeName() === 'checkout'
       && selectedCheckoutOffer()?.id === offer.id;
     if (!isCurrentCheckout || controller.signal.aborted) return;
-    writeSessionJson(storageKeys.sandboxOrder, data);
-    trackClarityEvent('checkout_sandbox_created', {
+    writeSessionJson(storageKeys.checkoutOrder, data);
+    trackClarityEvent('checkout_pix_created', {
       stage: 'checkout',
-      sandbox: true,
       offer_id: data.order.offer.id,
       amount_cents: data.order.offer.amountCents,
+      gateway: data.pix.gateway,
+    });
+    trackConfiguredEvent('add_payment_info', {
+      value: data.order.offer.amountCents / 100,
+      currency: 'BRL',
+      content_ids: [data.order.offer.id],
+      content_name: data.order.offer.title,
+      content_type: 'product',
+      event_id: `add_payment_${data.pix.txid}`,
     });
     void trackLead({
       stage: 'checkout',
-      event: 'checkout_sandbox_created',
-      sandbox: true,
+      event: 'pix_created',
       order: { id: data.order.id, status: data.order.status },
+      payment: data.pix,
       offer: data.order.offer,
       personal: readJson(storageKeys.personal, {}),
       quiz: readJson(storageKeys.quiz, null),
     });
-    renderSandboxPixState(offer, data);
+    void renderCheckoutPixState(offer, data);
   } catch (error) {
     const isCurrentCheckout = renderToken === checkoutRenderToken && routeName() === 'checkout';
     if (!isCurrentCheckout || (!timedOut && controller.signal.aborted)) return;
@@ -1233,101 +1269,104 @@ async function handleCheckoutSubmit(event, offer, renderToken) {
     if (button?.isConnected) {
       button.disabled = false;
       button.removeAttribute('aria-busy');
-      button.textContent = `Gerar Pix demonstrativo de ${formatMoney(offer.price)}`;
+      button.textContent = `Gerar Pix de ${formatMoney(offer.price)}`;
     }
     if (status?.isConnected) {
       status.className = 'checkout-status-rs is-error';
       status.textContent = timedOut
         ? 'A conexão demorou demais. Confira sua internet e tente novamente.'
-        : (error.message || 'Não foi possível gerar a demonstração. Tente novamente.');
+        : (error.message || 'Não foi possível gerar o Pix. Tente novamente.');
     }
-    trackClarityEvent('checkout_error', { stage: 'checkout', sandbox: true, offer_id: offer.id });
+    trackClarityEvent('checkout_error', { stage: 'checkout', offer_id: offer.id });
   } finally {
     window.clearTimeout(timeoutId);
     if (checkoutRequestController === controller) checkoutRequestController = null;
   }
 }
 
-function sandboxQrMarkup(seed = '') {
-  let state = [...String(seed)].reduce((sum, char) => (sum + char.charCodeAt(0)) >>> 0, 2166136261);
-  const isFinder = (x, y, ox, oy) => x >= ox && x < ox + 7 && y >= oy && y < oy + 7
-    && (x === ox || x === ox + 6 || y === oy || y === oy + 6 || (x >= ox + 2 && x <= ox + 4 && y >= oy + 2 && y <= oy + 4));
-  const modules = [];
-  for (let y = 0; y < 21; y += 1) {
-    for (let x = 0; x < 21; x += 1) {
-      const finderZone = (x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12);
-      const finder = isFinder(x, y, 0, 0) || isFinder(x, y, 14, 0) || isFinder(x, y, 0, 14);
-      state = (Math.imul(state ^ (x + 31 * y + 1), 16777619) + 1013904223) >>> 0;
-      if (finder || (!finderZone && state % 3 === 0)) modules.push(`<rect x="${x}" y="${y}" width="1" height="1" />`);
-    }
+async function checkoutQrSource(pix = {}) {
+  const direct = String(pix.paymentQrUrl || '').trim();
+  if (/^(https?:\/\/|data:image)/i.test(direct)) return direct;
+  const base64 = String(pix.paymentCodeBase64 || '').trim().replace(/^data:image\/[^;]+;base64,/i, '');
+  if (base64) return `data:image/png;base64,${base64}`;
+  const code = String(pix.paymentCode || '').trim();
+  if (!code) return '';
+  try {
+    return await QRCode.toDataURL(code, { width: 320, margin: 2, errorCorrectionLevel: 'M' });
+  } catch (_error) {
+    return '';
   }
-  return `
-    <div class="checkout-demo-qr-wrap-rs">
-      <svg class="checkout-demo-qr-rs" viewBox="0 0 21 21" role="img" aria-label="Prévia visual de QR code não escaneável">${modules.join('')}</svg>
-      <strong>DEMO</strong>
-    </div>
-  `;
 }
 
-function renderSandboxPixState(offer, data, resumed = false) {
+async function renderCheckoutPixState(offer, data, resumed = false) {
   checkoutSubmitting = false;
   const stage = document.querySelector('#checkoutStage');
   if (!stage) return;
+  if (data.pix?.status === 'paid') {
+    renderCheckoutSuccess(offer, data, String(data.order?.id || data.pix?.txid || '').slice(-12).toUpperCase());
+    return;
+  }
+  const qrSrc = await checkoutQrSource(data.pix);
+  if (!stage.isConnected || routeName() !== 'checkout') return;
   const confirmedOffer = {
     ...offer,
     title: data.order?.offer?.title || offer.title,
     price: Number(data.order?.offer?.amountCents || Math.round(offer.price * 100)) / 100,
   };
-  const orderId = String(data.order?.id || 'demo').slice(-12).toUpperCase();
+  const orderId = String(data.order?.id || data.pix?.txid || '').slice(-12).toUpperCase();
   stage.className = 'checkout-pix-layout-rs';
   stage.innerHTML = `
     <article class="checkout-card-rs checkout-pix-card-rs">
       <div class="checkout-section-head-rs">
         <span>✓</span>
         <div>
-          <p class="checkout-kicker-rs">Pix demonstrativo</p>
-          <h2>Código de teste gerado</h2>
-          <p>${resumed ? 'Retomamos sua demonstração neste aparelho.' : 'A prévia está pronta. Nenhum pagamento real foi criado.'}</p>
+          <p class="checkout-kicker-rs">Pix gerado</p>
+          <h2>Pedido aguardando pagamento</h2>
+          <p>${resumed ? 'Retomamos o pagamento pendente neste aparelho.' : 'Use o QR Code ou copie o código Pix abaixo.'}</p>
         </div>
       </div>
       <div class="checkout-sandbox-banner-rs checkout-sandbox-banner-rs--compact" role="note">
-        <div><strong>Não pagar</strong><p>Este código não pertence à rede Pix.</p></div>
+        <div><strong>Confirmação automática</strong><p>Esta página será atualizada quando o gateway aprovar o pagamento.</p></div>
       </div>
       <div class="checkout-demo-qr-rs-shell">
-        ${sandboxQrMarkup(data.order?.id)}
+        <div class="checkout-demo-qr-wrap-rs">
+          ${qrSrc ? `<img class="checkout-demo-qr-rs" src="${escapeAttr(qrSrc)}" alt="QR Code Pix" />` : '<strong>PIX</strong>'}
+        </div>
         <div>
-          <small>Total simulado</small>
+          <small>Total no Pix</small>
           <strong>${formatMoney(Number(data.order?.offer?.amountCents || 0) / 100)}</strong>
           <span>${escapeHtml(data.order?.offer?.title || offer.title)}</span>
-          <em>Prévia visual não escaneável</em>
+          <em>${escapeHtml(data.pix?.gateway || 'gateway')}</em>
         </div>
       </div>
-      <label class="checkout-label-rs" for="sandboxPixCode">Código demonstrativo</label>
+      <label class="checkout-label-rs" for="checkoutPixCode">Pix copia e cola</label>
       <div class="checkout-copy-row-rs">
-        <input class="checkout-copy-input-rs" id="sandboxPixCode" data-demo-pix-code value="${escapeAttr(data.pix?.copyPaste || '')}" readonly />
-        <button class="checkout-copy-button-rs" type="button" data-copy-demo-code>Copiar</button>
+        <input class="checkout-copy-input-rs" id="checkoutPixCode" data-pix-code value="${escapeAttr(data.pix?.paymentCode || '')}" readonly />
+        <button class="checkout-copy-button-rs" type="button" data-copy-pix-code ${data.pix?.paymentCode ? '' : 'disabled'}>Copiar</button>
       </div>
       <div class="checkout-status-rs" id="checkoutPixStatus" role="status" aria-live="polite"></div>
-      <button class="checkout-submit-rs" type="button" data-simulate-paid>Simular confirmação</button>
-      <button class="checkout-link-button-rs" type="button" data-new-sandbox>Gerar uma nova demonstração</button>
+      <button class="checkout-submit-rs" type="button" data-check-payment>Verificar pagamento</button>
+      <button class="checkout-link-button-rs" type="button" data-new-payment>Gerar um novo Pix</button>
     </article>
     ${checkoutSummaryMarkup(confirmedOffer)}
   `;
 
   stage.querySelector('[data-checkout-change]')?.addEventListener('click', () => navigateTo('/ofertas'));
   bindCheckoutSummaryControls(stage);
-  stage.querySelector('[data-copy-demo-code]')?.addEventListener('click', copySandboxCode);
-  stage.querySelector('[data-new-sandbox]')?.addEventListener('click', () => {
-    removeSessionJson(storageKeys.sandboxOrder);
+  stage.querySelector('[data-copy-pix-code]')?.addEventListener('click', copyCheckoutPixCode);
+  stage.querySelector('[data-new-payment]')?.addEventListener('click', () => {
+    removeSessionJson(storageKeys.checkoutOrder);
+    window.clearTimeout(checkoutStatusTimer);
     renderCheckoutPage({ trackView: false });
   });
-  stage.querySelector('[data-simulate-paid]')?.addEventListener('click', () => renderSandboxSuccess(confirmedOffer, data, orderId));
-  stage.querySelector('[data-copy-demo-code]')?.focus({ preventScroll: true });
+  stage.querySelector('[data-check-payment]')?.addEventListener('click', () => void pollCheckoutStatus(confirmedOffer, data, orderId, true));
+  stage.querySelector('[data-copy-pix-code]')?.focus({ preventScroll: true });
+  scheduleCheckoutStatusPoll(confirmedOffer, data, orderId, 2500);
 }
 
-async function copySandboxCode(event) {
+async function copyCheckoutPixCode(event) {
   const button = event.currentTarget;
-  const input = document.querySelector('[data-demo-pix-code]');
+  const input = document.querySelector('[data-pix-code]');
   const status = document.querySelector('#checkoutPixStatus');
   if (!input) return;
   try {
@@ -1337,8 +1376,8 @@ async function copySandboxCode(event) {
       document.execCommand('copy');
     }
     button.textContent = 'Copiado';
-    if (status) status.textContent = 'Código demonstrativo copiado.';
-    trackClarityEvent('checkout_demo_code_copied', { stage: 'checkout', sandbox: true });
+    if (status) status.textContent = 'Código Pix copiado.';
+    trackClarityEvent('checkout_pix_code_copied', { stage: 'checkout' });
     window.setTimeout(() => { if (button.isConnected) button.textContent = 'Copiar'; }, 1800);
   } catch (_error) {
     input.select();
@@ -1346,66 +1385,137 @@ async function copySandboxCode(event) {
   }
 }
 
-function renderSandboxSuccess(offer, data, orderId) {
+function renderCheckoutSuccess(offer, data, orderId) {
   const stage = document.querySelector('#checkoutStage');
   if (!stage) return;
-  removeSessionJson(storageKeys.sandboxOrder);
+  window.clearTimeout(checkoutStatusTimer);
+  checkoutStatusTimer = 0;
+  const firstConfirmation = data.clientPurchaseTracked !== true;
+  const storedData = { ...data, clientPurchaseTracked: true };
+  writeSessionJson(storageKeys.checkoutOrder, storedData);
   stage.className = 'checkout-pix-layout-rs';
   stage.innerHTML = `
     <article class="checkout-card-rs checkout-success-rs" tabindex="-1">
       <div class="checkout-success-icon-rs" aria-hidden="true"><span></span></div>
-      <p class="checkout-kicker-rs">Demonstração concluída</p>
-      <h2>Fluxo confirmado com sucesso</h2>
-      <p>Você chegou ao fim do checkout sandbox. Nenhum pagamento real foi realizado e nenhum pedido comercial foi criado.</p>
-      <div class="checkout-order-id-rs"><span>Referência de teste</span><strong>${escapeHtml(orderId)}</strong></div>
+      <p class="checkout-kicker-rs">Pagamento confirmado</p>
+      <h2>Pedido aprovado com sucesso</h2>
+      <p>O gateway confirmou seu Pix. O pedido já aparece como pago no painel administrativo.</p>
+      <div class="checkout-order-id-rs"><span>Referência do pedido</span><strong>${escapeHtml(orderId)}</strong></div>
       <button class="checkout-submit-rs" type="button" data-checkout-success-back>Voltar às ofertas</button>
-      <button class="checkout-link-button-rs" type="button" data-checkout-success-restart>Refazer demonstração</button>
     </article>
     ${checkoutSummaryMarkup(offer)}
   `;
-  trackClarityEvent('checkout_sandbox_completed', {
-    stage: 'checkout',
-    sandbox: true,
-    offer_id: data.order?.offer?.id || offer.id,
-  });
-  void trackLead({
-    stage: 'checkout',
-    event: 'checkout_sandbox_completed',
-    sandbox: true,
-    order: { id: data.order?.id, status: 'demo_completed' },
-    offer: data.order?.offer,
-    personal: readJson(storageKeys.personal, {}),
-    quiz: readJson(storageKeys.quiz, null),
-  });
+  if (firstConfirmation) {
+    trackClarityEvent('purchase', {
+      stage: 'checkout',
+      offer_id: data.order?.offer?.id || offer.id,
+      amount_cents: data.order?.offer?.amountCents || Math.round(offer.price * 100),
+      gateway: data.pix?.gateway,
+    });
+    trackConfiguredEvent('purchase', {
+      value: Number(data.order?.offer?.amountCents || Math.round(offer.price * 100)) / 100,
+      currency: 'BRL',
+      order_id: data.pix?.txid || data.order?.id,
+      content_ids: [data.order?.offer?.id || offer.id],
+      content_name: data.order?.offer?.title || offer.title,
+      content_type: 'product',
+      event_id: data.pix?.purchaseEventId || `purchase_${data.pix?.txid || data.order?.id}`,
+    });
+    void trackLead({
+      stage: 'checkout',
+      event: 'pix_confirmed',
+      order: { id: data.order?.id, status: 'paid' },
+      payment: data.pix,
+      offer: data.order?.offer,
+      personal: readJson(storageKeys.personal, {}),
+      quiz: readJson(storageKeys.quiz, null),
+    });
+  }
   stage.querySelector('[data-checkout-change]')?.addEventListener('click', () => navigateTo('/ofertas'));
   bindCheckoutSummaryControls(stage);
   stage.querySelector('[data-checkout-success-back]')?.addEventListener('click', () => navigateTo('/ofertas'));
-  stage.querySelector('[data-checkout-success-restart]')?.addEventListener('click', () => renderCheckoutPage({ trackView: false }));
   stage.querySelector('.checkout-success-rs')?.focus({ preventScroll: true });
 }
 
-function activeSandboxOrder(offer) {
-  const data = readSessionJson(storageKeys.sandboxOrder, null);
+async function requestCheckoutStatus(data, signal) {
+  const send = () => fetch('/api/checkout/status', {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+      signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId: getSessionId(), txid: data.pix?.txid }),
+    });
+  let response = await send();
+  if (response.status === 401) {
+    await abortableRequest(initSession({ force: true }), signal);
+    response = await send();
+  }
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok && response.status !== 202) throw new Error(result.error || 'Falha ao consultar o pagamento.');
+  return result.payment || data.pix;
+}
+
+function scheduleCheckoutStatusPoll(offer, data, orderId, delay = 5000) {
+  window.clearTimeout(checkoutStatusTimer);
+  if (routeName() !== 'checkout' || data.pix?.status !== 'waiting_payment') return;
+  checkoutStatusTimer = window.setTimeout(() => void pollCheckoutStatus(offer, data, orderId, false), delay);
+}
+
+async function pollCheckoutStatus(offer, data, orderId, manual = false) {
+  if (routeName() !== 'checkout') return;
+  checkoutStatusController?.abort();
+  const controller = new AbortController();
+  checkoutStatusController = controller;
+  const status = document.querySelector('#checkoutPixStatus');
+  const button = document.querySelector('[data-check-payment]');
+  if (manual && button) button.disabled = true;
+  if (manual && status) status.textContent = 'Consultando o gateway...';
+  try {
+    const payment = await requestCheckoutStatus(data, controller.signal);
+    if (controller.signal.aborted || routeName() !== 'checkout') return;
+    const next = { ...data, order: { ...data.order, status: payment.status }, pix: { ...data.pix, ...payment, isReal: true } };
+    writeSessionJson(storageKeys.checkoutOrder, next);
+    if (payment.status === 'paid') {
+      renderCheckoutSuccess(offer, next, orderId);
+      return;
+    }
+    if (status) {
+      status.className = `checkout-status-rs ${['refused', 'refunded', 'chargedback'].includes(payment.status) ? 'is-error' : ''}`;
+      status.textContent = payment.status === 'waiting_payment'
+        ? 'Aguardando pagamento. A consulta é atualizada automaticamente.'
+        : `Status do pagamento: ${payment.status}.`;
+    }
+    scheduleCheckoutStatusPoll(offer, next, orderId, 5000);
+  } catch (error) {
+    if (!controller.signal.aborted && status) status.textContent = manual ? error.message : 'Aguardando nova consulta ao gateway...';
+    if (!controller.signal.aborted) scheduleCheckoutStatusPoll(offer, data, orderId, 7000);
+  } finally {
+    if (button?.isConnected) button.disabled = false;
+    if (checkoutStatusController === controller) checkoutStatusController = null;
+  }
+}
+
+function activeCheckoutOrder(offer) {
+  const data = readSessionJson(storageKeys.checkoutOrder, null);
   const expiresAt = Date.parse(data?.pix?.expiresAt || '');
   const createdAt = Date.parse(data?.order?.createdAt || '');
   const expectedAmount = Math.round(Number(offer.price || 0) * 100);
-  const valid = data?.sandbox === true
-    && data?.mode === 'sandbox'
-    && data?.pix?.isReal === false
+  const valid = data?.mode === 'production'
+    && data?.pix?.isReal === true
     && data?.order?.offer?.id === offer.id
     && data?.order?.offer?.title === offer.title
     && data?.order?.offer?.currency === 'BRL'
     && data?.order?.offer?.amountCents === expectedAmount
-    && /^demo_[a-f0-9]{32}$/.test(data?.order?.id || '')
-    && /^DEMO-PIX-[A-F0-9]+-\d+-NAO-PAGAR$/.test(data?.pix?.copyPaste || '')
+    && typeof data?.order?.id === 'string'
+    && typeof data?.pix?.txid === 'string'
+    && Boolean(data?.pix?.paymentCode || data?.pix?.paymentCodeBase64 || data?.pix?.paymentQrUrl)
     && Number.isFinite(createdAt)
     && Number.isFinite(expiresAt)
-    && expiresAt - createdAt === 15 * 60 * 1000
     && createdAt <= Date.now() + 60 * 1000
-    && expiresAt <= Date.now() + 16 * 60 * 1000
-    && expiresAt > Date.now();
+    && (data?.pix?.status === 'paid' || (data?.pix?.status === 'waiting_payment' && expiresAt > Date.now()));
   if (valid) return data;
-  removeSessionJson(storageKeys.sandboxOrder);
+  removeSessionJson(storageKeys.checkoutOrder);
   return null;
 }
 
@@ -2056,6 +2166,8 @@ function gatewayFieldsMarkup(name, gateway) {
       settingInput('gateways.sunize.baseUrl', 'Base URL', baseUrl),
       settingInput('gateways.sunize.apiKey', 'API key', gateway.apiKey, 'password'),
       settingInput('gateways.sunize.apiSecret', 'API secret', gateway.apiSecret || gateway.secret, 'password'),
+      settingInput('gateways.sunize.webhookToken', 'Token do webhook', gateway.webhookToken, 'password'),
+      settingInput('gateways.sunize.postbackUrl', 'URL de postback (opcional)', gateway.postbackUrl),
     ].join('');
   }
   if (name === 'paradise') {
@@ -2066,6 +2178,8 @@ function gatewayFieldsMarkup(name, gateway) {
       settingInput('gateways.paradise.orderbumpHash', 'Orderbump hash', gateway.orderbumpHash, 'password'),
       settingInput('gateways.paradise.source', 'Source', gateway.source || 'api_externa'),
       settingInput('gateways.paradise.description', 'Descrição PIX', gateway.description),
+      settingInput('gateways.paradise.webhookToken', 'Token do webhook', gateway.webhookToken, 'password'),
+      settingInput('gateways.paradise.postbackUrl', 'URL de postback (opcional)', gateway.postbackUrl),
     ].join('');
   }
   if (name === 'atomopay') {
@@ -2081,12 +2195,15 @@ function gatewayFieldsMarkup(name, gateway) {
       settingInput('gateways.atomopay.expressoOfferHash', 'Expresso offer hash', gateway.expressoOfferHash, 'password'),
       settingInput('gateways.atomopay.expressoProductHash', 'Expresso product hash', gateway.expressoProductHash, 'password'),
       settingInput('gateways.atomopay.webhookToken', 'Webhook token', gateway.webhookToken, 'password'),
+      settingInput('gateways.atomopay.postbackUrl', 'URL de postback (opcional)', gateway.postbackUrl),
     ].join('');
   }
   return [
     settingInput('gateways.bravopay.baseUrl', 'Base URL', baseUrl),
     settingInput('gateways.bravopay.apiKey', 'API key', gateway.apiKey, 'password'),
     settingInput('gateways.bravopay.webhookSecret', 'Webhook secret', gateway.webhookSecret || gateway.secret, 'password'),
+    settingInput('gateways.bravopay.webhookToken', 'Token do webhook', gateway.webhookToken, 'password'),
+    settingInput('gateways.bravopay.postbackUrl', 'URL de postback (opcional)', gateway.postbackUrl),
     settingInput('gateways.bravopay.expiresIn', 'Expira em segundos', gateway.expiresIn || 3600, 'number'),
     settingInput('gateways.bravopay.description', 'Descrição PIX', gateway.description),
   ].join('');
@@ -2165,9 +2282,15 @@ async function runGatewayTests() {
     return;
   }
   if (runButton) runButton.disabled = true;
-  if (status) status.textContent = 'Gerando PIXs de teste direto nos gateways salvos...';
-  if (results) results.innerHTML = '<div class="gateway-test-empty-rs">Gerando testes. Aguarde alguns segundos...</div>';
+  if (status) status.textContent = 'Salvando os gateways antes do teste...';
+  if (results) results.innerHTML = '<div class="gateway-test-empty-rs">Validando configurações e gerando testes. Aguarde alguns segundos...</div>';
   try {
+    const saved = await adminFetch('/api/admin/settings', {
+      method: 'POST',
+      body: JSON.stringify({ settings: collectAdminSettingsPatch() }),
+    });
+    adminSettings = saved.settings || adminSettings;
+    if (status) status.textContent = 'Configurações salvas. Gerando PIXs de teste...';
     const data = await adminFetch('/api/admin/gateway-test-pix', {
       method: 'POST',
       body: JSON.stringify({ amount, gateways }),
@@ -2362,6 +2485,22 @@ function settingToggle(path, label, checked) {
 
 async function saveAdminSettings() {
   const status = document.querySelector('#adminStatus');
+  const patch = collectAdminSettingsPatch();
+  status.textContent = 'Salvando configurações...';
+  try {
+    const result = await adminFetch('/api/admin/settings', {
+      method: 'POST',
+      body: JSON.stringify({ settings: patch }),
+    });
+    adminSettings = result.settings || adminSettings;
+    status.textContent = 'Configurações salvas.';
+    renderAdminPanel();
+  } catch (error) {
+    status.textContent = error.message || 'Falha ao salvar.';
+  }
+}
+
+function collectAdminSettingsPatch() {
   const patch = {};
   document.querySelectorAll('[data-setting]').forEach((input) => {
     const path = input.dataset.setting;
@@ -2375,18 +2514,7 @@ async function saveAdminSettings() {
     setDeep(patch, 'gateways.active', gatewayOrder[0]);
     setDeep(patch, 'gateways.activeGateway', gatewayOrder[0]);
   }
-  status.textContent = 'Salvando configurações...';
-  try {
-    const result = await adminFetch('/api/admin/settings', {
-      method: 'POST',
-      body: JSON.stringify({ settings: patch }),
-    });
-    adminSettings = result.settings || adminSettings;
-    status.textContent = 'Configurações salvas.';
-    renderAdminPanel();
-  } catch (error) {
-    status.textContent = error.message || 'Falha ao salvar.';
-  }
+  return patch;
 }
 
 function setDeep(target, path, value) {
@@ -2700,17 +2828,39 @@ function trackConfiguredEvent(name, data = {}) {
     personal_submitted: 'CompleteRegistration',
     personal_data_submitted: 'CompleteRegistration',
     offer_selected: 'InitiateCheckout',
+    add_payment_info: 'AddPaymentInfo',
     purchase: 'Purchase',
   }[normalizedName] || '';
-  const eventId = `evt_${normalizedName.replace(/[^a-z0-9_]+/g, '_').slice(0, 48) || 'event'}_${
+  const tiktokStandardName = {
+    quiz_started: 'ViewContent',
+    quiz_completed: 'SubmitForm',
+    personal_submitted: 'CompleteRegistration',
+    personal_data_submitted: 'CompleteRegistration',
+    offer_selected: 'InitiateCheckout',
+    add_payment_info: 'AddPaymentInfo',
+    purchase: 'CompletePayment',
+  }[normalizedName] || '';
+  const googleEventName = {
+    pageview: 'page_view',
+    offer_selected: 'begin_checkout',
+    add_payment_info: 'add_payment_info',
+    purchase: 'purchase',
+  }[normalizedName] || rawName;
+  const explicitEventId = String(data?.event_id || '').trim().slice(0, 120);
+  const eventData = { ...data };
+  delete eventData.event_id;
+  const eventId = explicitEventId || `evt_${normalizedName.replace(/[^a-z0-9_]+/g, '_').slice(0, 48) || 'event'}_${
     crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`
   }`.slice(0, 120);
   if (siteConfig.tracking?.browserPixel !== false) {
     try {
-      window.fbq?.(metaStandardName ? 'track' : 'trackCustom', metaStandardName || rawName, data, { eventID: eventId });
+      window.fbq?.(metaStandardName ? 'track' : 'trackCustom', metaStandardName || rawName, eventData, { eventID: eventId });
     } catch (_error) {}
-    try { window.ttq?.track?.(rawName, data); } catch (_error) {}
-    try { window.gtag?.('event', rawName, data); } catch (_error) {}
+    try {
+      if (normalizedName === 'pageview') window.ttq?.page?.();
+      else window.ttq?.track?.(tiktokStandardName || rawName, eventData);
+    } catch (_error) {}
+    try { window.gtag?.('event', googleEventName, eventData); } catch (_error) {}
   }
   if (siteConfig.tracking?.serverEvents === true) {
     fetch('/api/tracking/event', {
@@ -2723,7 +2873,7 @@ function trackConfiguredEvent(name, data = {}) {
         sessionId: getSessionId(),
         eventId,
         sourceUrl: window.location.href,
-        data,
+        data: eventData,
       }),
     }).catch(() => null);
   }
