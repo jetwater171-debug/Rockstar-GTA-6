@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import {
   adminLoginRateState,
   clearAdminCookie,
@@ -18,15 +19,42 @@ import { invalidateIpBlacklistCache, isValidIp } from '../../lib/ip-blacklist.js
 import { officialHosts } from '../../lib/clone-detector.js';
 import { auditAdmin, listAdminAudit } from '../../lib/admin-audit.js';
 import { getGatewayTransaction } from '../../lib/checkout-payments.js';
+import { invalidateSharedCommerceCaches, runCoreAdmin } from '../../lib/shared-commerce-adapter.js';
 
-const gateways = ['sunize', 'paradise', 'atomopay', 'bravopay'];
+const require = createRequire(import.meta.url);
+const { describeLeadDevice, sanitizeLeadPayload } = require('../../backend/shared-core/lib/lead-privacy.js');
+
+const gateways = ['ghostspay', 'sunize', 'paradise', 'atomopay', 'bravopay'];
 const defaultSettings = {
-  tracking: { metaPixel: '', metaAccessToken: '', tiktokPixel: '', googleTag: '', browserPixel: true, serverEvents: false },
+  tracking: {
+    metaPixel: '',
+    metaBackupPixel: '',
+    metaAccessToken: '',
+    metaBackupAccessToken: '',
+    metaTestEventCode: '',
+    metaBackupTestEventCode: '',
+    tiktokPixel: '',
+    googleTag: '',
+    browserPixel: true,
+    serverEvents: false
+  },
   utmfy: { enabled: false, apiKey: '', endpoint: 'https://api.utmify.com.br/api-credentials/orders', productName: 'Promoção GTA VI', platform: 'Rockstar GTA VI' },
+  pushcut: {
+    enabled: false,
+    pixCreatedUrl: '',
+    pixConfirmedUrl: '',
+    templates: {
+      pixCreatedTitle: 'PIX gerado - {amount}',
+      pixCreatedMessage: 'Novo PIX gerado para {name}. Pedido {orderId}.',
+      pixConfirmedTitle: 'PIX pago - {amount}',
+      pixConfirmedMessage: 'Pagamento confirmado para {name}. Pedido {orderId}.'
+    }
+  },
   gateways: {
     active: 'sunize',
     activeGateway: 'sunize',
-    gatewayOrder: ['sunize', 'paradise', 'atomopay', 'bravopay'],
+    gatewayOrder: ['sunize', 'ghostspay', 'paradise', 'atomopay', 'bravopay'],
+    ghostspay: { enabled: false, baseUrl: 'https://api.ghostspaysv2.com/functions/v1', basicAuthBase64: '', secretKey: '', companyId: '', webhookToken: '', postbackUrl: '' },
     sunize: { enabled: false, baseUrl: 'https://api.sunize.com.br/v1', apiKey: '', apiSecret: '', webhookToken: '', postbackUrl: '' },
     paradise: { enabled: false, baseUrl: 'https://multi.paradisepags.com', apiKey: '', productHash: '', orderbumpHash: '', source: 'api_externa', description: '', webhookToken: '', postbackUrl: '' },
     atomopay: {
@@ -61,7 +89,7 @@ const defaultSettings = {
 
 const asObject = (value) => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 const isPlainObject = (value) => value && typeof value === 'object' && !Array.isArray(value);
-const gatewayLabel = (name) => ({ sunize: 'Sunize', paradise: 'Paradise', atomopay: 'AtomoPay', bravopay: 'Bravo Pay' }[name] || name);
+const gatewayLabel = (name) => ({ ghostspay: 'GhostsPay', sunize: 'Sunize', paradise: 'Paradise', atomopay: 'AtomoPay', bravopay: 'Bravo Pay' }[name] || name);
 
 function pickText(...values) {
   for (const value of values) {
@@ -245,7 +273,6 @@ function normalizeGatewaySettings(value) {
     activeGateway: order[0] || gateways[0],
     gatewayOrder: order.length ? order : [...gateways]
   };
-  delete next.gateways.ghostspay;
   return next;
 }
 
@@ -255,6 +282,7 @@ function publicSettings(value) {
     'apiKey',
     'apiSecret',
     'apiToken',
+    'basicAuthBase64',
     'secret',
     'secretKey',
     'companyId',
@@ -276,7 +304,10 @@ function publicSettings(value) {
     });
   });
   if (merged.tracking?.metaAccessToken) merged.tracking.metaAccessToken = '__SECRET_SET__';
+  if (merged.tracking?.metaBackupAccessToken) merged.tracking.metaBackupAccessToken = '__SECRET_SET__';
   if (merged.utmfy?.apiKey) merged.utmfy.apiKey = '__SECRET_SET__';
+  if (merged.pushcut?.pixCreatedUrl) merged.pushcut.pixCreatedUrl = '__SECRET_SET__';
+  if (merged.pushcut?.pixConfirmedUrl) merged.pushcut.pixConfirmedUrl = '__SECRET_SET__';
   return merged;
 }
 
@@ -300,11 +331,17 @@ function cleanSearch(value) {
   return String(value || '').trim().replace(/[%(),]/g, '').slice(0, 80);
 }
 
-async function fetchLeads(limit = 5000, q = '') {
+async function fetchLeads(limit = 5000, q = '', options = {}) {
   const params = new URLSearchParams({ select: '*', order: 'updated_at.desc', limit: String(limit) });
+  const offset = Math.max(0, Number(options.offset) || 0);
+  if (offset) params.set('offset', String(offset));
+  const from = String(options.from || '').trim();
+  const to = String(options.to || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(from)) params.set('created_at', `gte.${from}T00:00:00.000Z`);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(to)) params.append('created_at', `lte.${to}T23:59:59.999Z`);
   const search = cleanSearch(q);
-  if (search) params.set('or', `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,cpf.ilike.%${search}%`);
-  return supabaseFetch(`leads?${params.toString()}`);
+  if (search) params.set('or', `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%,cpf.ilike.%${search}%,session_id.ilike.%${search}%,client_ip.ilike.%${search}%,pix_txid.ilike.%${search}%,utm_campaign.ilike.%${search}%`);
+  return supabaseFetch(`leads?${params.toString()}`, options.count ? { headers: { Prefer: 'count=exact' } } : {});
 }
 
 function pageKey(page) {
@@ -332,23 +369,31 @@ function ranking(map, total, limit = 8) {
 }
 
 function deviceFromLead(lead, payload) {
-  const ua = String(lead.user_agent || payload.metadata?.user_agent || '').toLowerCase();
-  const platform = String(payload.quiz?.answers?.find?.((a) => /plataforma/i.test(a.question || ''))?.answer || '').toLowerCase();
-  if (ua.includes('iphone')) return 'iPhone';
-  if (ua.includes('android')) return 'Android';
-  if (platform.includes('playstation')) return 'PlayStation';
-  if (platform.includes('xbox')) return 'Xbox';
-  if (platform.includes('pc')) return 'PC';
-  return 'Indefinido';
+  const described = describeLeadDevice(lead.user_agent || payload.metadata?.user_agent || '', payload.device);
+  return described.model || described.type || 'Indefinido';
+}
+
+function enrichLeadForAdmin(leadValue) {
+  const lead = asObject(leadValue);
+  const payload = sanitizeLeadPayload(lead.payload);
+  const described = describeLeadDevice(lead.user_agent || payload.metadata?.user_agent || '', payload.device);
+  return {
+    ...lead,
+    payload,
+    device: {
+      ...described,
+      clientIp: String(lead.client_ip || payload.metadata?.client_ip || '').trim()
+    }
+  };
 }
 
 function leadGateway(lead, payload) {
-  const raw = String(payload.gateway || payload.payment?.gateway || lead.gateway || 'sunize').trim().toLowerCase();
+  const raw = String(payload.gateway || payload.pixGateway || payload.paymentGateway || payload.pix?.gateway || payload.payment?.gateway || lead.gateway || 'sunize').trim().toLowerCase();
   return gateways.includes(raw) ? raw : 'sunize';
 }
 
 function isPaidLead(lead, payload) {
-  return /paid|confirm|pago/i.test(String(lead.last_event || payload.payment?.status || ''));
+  return /paid|confirm|pago|approved/i.test(String(lead.last_event || payload.pixStatus || payload.pix?.status || payload.payment?.status || ''));
 }
 
 function csvCell(value) {
@@ -388,9 +433,11 @@ async function overview(req, res) {
 }
 
 async function leads(req, res) {
+  if (req.query?.session_id) return leadDetail(req, res, req.query.session_id);
   const limit = Math.min(Math.max(Number(req.query?.limit) || 50, 1), 200);
+  const offset = Math.max(0, Number(req.query?.offset) || 0);
   const [result, pageviewsResult] = await Promise.all([
-    fetchLeads(limit, req.query?.q),
+    fetchLeads(limit, req.query?.q, { offset, from: req.query?.from, to: req.query?.to, count: true }),
     supabaseFetch('lead_pageviews?select=session_id,page,created_at&order=created_at.asc&limit=5000')
   ]);
   if (result.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
@@ -403,10 +450,13 @@ async function leads(req, res) {
     map[session].push(item);
     return map;
   }, {});
-  const data = (Array.isArray(result.data) ? result.data : []).map((lead) => ({
-    ...lead,
-    pageviews: pageviewsBySession[lead.session_id] || []
-  }));
+  const data = (Array.isArray(result.data) ? result.data : []).map((lead) => {
+    const enriched = enrichLeadForAdmin(lead);
+    return {
+      ...enriched,
+      pageviews: pageviewsBySession[lead.session_id] || []
+    };
+  });
   const summary = data.reduce((acc, lead) => {
     const payload = asObject(lead.payload);
     acc.total += 1;
@@ -418,7 +468,19 @@ async function leads(req, res) {
     if (updated && (!acc.lastUpdated || Date.parse(updated) > Date.parse(acc.lastUpdated))) acc.lastUpdated = updated;
     return acc;
   }, { total: 0, phone: 0, email: 0, quiz: 0, data: 0, lastUpdated: null });
-  sendJson(res, 200, { data, summary });
+  const contentRange = String(result.response?.headers?.get?.('content-range') || '');
+  const totalMatch = contentRange.match(/\/(\d+)$/);
+  const total = totalMatch ? Number(totalMatch[1]) : offset + data.length;
+  sendJson(res, 200, {
+    data,
+    summary,
+    pagination: {
+      offset,
+      limit,
+      total,
+      hasMore: offset + data.length < total || data.length === limit
+    }
+  });
 }
 
 async function leadDetail(req, res, sessionId) {
@@ -434,7 +496,7 @@ async function leadDetail(req, res, sessionId) {
   const lead = Array.isArray(leadResult.data) ? leadResult.data[0] : null;
   if (!lead) return sendJson(res, 404, { error: 'Lead não encontrado.' });
   const pageviews = pageviewsResult.ok && Array.isArray(pageviewsResult.data) ? pageviewsResult.data : [];
-  return sendJson(res, 200, { ok: true, data: { ...lead, pageviews } });
+  return sendJson(res, 200, { ok: true, data: { ...enrichLeadForAdmin(lead), pageviews } });
 }
 
 async function pages(_req, res) {
@@ -457,6 +519,7 @@ async function settings(req, res) {
     const current = await loadSettings();
     const next = normalizeGatewaySettings(mergeDeep(current.ok ? current.value : defaultSettings, body.settings || body || {}));
     const saved = await saveSettingsValue(next);
+    if (saved.ok) invalidateSharedCommerceCaches();
     if (saved.missing) return sendJson(res, 500, { error: 'Supabase não configurado.' });
     if (!saved.ok) return sendJson(res, 502, { error: 'Falha ao salvar configurações.', detail: saved.detail });
     await auditAdmin(req, 'settings_updated', { sections: Object.keys(body.settings || body || {}) });
@@ -474,7 +537,7 @@ async function salesInsights(_req, res) {
   let qualified = 0, contacts = 0, paid = 0, revenue = 0, lastSaleAt = null;
   rows.forEach((lead) => {
     const payload = asObject(lead.payload);
-    const amount = Number(lead.pix_amount || payload.payment?.amount || 0);
+    const amount = Number(lead.pix_amount || payload.pixAmount || payload.pix?.amount || payload.payment?.amount || 0);
     if (isPaidLead(lead, payload)) {
       paid += 1;
       revenue = Number((revenue + amount).toFixed(2));
@@ -486,8 +549,10 @@ async function salesInsights(_req, res) {
     bucketAdd(campaign, lead.utm_campaign || payload.utm?.utm_campaign || 'sem_campanha', lead.utm_campaign || payload.utm?.utm_campaign || 'Sem campanha');
     bucketAdd(device, deviceFromLead(lead, payload), deviceFromLead(lead, payload));
     bucketAdd(city, lead.city || payload.address?.city || 'sem_cidade', lead.city || payload.address?.city || 'Sem cidade');
-    const exp = payload.quiz?.answers?.find?.((answer) => /expectativa/i.test(answer.question || ''))?.answer || 'Sem resposta';
-    bucketAdd(expectation, exp, exp);
+    const qualification = payload.quiz?.status === 'pre_selected'
+      ? 'Pre-selecionado'
+      : payload.quiz?.status === 'review' ? 'Em revisao' : 'Sem quiz concluido';
+    bucketAdd(expectation, qualification, qualification);
   });
   sendJson(res, 200, {
     ok: true,
@@ -495,7 +560,7 @@ async function salesInsights(_req, res) {
     data: { sources: ranking(source, rows.length), campaigns: ranking(campaign, rows.length), devices: ranking(device, rows.length), cities: ranking(city, rows.length), expectations: ranking(expectation, rows.length) },
     audience: {
       headline: 'Público recomendado para Meta/TikTok',
-      recommendation: 'Priorize leads que concluíram o quiz, jogaram GTA V/GTA Online e escolheram PlayStation, Xbox ou iPhone/Android como plataforma principal.',
+      recommendation: 'Priorize leads que concluíram o quiz e agrupe os públicos por origem, campanha e dispositivo observado no acesso.',
       customAudience: 'Suba todos os leads com telefone/email e crie lookalike 1% Brasil a partir dos qualificados.',
       exclusion: 'Exclua visitantes sem contato e leads marcados como review quando houver volume suficiente.'
     }
@@ -512,13 +577,13 @@ async function gatewaySales(_req, res) {
     const payload = asObject(lead.payload);
     if (!isPaidLead(lead, payload)) return;
     const gateway = leadGateway(lead, payload);
-    const amount = Number(lead.pix_amount || payload.payment?.amount || 0);
+    const amount = Number(lead.pix_amount || payload.pixAmount || payload.pix?.amount || payload.payment?.amount || 0);
     const paidAt = lead.updated_at || lead.created_at;
     const row = summary.get(gateway);
     row.salesCount += 1;
     row.grossRevenue = Number((row.grossRevenue + amount).toFixed(2));
     row.lastPaidAt = !row.lastPaidAt || Date.parse(paidAt) > Date.parse(row.lastPaidAt) ? paidAt : row.lastPaidAt;
-    items.push({ gateway, gatewayLabel: gatewayLabel(gateway), amount, paidAt, txid: lead.pix_txid || payload.payment?.txid || '', sessionId: lead.session_id, lead: { name: lead.name, email: lead.email, phone: lead.phone }, status: lead.last_event || payload.payment?.status || '' });
+    items.push({ gateway, gatewayLabel: gatewayLabel(gateway), amount, paidAt, txid: lead.pix_txid || payload.pixTxid || payload.pix?.idTransaction || payload.payment?.txid || '', sessionId: lead.session_id, lead: { name: lead.name, email: lead.email, phone: lead.phone }, status: lead.last_event || payload.pixStatus || payload.pix?.status || payload.payment?.status || '' });
   });
   const summaryRows = Array.from(summary.values()).sort((a, b) => b.grossRevenue - a.grossRevenue || b.salesCount - a.salesCount);
   sendJson(res, 200, { ok: true, summary: summaryRows, detail: { totalSales: items.length, totalGrossRevenue: Number(items.reduce((sum, item) => sum + item.amount, 0).toFixed(2)) }, items: items.slice(0, 500) });
@@ -870,18 +935,21 @@ export default async function handler(req, res) {
   }
 
   if (route === 'overview') return overview(req, res);
-  if (route.startsWith('leads/')) return leadDetail(req, res, route.slice('leads/'.length));
+  if (route.startsWith('leads/') && route !== 'leads/export') return leadDetail(req, res, route.slice('leads/'.length));
   if (route === 'leads') return leads(req, res);
   if (route === 'pages') return pages(req, res);
   if (route === 'settings') return settings(req, res);
   if (route === 'sales-insights') return salesInsights(req, res);
   if (route === 'gateway-sales') return gatewaySales(req, res);
-  if (route === 'gateway-test-pix') return gatewayTestPix(req, res);
+  if (route === 'gateway-test-pix') return runCoreAdmin(req, res);
   if (route === 'backredirects') return backredirects(req, res);
   if (route === 'clonadores') return cloners(req, res);
   if (route === 'ip-blacklist') return blacklist(req, res);
-  if (route === 'leads-export') return exportLeads(req, res);
+  if (route === 'leads-export' || route === 'leads/export') return exportLeads(req, res);
   if (route === 'test-integration') return testIntegration(req, res);
   if (route === 'audit-logs') return auditLogs(req, res);
+  if (['utmfy-test', 'utmfy-sale', 'pushcut-test', 'pix-reconcile', 'dispatch-process'].includes(route)) {
+    return runCoreAdmin(req, res);
+  }
   sendJson(res, 404, { error: 'Rota admin não encontrada.' });
 }

@@ -3050,8 +3050,50 @@
 
 .admin-table-rs {
   border-collapse: collapse;
-  min-width: 54rem;
+  min-width: 82rem;
   width: 100%;
+}
+
+.admin-lead-stats-rs {
+  margin-bottom: 0.85rem;
+}
+
+.lead-cell-rs {
+  min-width: 9.5rem;
+}
+
+.lead-cell-rs--identity {
+  min-width: 10.5rem;
+}
+
+.lead-stack-rs {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.lead-stack-rs strong,
+.lead-stack-rs span,
+.lead-stack-rs small {
+  display: block;
+  max-width: 13rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lead-stack-rs strong {
+  color: #fff;
+  font-size: 0.86rem;
+}
+
+.lead-stack-rs span {
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 0.78rem;
+}
+
+.lead-stack-rs small {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
 }
 
 .admin-table-rs th,
@@ -3367,6 +3409,13 @@
   margin-top: auto;
 }
 
+.lead-action-link-rs {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .lead-detail-main-rs {
   display: grid;
   gap: 0.85rem;
@@ -3385,6 +3434,32 @@
   display: grid;
   gap: 0.72rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lead-detail-stat-grid-rs--compact {
+  margin-top: 0.8rem;
+}
+
+.lead-kv-rs--four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.lead-privacy-note-rs {
+  background: rgba(66, 211, 146, 0.08);
+  border: 1px solid rgba(66, 211, 146, 0.22);
+  border-radius: 0.9rem;
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.85rem;
+}
+
+.lead-privacy-note-rs strong {
+  color: #83efbb;
+}
+
+.lead-privacy-note-rs span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
 }
 
 .lead-detail-pages-rs {
@@ -3743,19 +3818,26 @@
   }
 
   .admin-panel-rs {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
   }
 
   .admin-side-rs {
     border-bottom: 1px solid rgba(255, 255, 255, 0.09);
     border-right: 0;
+    min-width: 0;
+    width: 100%;
   }
 
   .admin-nav-rs {
     display: flex;
     gap: 0.5rem;
+    max-width: 100%;
     overflow-x: auto;
+    overscroll-behavior-inline: contain;
     padding-bottom: 0.2rem;
+    scrollbar-width: thin;
+    width: 100%;
   }
 
   .admin-nav-rs button {
@@ -3766,6 +3848,13 @@
 
   .admin-side-foot-rs {
     display: none;
+  }
+
+  .admin-workspace-rs,
+  .admin-content-rs,
+  .admin-section-rs {
+    min-width: 0;
+    width: 100%;
   }
 
   .admin-stats-rs {
@@ -3813,6 +3902,10 @@
   }
 
   .lead-detail-stat-grid-rs {
+    grid-template-columns: 1fr;
+  }
+
+  .lead-kv-rs--four {
     grid-template-columns: 1fr;
   }
 
@@ -3876,7 +3969,16 @@
   }
 
   .admin-actions-rs {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
+  }
+
+  .admin-actions-rs .admin-button-rs {
+    font-size: 1rem;
+    min-width: 0;
+    padding-inline: 0.55rem;
   }
 
   .admin-funnel-row-rs {

@@ -23,6 +23,7 @@ export default async function handler(req, res) {
       browserPixel: tracking.browserPixel !== false,
       serverEvents: tracking.serverEvents === true,
       metaPixel: String(tracking.metaPixel || '').trim(),
+      metaBackupPixel: String(tracking.metaBackupPixel || '').trim(),
       tiktokPixel: String(tracking.tiktokPixel || '').trim(),
       googleTag: String(tracking.googleTag || '').trim()
     },

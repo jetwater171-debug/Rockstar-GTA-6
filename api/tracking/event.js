@@ -1,75 +1,85 @@
-import crypto from 'node:crypto';
-import { clientIp, ensureAllowedRequest, readJson, sendJson, supabaseFetch, text } from '../../lib/api-utils.js';
+import { createRequire } from 'node:module';
+import { ensureAllowedRequest, readJson, sendJson, text } from '../../lib/api-utils.js';
 import { ensureNotBlocked } from '../../lib/ip-blacklist.js';
 
-const EVENT_NAMES = new Map([
-  ['pageview', 'PageView'],
-  ['quiz_started', 'ViewContent'],
-  ['quiz_completed', 'Lead'],
-  ['personal_submitted', 'CompleteRegistration'],
-  ['personal_data_submitted', 'CompleteRegistration'],
-  ['offer_selected', 'InitiateCheckout'],
-  ['add_payment_info', 'AddPaymentInfo'],
-  ['purchase', 'Purchase']
-]);
+const require = createRequire(import.meta.url);
+const { getSettings } = require('../../backend/shared-core/lib/settings-store.js');
+const {
+  buildLeadTrackDispatchJobs,
+  buildPageViewDispatchJobs,
+  buildPurchaseDispatchJobs,
+} = require('../../backend/shared-core/lib/meta-capi.js');
+const { enqueueDispatch, processDispatchQueue } = require('../../backend/shared-core/lib/dispatch-queue.js');
 
-function sha(value) {
-  return crypto.createHash('sha256').update(String(value || '').trim().toLowerCase()).digest('hex');
-}
-
-async function loadTracking() {
-  const result = await supabaseFetch('app_settings?key=eq.admin_config&select=value&limit=1');
-  const row = result.ok && Array.isArray(result.data) ? result.data[0] : null;
-  return row?.value?.tracking || {};
+function asObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Método não permitido.' });
+  if (req.method !== 'POST') return sendJson(res, 405, { error: 'Metodo nao permitido.' });
   if (!ensureAllowedRequest(req, res, { requireSession: true })) return;
   if (!await ensureNotBlocked(req, res)) return;
 
   const body = await readJson(req);
-  const tracking = await loadTracking();
-  if (!tracking.serverEvents || !tracking.metaPixel || !tracking.metaAccessToken) {
-    return sendJson(res, 202, { ok: true, skipped: true, reason: 'server_tracking_disabled' });
+  const name = String(body.name || '').trim().toLowerCase();
+  const sessionId = text(body.sessionId || body.session_id, 100);
+  const eventId = text(body.eventId, 120);
+  const sourceUrl = text(body.sourceUrl, 500);
+  const data = asObject(body.data);
+  if (!name || !sessionId) return sendJson(res, 400, { error: 'Evento invalido.' });
+
+  const settings = await getSettings().catch(() => ({}));
+  const context = {
+    sessionId,
+    eventId,
+    sourceUrl,
+    page: data.page || name,
+    stage: data.stage || name,
+    amount: Number(data.value || 0),
+    orderId: data.order_id || '',
+    txid: data.order_id || '',
+    shipping: {
+      id: Array.isArray(data.content_ids) ? data.content_ids[0] : '',
+      name: data.content_name || '',
+      price: Number(data.value || 0),
+    },
+    utm: asObject(data.utm),
+  };
+
+  let jobs = [];
+  if (name === 'pageview') {
+    jobs = buildPageViewDispatchJobs({ ...context, page: data.page || 'pageview', pageViewEventId: eventId }, req, settings);
+  } else if (name === 'purchase') {
+    jobs = buildPurchaseDispatchJobs({
+      ...context,
+      purchaseEventId: eventId,
+      leadData: {
+        session_id: sessionId,
+        pix_txid: data.order_id || '',
+        pix_amount: Number(data.value || 0),
+        source_url: sourceUrl,
+        payload: context,
+      },
+    }, settings);
+  } else {
+    const coreEvent = ['quiz_completed', 'personal_submitted', 'personal_data_submitted'].includes(name)
+      ? 'personal_submitted'
+      : name === 'add_payment_info'
+        ? 'checkout_view'
+        : name === 'offer_selected'
+          ? 'pix_view'
+          : 'processing_view';
+    jobs = buildLeadTrackDispatchJobs({
+      ...context,
+      event: coreEvent,
+      addPaymentInfoEventId: eventId,
+      initiateCheckoutEventId: eventId,
+      viewContentEventId: eventId,
+    }, req, settings);
   }
 
-  const rawName = String(body.name || '').trim().toLowerCase();
-  const eventName = EVENT_NAMES.get(rawName) || text(body.name, 80);
-  const sessionId = text(body.sessionId || body.session_id, 100);
-  if (!eventName || !sessionId) return sendJson(res, 400, { error: 'Evento invalido.' });
-  const eventId = text(body.eventId, 120) || `${rawName || 'event'}_${sha(sessionId).slice(0, 24)}`;
-  const custom = body.data && typeof body.data === 'object' ? body.data : {};
-  const event = {
-    event_name: eventName,
-    event_time: Math.floor(Date.now() / 1000),
-    event_id: eventId,
-    action_source: 'website',
-    event_source_url: text(body.sourceUrl, 500),
-    user_data: {
-      client_ip_address: text(clientIp(req), 100),
-      client_user_agent: text(req.headers?.['user-agent'], 500),
-      external_id: [sha(sessionId)]
-    },
-    custom_data: custom
-  };
-  const graphVersion = String(process.env.META_GRAPH_API_VERSION || 'v24.0').replace(/[^v0-9.]/gi, '') || 'v24.0';
-  const endpoint = `https://graph.facebook.com/${graphVersion}/${encodeURIComponent(String(tracking.metaPixel).trim())}/events?access_token=${encodeURIComponent(String(tracking.metaAccessToken).trim())}`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: [event] }),
-      signal: controller.signal
-    });
-    const detail = await response.text().catch(() => '');
-    if (!response.ok) return sendJson(res, 502, { ok: false, error: 'Meta CAPI recusou o evento.', detail: detail.slice(0, 500) });
-    return sendJson(res, 200, { ok: true, eventId });
-  } catch (error) {
-    return sendJson(res, 502, { ok: false, error: error?.name === 'AbortError' ? 'Timeout no Meta CAPI.' : 'Falha de rede no Meta CAPI.' });
-  } finally {
-    clearTimeout(timer);
-  }
+  if (!jobs.length) return sendJson(res, 202, { ok: true, skipped: true, reason: 'server_tracking_disabled' });
+  const queued = await Promise.all(jobs.map((job) => enqueueDispatch(job).catch((error) => ({ ok: false, reason: error?.message || 'queue_error' }))));
+  if (queued.some((item) => item?.ok || item?.fallback)) processDispatchQueue(10).catch(() => null);
+  return sendJson(res, 202, { ok: true, queued: queued.length, eventId });
 }

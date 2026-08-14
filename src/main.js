@@ -101,7 +101,7 @@ const storageKeys = {
   checkoutOrder: 'gta6_checkout_order',
 };
 
-const gatewayKeys = ['sunize', 'paradise', 'atomopay', 'bravopay'];
+const gatewayKeys = ['ghostspay', 'sunize', 'paradise', 'atomopay', 'bravopay'];
 const clarityTagAllowList = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'ttclid', 'gclid', 'src', 'sck'];
 
 const gtaOffers = [
@@ -153,8 +153,9 @@ const gtaOffers = [
 let currentQuestion = 0;
 let score = 0;
 let isLocked = false;
-let quizAnswers = [];
+let quizStartedAt = 0;
 let sessionReady = null;
+let deviceContextPromise = null;
 let adminLeads = [];
 let adminOverview = null;
 let adminSettings = null;
@@ -421,7 +422,9 @@ function renderAdminPage() {
               <button data-admin-tab="leads" type="button">Leads</button>
               <button data-admin-tab="tracking" type="button">Pixel</button>
               <button data-admin-tab="utmfy" type="button">UTMfy</button>
+              <button data-admin-tab="pushcut" type="button">Pushcut</button>
               <button data-admin-tab="gateways" type="button">Gateways</button>
+              <button data-admin-tab="operations" type="button">Operações</button>
               <button data-admin-tab="public" type="button">Público</button>
               <button data-admin-tab="sales" type="button">Vendas</button>
               <button data-admin-tab="backredirects" type="button">Backredirects</button>
@@ -486,6 +489,7 @@ function buildParticles() {
 
 function bindIntro() {
   document.querySelector('#startButton')?.addEventListener('click', async () => {
+    quizStartedAt = Date.now();
     await initSession();
     await trackPage('quiz');
     trackClarityEvent('quiz_started', { stage: 'quiz' });
@@ -521,6 +525,28 @@ function optionPoints(option, index, item) {
 
 function maxScore() {
   return quiz.reduce((total, item) => total + Math.max(...item.options.map((option, index) => optionPoints(option, index, item))), 0);
+}
+
+function sanitizeQuizSummary(summary) {
+  if (!summary || typeof summary !== 'object' || Array.isArray(summary)) return null;
+  const clean = {};
+  const scoreValue = Number(summary.score);
+  const totalValue = Number(summary.total);
+  const durationValue = Number(summary.durationMs);
+  if (Number.isFinite(scoreValue)) clean.score = Math.max(0, scoreValue);
+  if (Number.isFinite(totalValue)) clean.total = Math.max(0, totalValue);
+  if (summary.status) clean.status = String(summary.status).slice(0, 60);
+  if (summary.startedAt) clean.startedAt = String(summary.startedAt).slice(0, 40);
+  if (summary.completedAt) clean.completedAt = String(summary.completedAt).slice(0, 40);
+  if (Number.isFinite(durationValue)) clean.durationMs = Math.max(0, Math.min(24 * 60 * 60 * 1000, durationValue));
+  return Object.keys(clean).length ? clean : null;
+}
+
+function readQuizSummary() {
+  const stored = readJson(storageKeys.quiz, null);
+  const clean = sanitizeQuizSummary(stored);
+  if (clean && (Array.isArray(stored?.answers) || stored?.quizAnswers)) writeJson(storageKeys.quiz, clean);
+  return clean;
 }
 
 function renderQuestion(skipTransition = false) {
@@ -572,7 +598,6 @@ function handleAnswer(event) {
   });
 
   score += points;
-  quizAnswers.push({ question: item.question, answer: optionLabel(selectedOption), points });
   trackClarityEvent(`quiz_answer_${currentQuestion + 1}`, {
     stage: 'quiz',
     question_index: currentQuestion + 1,
@@ -593,12 +618,14 @@ function handleAnswer(event) {
 async function finishQuiz() {
   const total = maxScore();
   const approved = score >= Math.ceil(total * 0.55);
+  const completedAt = new Date();
   const summary = {
     score,
     total,
     status: approved ? 'pre_selected' : 'review',
-    answers: quizAnswers,
-    completedAt: new Date().toISOString(),
+    startedAt: quizStartedAt ? new Date(quizStartedAt).toISOString() : undefined,
+    completedAt: completedAt.toISOString(),
+    durationMs: quizStartedAt ? completedAt.getTime() - quizStartedAt : undefined,
   };
   writeJson(storageKeys.quiz, summary);
   trackClarityEvent('quiz_completed', {
@@ -643,7 +670,7 @@ function bindDataForm() {
     }
     writeJson(storageKeys.personal, personal);
     trackClarityEvent('personal_submitted', { stage: 'dados', lead_contact: 'captured' });
-    const result = await trackLead({ stage: 'dados', event: 'personal_submitted', personal, quiz: readJson(storageKeys.quiz, null) });
+    const result = await trackLead({ stage: 'dados', event: 'personal_submitted', personal, quiz: readQuizSummary() });
     if (!result.ok && result.reason !== 'missing_supabase_config') {
       status.classList.add('is-error');
       status.textContent = 'Não foi possível salvar agora. Tente novamente.';
@@ -707,7 +734,7 @@ function bindProcessingPage() {
       stage: 'processando',
       event,
       personal: readJson(storageKeys.personal, {}),
-      quiz: readJson(storageKeys.quiz, null),
+      quiz: readQuizSummary(),
     });
     navigateTo('/ofertas');
   };
@@ -785,7 +812,7 @@ function renderOffersPage() {
     stage: 'ofertas',
     event: 'offers_viewed',
     personal,
-    quiz: readJson(storageKeys.quiz, null),
+    quiz: readQuizSummary(),
   });
   bindOffersPage();
 }
@@ -847,7 +874,7 @@ function bindOffersPage() {
         event: 'offer_selected',
         offer: { id: offer.id, title: offer.title, price: offer.price },
         personal: readJson(storageKeys.personal, {}),
-        quiz: readJson(storageKeys.quiz, null),
+        quiz: readQuizSummary(),
       });
       window.setTimeout(() => navigateTo('/checkout'), 120);
     });
@@ -971,7 +998,7 @@ function renderCheckoutPage({ trackView = true } = {}) {
   const renderToken = ++checkoutRenderToken;
   const offer = selectedCheckoutOffer();
   const personal = readJson(storageKeys.personal, {});
-  const quizSummary = readJson(storageKeys.quiz, null);
+  const quizSummary = readQuizSummary();
   app.innerHTML = `
     <main class="checkout-screen-rs" data-page="checkout" data-checkout-mode="production">
       ${checkoutTopbarMarkup()}
@@ -1258,7 +1285,7 @@ async function handleCheckoutSubmit(event, offer, renderToken) {
       payment: data.pix,
       offer: data.order.offer,
       personal: readJson(storageKeys.personal, {}),
-      quiz: readJson(storageKeys.quiz, null),
+      quiz: readQuizSummary(),
     });
     void renderCheckoutPixState(offer, data);
   } catch (error) {
@@ -1419,7 +1446,8 @@ function renderCheckoutSuccess(offer, data, orderId) {
       content_ids: [data.order?.offer?.id || offer.id],
       content_name: data.order?.offer?.title || offer.title,
       content_type: 'product',
-      event_id: data.pix?.purchaseEventId || `purchase_${data.pix?.txid || data.order?.id}`,
+      event_id: data.pix?.purchaseEventId || data.pix?.txid || data.order?.id,
+      server_handled: true,
     });
     void trackLead({
       stage: 'checkout',
@@ -1428,7 +1456,7 @@ function renderCheckoutSuccess(offer, data, orderId) {
       payment: data.pix,
       offer: data.order?.offer,
       personal: readJson(storageKeys.personal, {}),
-      quiz: readJson(storageKeys.quiz, null),
+      quiz: readQuizSummary(),
     });
   }
   stage.querySelector('[data-checkout-change]')?.addEventListener('click', () => navigateTo('/ofertas'));
@@ -1634,7 +1662,9 @@ function renderAdminPanel() {
     leads: ['Leads', 'Lista operacional com quiz, contato, UTM e etapa atual.'],
     tracking: ['Pixel', 'Configuração de Meta, TikTok e Google Tag.'],
     utmfy: ['UTMfy', 'Envio de eventos e padrao de order para atribuicao.'],
-    gateways: ['Gateways', 'Multigateway preparado para Sunize, Paradise, AtomoPay e Bravo Pay.'],
+    pushcut: ['Pushcut', 'Alertas de PIX gerado e pagamento confirmado.'],
+    gateways: ['Gateways', 'Multigateway com GhostsPay, Sunize, Paradise, AtomoPay e Bravo Pay.'],
+    operations: ['Operações', 'Reconciliação de pagamentos e processamento da fila.'],
     public: ['Público', 'Recomendações de audiência e segmentação para campanhas.'],
     sales: ['Vendas', 'Resumo por gateway e receita quando o checkout estiver conectado.'],
     backredirects: ['Backredirects', 'Tentativas de volta e pontos de abandono do funil.'],
@@ -1652,7 +1682,9 @@ function renderAdminPanel() {
   if (adminCurrentTab === 'leads') content.innerHTML = adminLeadsMarkup();
   else if (adminCurrentTab === 'tracking') content.innerHTML = trackingMarkup();
   else if (adminCurrentTab === 'utmfy') content.innerHTML = utmfyMarkup();
+  else if (adminCurrentTab === 'pushcut') content.innerHTML = pushcutMarkup();
   else if (adminCurrentTab === 'gateways') content.innerHTML = gatewaysMarkup();
+  else if (adminCurrentTab === 'operations') content.innerHTML = operationsMarkup();
   else if (adminCurrentTab === 'public') content.innerHTML = publicMarkup();
   else if (adminCurrentTab === 'sales') content.innerHTML = salesMarkup();
   else if (adminCurrentTab === 'backredirects') content.innerHTML = backredirectsMarkup();
@@ -1666,6 +1698,20 @@ function renderAdminPanel() {
 
 function bindAdminContent() {
   document.querySelector('#adminSearch')?.addEventListener('input', debounce(() => loadAdminData(), 320));
+  document.querySelector('[data-pushcut-test]')?.addEventListener('click', async () => {
+    const status = document.querySelector('#adminStatus');
+    if (status) status.textContent = 'Enviando testes Pushcut...';
+    try {
+      const result = await adminFetch('/api/admin/pushcut-test', { method: 'POST', body: '{}' });
+      if (status) status.textContent = result.ok ? 'Pushcut respondeu com sucesso.' : 'Teste Pushcut concluído com alerta.';
+    } catch (error) {
+      if (status) status.textContent = error.message || 'Falha ao testar Pushcut.';
+    }
+  });
+  document.querySelector('[data-utmfy-core-test]')?.addEventListener('click', () => runUtmfyCoreTest('utmfy-test'));
+  document.querySelector('[data-utmfy-sale-test]')?.addEventListener('click', () => runUtmfyCoreTest('utmfy-sale'));
+  document.querySelector('[data-reconcile-run]')?.addEventListener('click', runAdminReconciliation);
+  document.querySelector('[data-dispatch-run]')?.addEventListener('click', runAdminDispatchQueue);
   document.querySelectorAll('#adminLeadsFrom, #adminLeadsTo').forEach((input) => input.addEventListener('change', () => loadAdminData({ force: true })));
   document.querySelector('#adminLoadMore')?.addEventListener('click', loadMoreAdminLeads);
   document.querySelectorAll('[data-test-integration]').forEach((button) => {
@@ -1722,7 +1768,8 @@ function bindAdminContent() {
   bindGatewayDragAndDrop();
   refreshGatewayOrderDom();
   document.querySelectorAll('[data-open-lead]').forEach((button) => {
-    button.addEventListener('click', async () => {
+    button.addEventListener('click', async (event) => {
+      event.stopPropagation();
       adminSelectedLeadSession = button.dataset.openLead || '';
       renderAdminPanel();
       try {
@@ -1748,6 +1795,20 @@ function bindAdminContent() {
     await navigator.clipboard?.writeText(payload).catch(() => {});
     if (status) status.textContent = 'JSON copiado.';
   });
+  document.querySelectorAll('[data-copy-value]').forEach((button) => {
+    button.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      const value = String(button.dataset.copyValue || '');
+      const status = document.querySelector('#leadCopyStatus');
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        if (status) status.textContent = 'Informação copiada.';
+      } catch (_error) {
+        if (status) status.textContent = 'Não foi possível copiar automaticamente.';
+      }
+    });
+  });
   document.querySelector('#adminExportLeads')?.addEventListener('click', () => {
     window.open('/api/admin/leads-export', '_blank', 'noopener');
   });
@@ -1769,6 +1830,26 @@ function bindAdminContent() {
       adminCurrentTab = 'blacklist';
       await loadAdminData({ force: true });
     });
+  });
+  document.querySelector('[data-reconcile-lead]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const txid = button.dataset.txid || '';
+    const gateway = button.dataset.gateway || '';
+    const status = document.querySelector('#leadCopyStatus');
+    button.disabled = true;
+    if (status) status.textContent = 'Consultando o gateway e atualizando o lead...';
+    try {
+      const result = await adminFetch('/api/admin/pix-reconcile', {
+        method: 'POST',
+        body: JSON.stringify({ txid, gateway, sessionId: adminSelectedLeadSession, mutate: 1 }),
+      });
+      if (status) status.textContent = result.item?.statusRaw ? `Status: ${result.item.statusRaw}` : 'Reconciliação concluída.';
+      await loadAdminData({ force: true });
+    } catch (error) {
+      if (status) status.textContent = error.message || 'Falha ao reconciliar o pagamento.';
+    } finally {
+      if (button.isConnected) button.disabled = false;
+    }
   });
   document.querySelectorAll('[data-block-cloner]').forEach((button) => {
     button.addEventListener('click', async () => {
@@ -1822,9 +1903,23 @@ function overviewMarkup() {
 
 function adminLeadsMarkup() {
   const selectedLead = adminLeads.find((lead) => lead.session_id === adminSelectedLeadSession);
+  const withPhone = adminLeads.filter((lead) => lead.phone || lead.telefone).length;
+  const withPix = adminLeads.filter((lead) => lead.pix_txid || lead.payload?.pixTxid || lead.payload?.payment?.txid || lead.payload?.pix?.idTransaction).length;
+  const paid = adminLeads.filter((lead) => /paid|confirm|pago|approved/i.test(String(lead.last_event || lead.payload?.pixStatus || lead.payload?.payment?.status || ''))).length;
+  const latest = adminLeads.reduce((current, lead) => {
+    const candidate = lead.updated_at || lead.created_at || '';
+    return candidate && (!current || Date.parse(candidate) > Date.parse(current)) ? candidate : current;
+  }, '');
   return `
+    <div class="admin-stats-rs admin-stats-rs--wide admin-lead-stats-rs">
+      ${statCard('Leads', adminLeadPagination.total ?? adminLeads.length, 'Base encontrada')}
+      ${statCard('Com telefone', withPhone, 'Prontos para contato')}
+      ${statCard('PIX gerados', withPix, 'Cobranças vinculadas')}
+      ${statCard('Pagos', paid, 'Conversões confirmadas')}
+      ${statCard('Última atividade', formatShortDate(latest), 'Atualização do lead')}
+    </div>
     <div class="admin-toolbar-rs">
-      <input id="adminSearch" placeholder="Buscar nome, email, telefone..." value="${escapeAttr(adminLeadFilters.q)}" />
+      <input id="adminSearch" placeholder="Buscar nome, telefone, sessão, IP, TXID ou campanha..." value="${escapeAttr(adminLeadFilters.q)}" />
       <label class="admin-date-filter-rs"><span>De</span><input id="adminLeadsFrom" type="date" value="${escapeAttr(adminLeadFilters.from)}" /></label>
       <label class="admin-date-filter-rs"><span>Até</span><input id="adminLeadsTo" type="date" value="${escapeAttr(adminLeadFilters.to)}" /></label>
       <span class="admin-muted-rs">${adminLeadPagination.total ?? adminLeads.length} registros</span>
@@ -1832,12 +1927,60 @@ function adminLeadsMarkup() {
     </div>
     <div class="admin-table-wrap-rs">
       <table class="admin-table-rs">
-        <thead><tr><th>Lead</th><th>Contato</th><th>Etapa</th><th>Quiz</th><th>Origem</th><th>Atualizado</th><th></th></tr></thead>
+        <thead><tr><th>Lead</th><th>Contato</th><th>Dispositivo</th><th>Jornada</th><th>Pagamento</th><th>Quiz</th><th>Origem</th><th>Atualizado</th><th></th></tr></thead>
         <tbody>${leadRowsMarkup(adminLeads)}</tbody>
       </table>
     </div>
     ${selectedLead ? leadDetailMarkup(selectedLead) : ''}
   `;
+}
+
+async function runUtmfyCoreTest(route) {
+  const status = document.querySelector('#adminStatus');
+  if (status) status.textContent = route === 'utmfy-sale' ? 'Enviando venda de teste...' : 'Enviando pedido pendente de teste...';
+  try {
+    const result = await adminFetch(`/api/admin/${route}`, { method: 'POST', body: '{}' });
+    if (status) status.textContent = result.ok ? 'UTMfy respondeu com sucesso.' : 'Teste UTMfy concluido com alerta.';
+  } catch (error) {
+    if (status) status.textContent = error.message || 'Falha ao testar UTMfy.';
+  }
+}
+
+async function runAdminReconciliation() {
+  const resultNode = document.querySelector('#operationsResult');
+  const button = document.querySelector('[data-reconcile-run]');
+  const maxTx = Math.max(1, Math.min(1000, Number(document.querySelector('#reconcileMaxTx')?.value || 100)));
+  const includeConfirmed = document.querySelector('[data-setting="operations.includeConfirmed"]')?.checked !== false;
+  const mutate = document.querySelector('[data-setting="operations.mutate"]')?.checked !== false;
+  if (button) button.disabled = true;
+  if (resultNode) resultNode.textContent = 'Consultando os gateways...';
+  try {
+    const result = await adminFetch('/api/admin/pix-reconcile', {
+      method: 'POST',
+      body: JSON.stringify({ maxTx, includeConfirmed: includeConfirmed ? 1 : 0, mutate: mutate ? 1 : 0 }),
+    });
+    if (resultNode) resultNode.textContent = JSON.stringify(result, null, 2);
+  } catch (error) {
+    if (resultNode) resultNode.textContent = error.message || 'Falha na reconciliação.';
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function runAdminDispatchQueue() {
+  const resultNode = document.querySelector('#operationsResult');
+  const button = document.querySelector('[data-dispatch-run]');
+  const limit = Math.max(1, Math.min(300, Number(document.querySelector('#dispatchQueueLimit')?.value || 80)));
+  if (button) button.disabled = true;
+  if (resultNode) resultNode.textContent = 'Processando a fila persistente...';
+  try {
+    const result = await adminFetch(`/api/admin/dispatch-process?limit=${encodeURIComponent(limit)}`, { method: 'POST', body: '{}' });
+    if (resultNode) resultNode.textContent = JSON.stringify(result, null, 2);
+  } catch (error) {
+    if (resultNode) resultNode.textContent = error.message || 'Falha ao processar a fila.';
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 async function loadMoreAdminLeads() {
@@ -1861,32 +2004,113 @@ async function loadMoreAdminLeads() {
 }
 
 function leadRowsMarkup(leads) {
-  if (!leads.length) return '<tr><td colspan="7">Nenhum lead encontrado ainda.</td></tr>';
+  if (!leads.length) return '<tr><td colspan="9">Nenhum lead encontrado ainda.</td></tr>';
   return leads.map((lead) => {
     const payload = lead.payload || {};
     const quiz = payload.quiz || {};
+    const pix = payload.pix || payload.payment || {};
+    const gateway = payload.gateway || payload.pixGateway || payload.paymentGateway || pix.gateway || lead.gateway || '-';
+    const paymentStatus = payload.pixStatus || pix.status || lead.last_event || '-';
+    const paymentAmount = Number(lead.pix_amount || payload.pixAmount || pix.amount || 0);
     const quizText = quiz.score !== undefined ? `${quiz.score}/${quiz.total || '-'}` : '-';
+    const device = leadDeviceProfile(lead);
+    const pageviews = Array.isArray(lead.pageviews) ? lead.pageviews : [];
+    const phone = formatLeadPhone(lead.phone || lead.telefone || '');
+    const source = lead.utm_source || payload.utm?.utm_source || 'Orgânico';
+    const campaign = lead.utm_campaign || payload.utm?.utm_campaign || 'Sem campanha';
     return `
       <tr class="admin-lead-row-rs" data-open-lead="${escapeAttr(lead.session_id || '')}">
-        <td><strong>${escapeHtml(lead.name || lead.nome || '-')}</strong><br><span class="admin-chip-rs">${escapeHtml(lead.session_id || '-')}</span></td>
-        <td>${escapeHtml(lead.email || '-')}<br>${escapeHtml(lead.phone || lead.telefone || '-')}</td>
-        <td>${escapeHtml(lead.stage || lead.etapa || '-')}<br>${escapeHtml(lead.last_event || lead.evento || '-')}</td>
-        <td>${escapeHtml(quizText)}<br>${escapeHtml(quiz.status || lead.quiz_status || '-')}</td>
-        <td>${escapeHtml(lead.utm_source || '-')}<br>${escapeHtml(lead.utm_campaign || '')}</td>
-        <td>${escapeHtml(formatDate(lead.updated_at || lead.created_at))}</td>
+        <td class="lead-cell-rs lead-cell-rs--identity">
+          <div class="lead-stack-rs"><strong>${escapeHtml(lead.name || lead.nome || 'Lead sem nome')}</strong><span>${escapeHtml(shortLeadCode(lead.session_id))}</span>${lead.cpf ? `<small>CPF ${escapeHtml(lead.cpf)}</small>` : ''}</div>
+        </td>
+        <td class="lead-cell-rs">
+          <div class="lead-stack-rs"><strong>${escapeHtml(lead.email || 'Sem email')}</strong><span>${escapeHtml(phone || 'Sem telefone')}</span></div>
+        </td>
+        <td class="lead-cell-rs">
+          <div class="lead-stack-rs"><strong>${escapeHtml(device.model || device.type)}</strong><span>${escapeHtml([device.os, device.browser].filter(Boolean).join(' · ') || '-')}</span><small>${escapeHtml(device.screenLabel || 'Tela não informada')}</small></div>
+        </td>
+        <td class="lead-cell-rs">
+          <div class="lead-stack-rs"><strong>${escapeHtml(lead.stage || lead.etapa || '-')}</strong><span>${escapeHtml(lead.last_event || lead.evento || '-')}</span><small>${pageviews.length} etapa${pageviews.length === 1 ? '' : 's'} registrada${pageviews.length === 1 ? '' : 's'}</small></div>
+        </td>
+        <td class="lead-cell-rs"><div class="lead-stack-rs"><strong>${escapeHtml(paymentStatus)}</strong><span>${escapeHtml(gateway)}${paymentAmount ? ` · ${formatMoney(paymentAmount)}` : ''}</span><small>${escapeHtml(shortLeadCode(lead.pix_txid || payload.pixTxid || pix.txid || pix.idTransaction, 12) || 'Sem TXID')}</small></div></td>
+        <td class="lead-cell-rs"><div class="lead-stack-rs"><strong>${escapeHtml(quizText)}</strong><span>${escapeHtml(quiz.status || lead.quiz_status || 'Não concluído')}</span><small>Somente métricas</small></div></td>
+        <td class="lead-cell-rs"><div class="lead-stack-rs"><strong>${escapeHtml(source)}</strong><span title="${escapeAttr(campaign)}">${escapeHtml(campaign)}</span><small>${escapeHtml(lead.utm_medium || payload.utm?.utm_medium || '-')}</small></div></td>
+        <td class="lead-cell-rs"><div class="lead-stack-rs"><strong>${escapeHtml(formatShortDate(lead.updated_at || lead.created_at))}</strong><span>${escapeHtml(formatDate(lead.updated_at || lead.created_at))}</span></div></td>
         <td><button class="admin-row-button-rs" data-open-lead="${escapeAttr(lead.session_id || '')}" type="button">Abrir</button></td>
       </tr>
     `;
   }).join('');
 }
 
+function shortLeadCode(value, length = 10) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return text.length > length ? `${text.slice(0, Math.max(4, length - 3))}…${text.slice(-3)}` : text;
+}
+
+function formatLeadPhone(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  const local = digits.startsWith('55') && digits.length > 11 ? digits.slice(2) : digits;
+  if (local.length === 11) return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`;
+  if (local.length === 10) return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`;
+  return String(value || '').trim();
+}
+
+function leadDimensionLabel(value, pixelRatio = 0) {
+  const width = Number(value?.width || 0);
+  const height = Number(value?.height || 0);
+  if (!width || !height) return '';
+  return `${Math.round(width)}×${Math.round(height)}${Number(pixelRatio) > 0 ? ` @${Number(pixelRatio).toFixed(1)}x` : ''}`;
+}
+
+function leadDeviceProfile(lead) {
+  const payload = lead?.payload || {};
+  const supplied = lead?.device || payload.device || {};
+  const ua = String(lead?.user_agent || payload.metadata?.user_agent || supplied.userAgent || '');
+  const iphone = /iphone/i.test(ua);
+  const ipad = /ipad/i.test(ua);
+  const android = /android/i.test(ua);
+  const mobile = iphone || ipad || android || /mobile/i.test(ua);
+  const browser = supplied.browser || (/edg/i.test(ua) ? 'Edge' : /firefox|fxios/i.test(ua) ? 'Firefox' : /chrome|crios/i.test(ua) ? 'Chrome' : /safari/i.test(ua) ? 'Safari' : 'Não identificado');
+  const os = supplied.os || (android ? 'Android' : iphone || ipad ? 'iOS' : /windows/i.test(ua) ? 'Windows' : /mac os/i.test(ua) ? 'macOS' : /linux/i.test(ua) ? 'Linux' : 'Não informado');
+  const model = supplied.model || (iphone ? 'iPhone' : ipad ? 'iPad' : android ? 'Android' : mobile ? 'Celular' : 'Desktop');
+  const type = supplied.type || (ipad ? 'Tablet' : mobile ? 'Celular' : 'Desktop');
+  return {
+    ...supplied,
+    model,
+    type,
+    os,
+    browser,
+    userAgent: supplied.userAgent || ua,
+    clientIp: supplied.clientIp || lead?.client_ip || payload.metadata?.client_ip || '',
+    screenLabel: leadDimensionLabel(supplied.screen, supplied.pixelRatio),
+    viewportLabel: leadDimensionLabel(supplied.viewport),
+  };
+}
+
 function leadDetailMarkup(lead) {
   const payload = lead.payload || {};
   const quiz = payload.quiz || {};
-  const answers = Array.isArray(quiz.answers) ? quiz.answers : [];
   const pageviews = Array.isArray(lead.pageviews) ? lead.pageviews : [];
   const timeline = leadTimeline(lead, pageviews);
   const utm = payload.utm || {};
+  const metadata = payload.metadata || {};
+  const device = leadDeviceProfile(lead);
+  const offer = payload.offer || payload.reward || {};
+  const order = payload.order || {};
+  const address = payload.address || {};
+  const extra = payload.extra || {};
+  const shipping = payload.shipping || {};
+  const bump = payload.bump || {};
+  const paymentHistory = Array.isArray(payload.paymentHistory) ? payload.paymentHistory : [];
+  const currentTxid = lead.pix_txid || payload.pixTxid || payload.pix?.idTransaction || payload.payment?.txid || '';
+  const currentGateway = payload.gateway || payload.pixGateway || payload.paymentGateway || payload.pix?.gateway || payload.payment?.gateway || lead.gateway || '';
+  const currentPaymentStatus = payload.pixStatus || payload.payment?.status || payload.pix?.status || lead.last_event || '-';
+  const currentAmount = Number(lead.pix_amount || payload.pixAmount || payload.payment?.amount || payload.pix?.amount || offer.price || 0);
+  const phone = lead.phone || lead.telefone || '';
+  const phoneDigits = String(phone).replace(/\D/g, '');
+  const whatsappDigits = phoneDigits.startsWith('55') ? phoneDigits : `55${phoneDigits}`;
+  const network = device.network || {};
   return `
     <div class="lead-modal-rs" role="dialog" aria-modal="true" aria-label="Detalhes do lead">
       <div class="lead-modal-backdrop-rs" data-close-lead></div>
@@ -1902,15 +2126,22 @@ function leadDetailMarkup(lead) {
             <div class="lead-detail-tags-rs">
               <span class="admin-chip-rs">${escapeHtml(quiz.status || 'sem quiz')}</span>
               <span class="admin-chip-rs">${escapeHtml(lead.utm_source || utm.utm_source || 'sem origem')}</span>
+              <span class="admin-chip-rs">${escapeHtml(device.model || device.type)}</span>
               <span class="admin-chip-rs">${escapeHtml(pageviews.length ? `${pageviews.length} páginas` : 'sem pageviews')}</span>
             </div>
             <div class="lead-detail-summary-rs">
-              ${leadSummaryCard('Quiz', quiz.score !== undefined ? `${quiz.score}/${quiz.total || '-'}` : '-', quiz.status || '-')}
+              ${leadSummaryCard('Pagamento', currentAmount ? formatMoney(currentAmount) : 'Sem cobrança', currentPaymentStatus)}
               ${leadSummaryCard('Contato', lead.email || lead.phone ? 'Capturado' : 'Pendente', lead.email || lead.phone || '-')}
-              ${leadSummaryCard('Atualizado', formatShortDate(lead.updated_at || lead.created_at), lead.client_ip || '-')}
+              ${leadSummaryCard('Dispositivo', device.model || device.type, `${device.os} · ${device.browser}`)}
+              ${leadSummaryCard('Atualizado', formatShortDate(lead.updated_at || lead.created_at), device.clientIp || '-')}
             </div>
             <div class="lead-detail-actions-rs">
+              ${phoneDigits ? `<a class="admin-row-button-rs lead-action-link-rs" href="https://wa.me/${escapeAttr(whatsappDigits)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : ''}
+              ${phone ? `<button class="admin-row-button-rs" data-copy-value="${escapeAttr(phone)}" type="button">Copiar telefone</button>` : ''}
+              ${lead.email ? `<button class="admin-row-button-rs" data-copy-value="${escapeAttr(lead.email)}" type="button">Copiar email</button>` : ''}
+              <button class="admin-row-button-rs" data-copy-value="${escapeAttr(lead.session_id || '')}" type="button">Copiar sessão</button>
               <button class="admin-row-button-rs" data-copy-lead-payload type="button">Copiar JSON</button>
+              ${currentTxid ? `<button class="admin-row-button-rs" data-reconcile-lead data-txid="${escapeAttr(currentTxid)}" data-gateway="${escapeAttr(currentGateway)}" type="button">Reconciliar PIX</button>` : ''}
               <span class="admin-muted-rs" id="leadCopyStatus">Detalhes carregados da sessão.</span>
             </div>
           </aside>
@@ -1920,9 +2151,13 @@ function leadDetailMarkup(lead) {
               <div class="admin-section-head-rs"><h2>Visão geral</h2><span>perfil</span></div>
               <div class="lead-detail-stat-grid-rs">
                 ${leadInfoCard('Etapa atual', lead.stage || lead.etapa || '-', lead.last_event || lead.evento || '-')}
-                ${leadInfoCard('Quiz', quiz.score !== undefined ? `${quiz.score}/${quiz.total || '-'}` : '-', quiz.status || '-')}
+                ${leadInfoCard('Pagamento', currentAmount ? formatMoney(currentAmount) : '-', `${currentGateway || '-'} · ${currentPaymentStatus}`)}
+                ${leadInfoCard('Dispositivo', device.model || device.type, `${device.os} · ${device.browser}`)}
                 ${leadInfoCard('Origem', lead.utm_source || utm.utm_source || '-', lead.utm_campaign || utm.utm_campaign || '-')}
-                ${leadInfoCard('Criado', formatShortDate(lead.created_at), lead.client_ip || '-')}
+                ${leadInfoCard('Quiz agregado', quiz.score !== undefined ? `${quiz.score}/${quiz.total || '-'}` : '-', quiz.status || '-')}
+                ${leadInfoCard('Páginas', String(pageviews.length), timeline.length ? `${timeline.length} eventos na timeline` : 'Sem jornada')}
+                ${leadInfoCard('Criado', formatShortDate(lead.created_at), formatDate(lead.created_at))}
+                ${leadInfoCard('Atualizado', formatShortDate(lead.updated_at), formatDate(lead.updated_at))}
               </div>
             </section>
 
@@ -1931,8 +2166,33 @@ function leadDetailMarkup(lead) {
               <div class="lead-kv-rs">
                 ${leadKv('Nome', lead.name || lead.nome)}
                 ${leadKv('Email', lead.email)}
-                ${leadKv('Telefone', lead.phone || lead.telefone)}
+                ${leadKv('Telefone', formatLeadPhone(phone))}
+                ${leadKv('Telefone bruto', phone)}
+                ${leadKv('CPF', lead.cpf)}
                 ${leadKv('Sessão', lead.session_id)}
+              </div>
+            </section>
+
+            <section class="lead-detail-section-rs">
+              <div class="admin-section-head-rs"><h2>Dispositivo e acesso</h2><span>telemetria</span></div>
+              <div class="lead-kv-rs">
+                ${leadKv('Aparelho', device.model || device.type)}
+                ${leadKv('Tipo', device.type)}
+                ${leadKv('Sistema', device.os)}
+                ${leadKv('Navegador', [device.browser, device.browserVersion].filter(Boolean).join(' '))}
+                ${leadKv('Plataforma', device.platform)}
+                ${leadKv('Versão da plataforma', device.platformVersion)}
+                ${leadKv('Tela', device.screenLabel)}
+                ${leadKv('Viewport', device.viewportLabel)}
+                ${leadKv('Orientação', device.orientation)}
+                ${leadKv('Fuso horário', device.timezone)}
+                ${leadKv('Idioma', device.language)}
+                ${leadKv('Toques suportados', device.touchPoints)}
+                ${leadKv('Rede', network.effectiveType)}
+                ${leadKv('Downlink estimado', network.downlink !== undefined ? `${network.downlink} Mbps` : '')}
+                ${leadKv('Economia de dados', network.saveData === true ? 'Ativa' : network.saveData === false ? 'Desativada' : '')}
+                ${leadKv('IP público', device.clientIp)}
+                ${leadKv('User-Agent', device.userAgent)}
               </div>
             </section>
 
@@ -1947,8 +2207,41 @@ function leadDetailMarkup(lead) {
                 ${leadKv('fbclid', lead.fbclid || utm.fbclid)}
                 ${leadKv('ttclid', lead.ttclid || utm.ttclid)}
                 ${leadKv('gclid', lead.gclid || utm.gclid)}
+                ${leadKv('src', payload.src || utm.src)}
+                ${leadKv('sck', payload.sck || utm.sck)}
                 ${leadKv('referrer', lead.referrer || utm.referrer)}
                 ${leadKv('landing_page', lead.landing_page || utm.landing_page)}
+                ${leadKv('source_url', lead.source_url || payload.sourceUrl)}
+              </div>
+            </section>
+
+            <section class="lead-detail-section-rs">
+              <div class="admin-section-head-rs"><h2>Checkout e pedido</h2><span>conversão</span></div>
+              <div class="lead-kv-rs">
+                ${leadKv('Pedido', order.id || payload.orderId || metadata.orderId)}
+                ${leadKv('Status do pedido', order.status)}
+                ${leadKv('Oferta', offer.title || offer.name)}
+                ${leadKv('Oferta ID', offer.id)}
+                ${leadKv('Valor atual', currentAmount ? formatMoney(currentAmount) : '')}
+                ${leadKv('Frete', lead.shipping_name || shipping.name)}
+                ${leadKv('Frete ID', lead.shipping_id || shipping.id)}
+                ${leadKv('Valor do frete', Number(lead.shipping_price || shipping.price || 0) ? formatMoney(Number(lead.shipping_price || shipping.price)) : '')}
+                ${leadKv('Order bump', lead.bump_selected || bump.selected ? 'Selecionado' : 'Não selecionado')}
+                ${leadKv('Valor do bump', Number(lead.bump_price || bump.price || 0) ? formatMoney(Number(lead.bump_price || bump.price)) : '')}
+              </div>
+            </section>
+
+            <section class="lead-detail-section-rs">
+              <div class="admin-section-head-rs"><h2>Entrega e endereço</h2><span>logística</span></div>
+              <div class="lead-kv-rs">
+                ${leadKv('CEP', lead.cep || address.cep)}
+                ${leadKv('Endereço', lead.address_line || address.street || address.streetLine)}
+                ${leadKv('Número', lead.number || extra.number)}
+                ${leadKv('Complemento', lead.complement || extra.complement)}
+                ${leadKv('Bairro', lead.neighborhood || address.neighborhood)}
+                ${leadKv('Cidade', lead.city || address.city)}
+                ${leadKv('Estado', lead.state || address.state)}
+                ${leadKv('Referência', lead.reference || extra.reference)}
               </div>
             </section>
 
@@ -1969,14 +2262,55 @@ function leadDetailMarkup(lead) {
             </section>
 
             <section class="lead-detail-section-rs lead-detail-section-rs--wide">
-              <div class="admin-section-head-rs"><h2>Respostas do quiz</h2><span>${answers.length}</span></div>
-              <div class="lead-answer-list-rs">
-                ${answers.length ? answers.map((item) => `<div><span>${escapeHtml(item.question || '-')}</span><strong>${escapeHtml(item.answer || '-')}</strong><em>${escapeHtml(`${item.points ?? 0} pts`)}</em></div>`).join('') : '<p class="admin-empty-rs">Sem respostas registradas.</p>'}
+              <div class="admin-section-head-rs"><h2>Resumo do quiz</h2><span>privacidade</span></div>
+              <div class="lead-privacy-note-rs">
+                <strong>Respostas individuais não são armazenadas.</strong>
+                <span>O painel mantém apenas o resultado agregado necessário para medir o funil.</span>
+              </div>
+              <div class="lead-detail-stat-grid-rs lead-detail-stat-grid-rs--compact">
+                ${leadInfoCard('Pontuação', quiz.score !== undefined ? String(quiz.score) : '-', 'agregado')}
+                ${leadInfoCard('Total possível', quiz.total !== undefined ? String(quiz.total) : '-', 'agregado')}
+                ${leadInfoCard('Classificação', quiz.status || '-', 'resultado do funil')}
+                ${leadInfoCard('Duração', Number(quiz.durationMs) > 0 ? `${Math.round(Number(quiz.durationMs) / 1000)}s` : '-', 'tempo total')}
               </div>
             </section>
 
             <section class="lead-detail-section-rs lead-detail-section-rs--wide">
-              <div class="admin-section-head-rs"><h2>Payload completo</h2><span>debug</span></div>
+              <div class="admin-section-head-rs"><h2>Histórico de pagamentos</h2><span>${paymentHistory.length}</span></div>
+              <div class="lead-detail-pages-rs">
+                ${paymentHistory.length ? paymentHistory.slice().reverse().map((payment, index) => `
+                  <article class="lead-detail-page-rs">
+                    <div class="lead-detail-page-index-rs">${index + 1}</div>
+                    <div>
+                      <strong>${escapeHtml(payment.status || 'sem status')} | ${escapeHtml(payment.gateway || '-')}</strong>
+                      <span>${escapeHtml(payment.txid || '-')} | ${formatMoney(Number(payment.amount || payment.totalAmount || 0))}</span>
+                      <small>${escapeHtml(formatDate(payment.lastStatusAt || payment.createdAt))}</small>
+                    </div>
+                  </article>
+                `).join('') : '<p class="admin-empty-rs">Nenhuma transação criada para este lead.</p>'}
+              </div>
+            </section>
+
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
+              <div class="admin-section-head-rs"><h2>Dados técnicos</h2><span>auditoria</span></div>
+              <div class="lead-kv-rs lead-kv-rs--four">
+                ${leadKv('Gateway atual', currentGateway)}
+                ${leadKv('Status atual', currentPaymentStatus)}
+                ${leadKv('TXID atual', currentTxid)}
+                ${leadKv('Evento atual', lead.last_event || payload.event)}
+                ${leadKv('Stage salvo', lead.stage || payload.stage)}
+                ${leadKv('Página do evento', payload.page)}
+                ${leadKv('Recebido em', metadata.received_at)}
+                ${leadKv('Event ID', payload.eventId)}
+                ${leadKv('IP do metadata', metadata.client_ip)}
+                ${leadKv('Referrer do metadata', metadata.referrer)}
+                ${leadKv('Criado em', lead.created_at)}
+                ${leadKv('Atualizado em', lead.updated_at)}
+              </div>
+            </section>
+
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
+              <div class="admin-section-head-rs"><h2>Payload sanitizado</h2><span>debug sem respostas</span></div>
               <pre class="lead-json-rs" id="leadPayloadJson">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
             </section>
           </div>
@@ -2004,12 +2338,44 @@ function leadTimeline(lead, pageviews = []) {
   const items = [];
   if (lead.created_at) items.push({ at: lead.created_at, label: 'Primeiro registro', detail: lead.stage || 'lead criado' });
   pageviews.forEach((view) => items.push({ at: view.created_at, label: `Página /${view.page || '-'}`, detail: 'pageview registrado' }));
+  (Array.isArray(payload.leadEvents) ? payload.leadEvents : []).forEach((event) => {
+    const rawEvent = String(event?.event || 'interação');
+    const labels = {
+      pageview: `Página /${event?.page || event?.stage || '-'}`,
+      quiz_started: 'Quiz iniciado',
+      quiz_completed: 'Quiz finalizado',
+      personal_submitted: 'Contato capturado',
+      vsl_started: 'Vídeo iniciado',
+      vsl_completed: 'Vídeo concluído',
+      offers_viewed: 'Ofertas visualizadas',
+      offer_selected: 'Oferta selecionada',
+      checkout_viewed: 'Checkout aberto',
+      pix_created: 'PIX criado',
+      pix_confirmed: 'Pagamento confirmado',
+    };
+    const detail = [event?.stage && `etapa ${event.stage}`, event?.gateway, event?.status, event?.offerTitle, event?.amount ? formatMoney(Number(event.amount)) : ''].filter(Boolean).join(' · ');
+    items.push({ at: event?.at, label: labels[rawEvent] || rawEvent, detail: detail || 'evento registrado' });
+  });
   if (quiz.completedAt) items.push({ at: quiz.completedAt, label: 'Quiz finalizado', detail: `${quiz.score ?? '-'} de ${quiz.total ?? '-'} pontos` });
   if (lead.name || lead.email || lead.phone) items.push({ at: lead.updated_at || lead.created_at, label: 'Dados enviados', detail: [lead.name, lead.email, lead.phone].filter(Boolean).join(' · ') || 'contato capturado' });
+  (Array.isArray(payload.paymentHistory) ? payload.paymentHistory : []).forEach((payment) => {
+    items.push({
+      at: payment?.lastStatusAt || payment?.changedAt || payment?.createdAt,
+      label: `PIX ${payment?.status || 'registrado'}`,
+      detail: [payment?.gateway, payment?.txid, Number(payment?.amount || payment?.totalAmount || 0) ? formatMoney(Number(payment.amount || payment.totalAmount)) : ''].filter(Boolean).join(' · '),
+    });
+  });
   if (lead.last_event) items.push({ at: lead.updated_at || lead.created_at, label: 'Ultimo evento', detail: lead.last_event });
+  const seen = new Set();
   return items
     .filter((item) => item.at)
-    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+    .filter((item) => {
+      const key = `${item.at}|${item.label}|${item.detail}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function trackingMarkup() {
@@ -2019,7 +2385,11 @@ function trackingMarkup() {
       <div class="admin-section-head-rs"><h2>Pixels e eventos</h2><span>tracking</span></div>
       <div class="admin-form-grid-rs">
         ${settingInput('tracking.metaPixel', 'Meta Pixel ID', tracking.metaPixel)}
+        ${settingInput('tracking.metaBackupPixel', 'Meta Pixel de backup', tracking.metaBackupPixel)}
         ${settingInput('tracking.metaAccessToken', 'Meta CAPI token', tracking.metaAccessToken, 'password')}
+        ${settingInput('tracking.metaBackupAccessToken', 'Meta CAPI token de backup', tracking.metaBackupAccessToken, 'password')}
+        ${settingInput('tracking.metaTestEventCode', 'Meta Test Event Code', tracking.metaTestEventCode)}
+        ${settingInput('tracking.metaBackupTestEventCode', 'Test Event Code de backup', tracking.metaBackupTestEventCode)}
         ${settingInput('tracking.tiktokPixel', 'TikTok Pixel ID', tracking.tiktokPixel)}
         ${settingInput('tracking.googleTag', 'Google Tag / GTM', tracking.googleTag)}
         ${settingToggle('tracking.browserPixel', 'Pixel no navegador', tracking.browserPixel !== false)}
@@ -2043,6 +2413,8 @@ function utmfyMarkup() {
         ${settingInput('utmfy.platform', 'Plataforma', utmfy.platform)}
       </div>
       <button class="admin-mini-button-rs" data-test-integration="UTMfy" type="button">Testar UTMfy</button>
+      <button class="admin-row-button-rs" data-utmfy-core-test type="button">Testar pedido pendente</button>
+      <button class="admin-row-button-rs" data-utmfy-sale-test type="button">Testar venda aprovada</button>
     </section>
   `;
 }
@@ -2059,7 +2431,7 @@ function gatewaysMarkup() {
         </div>
         <button class="admin-mini-button-rs gateway-test-open-rs" data-gateway-test-open type="button">Testar gateway</button>
       </div>
-      <p class="admin-hint-rs">O primeiro gateway da fila recebe o PIX. Se ele falhar, o sistema tenta os proximos na ordem abaixo.</p>
+      <p class="admin-hint-rs">O primeiro gateway da fila recebe o PIX. Se ele falhar, o sistema tenta os próximos na ordem abaixo.</p>
       <input type="hidden" data-setting="gateways.active" value="${escapeAttr(order[0])}" data-gateway-active-input />
       <input type="hidden" data-setting="gateways.activeGateway" value="${escapeAttr(order[0])}" data-gateway-active-gateway-input />
       <div class="gateway-order-rs" data-gateway-order-list>
@@ -2126,7 +2498,7 @@ function gatewayOrderRowMarkup(name, index) {
       <div class="gateway-order-rank-rs">${index === 0 ? 'ativo' : `fallback ${index}`}</div>
       <div class="gateway-order-copy-rs">
         <strong>${gatewayLabel(name)}</strong>
-        <span>${index === 0 ? 'Gateway principal da checkout' : 'Entra automaticamente se os anteriores falharem'}</span>
+        <span>${index === 0 ? 'Gateway principal do checkout' : 'Entra automaticamente se os anteriores falharem'}</span>
       </div>
       <div class="gateway-order-actions-rs">
         <button type="button" data-gateway-order-move="up" data-gateway="${escapeAttr(name)}" aria-label="Subir ${escapeAttr(gatewayLabel(name))}">SUBIR</button>
@@ -2161,6 +2533,16 @@ function gatewayCardMarkup(name, gateway, order = gatewayKeys) {
 
 function gatewayFieldsMarkup(name, gateway) {
   const baseUrl = gateway.baseUrl || gateway.apiUrl || '';
+  if (name === 'ghostspay') {
+    return [
+      settingInput('gateways.ghostspay.baseUrl', 'Base URL', baseUrl),
+      settingInput('gateways.ghostspay.basicAuthBase64', 'Basic Auth em Base64', gateway.basicAuthBase64, 'password'),
+      settingInput('gateways.ghostspay.secretKey', 'Secret key', gateway.secretKey, 'password'),
+      settingInput('gateways.ghostspay.companyId', 'Company ID', gateway.companyId, 'password'),
+      settingInput('gateways.ghostspay.webhookToken', 'Token do webhook', gateway.webhookToken, 'password'),
+      settingInput('gateways.ghostspay.postbackUrl', 'URL de postback (opcional)', gateway.postbackUrl),
+    ].join('');
+  }
   if (name === 'sunize') {
     return [
       settingInput('gateways.sunize.baseUrl', 'Base URL', baseUrl),
@@ -2500,6 +2882,54 @@ async function saveAdminSettings() {
   }
 }
 
+function pushcutMarkup() {
+  const pushcut = adminSettings?.pushcut || {};
+  const templates = pushcut.templates || {};
+  return `
+    <section class="admin-section-rs">
+      <div class="admin-section-head-rs"><h2>Pushcut</h2><span>notificações</span></div>
+      <p class="admin-hint-rs">Os avisos entram na mesma fila persistente dos pixels e da UTMfy, com retentativas e deduplicação.</p>
+      <div class="admin-form-grid-rs">
+        ${settingToggle('pushcut.enabled', 'Ativar Pushcut', pushcut.enabled === true)}
+        ${settingInput('pushcut.pixCreatedUrl', 'URL para PIX gerado', pushcut.pixCreatedUrl, 'password')}
+        ${settingInput('pushcut.pixConfirmedUrl', 'URL para PIX confirmado', pushcut.pixConfirmedUrl, 'password')}
+        ${settingInput('pushcut.templates.pixCreatedTitle', 'Título: PIX gerado', templates.pixCreatedTitle)}
+        ${settingInput('pushcut.templates.pixCreatedMessage', 'Mensagem: PIX gerado', templates.pixCreatedMessage)}
+        ${settingInput('pushcut.templates.pixConfirmedTitle', 'Título: PIX pago', templates.pixConfirmedTitle)}
+        ${settingInput('pushcut.templates.pixConfirmedMessage', 'Mensagem: PIX pago', templates.pixConfirmedMessage)}
+      </div>
+      <button class="admin-mini-button-rs" data-pushcut-test type="button">Testar Pushcut</button>
+    </section>
+  `;
+}
+
+function operationsMarkup() {
+  return `
+    <section class="admin-grid-2-rs">
+      <div class="admin-section-rs">
+        <div class="admin-section-head-rs"><h2>Reconciliação PIX</h2><span>multi-gateway</span></div>
+        <p class="admin-hint-rs">Consulta os gateways novamente e corrige leads que perderam webhook ou ficaram com status antigo.</p>
+        <div class="admin-form-grid-rs">
+          <label class="field-rs"><span>Transações por execução</span><input id="reconcileMaxTx" type="number" min="1" max="1000" value="100" /></label>
+          ${settingToggle('operations.includeConfirmed', 'Incluir pagamentos confirmados', true)}
+          ${settingToggle('operations.mutate', 'Aplicar correções no banco', true)}
+        </div>
+        <button class="admin-mini-button-rs" data-reconcile-run type="button">Executar reconciliação</button>
+      </div>
+      <div class="admin-section-rs">
+        <div class="admin-section-head-rs"><h2>Fila de eventos</h2><span>worker</span></div>
+        <p class="admin-hint-rs">Processa agora os eventos pendentes de UTMfy, Pushcut e Meta CAPI. O worker agendado continua cuidando das retentativas.</p>
+        <label class="field-rs"><span>Limite do lote</span><input id="dispatchQueueLimit" type="number" min="1" max="300" value="80" /></label>
+        <button class="admin-mini-button-rs" data-dispatch-run type="button">Processar fila agora</button>
+      </div>
+    </section>
+    <section class="admin-section-rs">
+      <div class="admin-section-head-rs"><h2>Resultado operacional</h2><span>tempo real</span></div>
+      <pre class="lead-json-rs" id="operationsResult">Nenhuma operação executada nesta sessão.</pre>
+    </section>
+  `;
+}
+
 function collectAdminSettingsPatch() {
   const patch = {};
   document.querySelectorAll('[data-setting]').forEach((input) => {
@@ -2619,7 +3049,7 @@ function refreshGatewayOrderDom() {
     const buttons = row.querySelectorAll('[data-gateway-order-move]');
     row.classList.toggle('is-primary', index === 0);
     if (rank) rank.textContent = index === 0 ? 'ativo' : `fallback ${index}`;
-    if (description) description.textContent = index === 0 ? 'Gateway principal da checkout' : 'Entra automaticamente se os anteriores falharem';
+    if (description) description.textContent = index === 0 ? 'Gateway principal do checkout' : 'Entra automaticamente se os anteriores falharem';
     buttons.forEach((button) => {
       button.disabled = (button.dataset.gatewayOrderMove === 'up' && index === 0)
         || (button.dataset.gatewayOrderMove === 'down' && index === order.length - 1);
@@ -2629,6 +3059,7 @@ function refreshGatewayOrderDom() {
 
 function gatewayLabel(name) {
   return {
+    ghostspay: 'GhostsPay',
     sunize: 'Sunize',
     paradise: 'Paradise',
     atomopay: 'AtomoPay',
@@ -2726,7 +3157,7 @@ function setClarityContext(page = routeName()) {
   const utm = readJson(storageKeys.utm, {});
   clarityTagAllowList.forEach((key) => setClarityTag(key, utm[key]));
 
-  const quiz = readJson(storageKeys.quiz, null);
+  const quiz = readQuizSummary();
   if (quiz) {
     setClarityTag('quiz_status', quiz.status);
     setClarityTag('quiz_score', quiz.score);
@@ -2787,6 +3218,7 @@ function initConfiguredTracking() {
   if (tracking.browserPixel === false) return;
 
   const metaId = String(tracking.metaPixel || '').trim();
+  const metaBackupId = String(tracking.metaBackupPixel || '').trim();
   if (/^\d{8,24}$/.test(metaId) && typeof window.fbq !== 'function') {
     const fbq = function (...args) { fbq.queue.push(args); };
     fbq.queue = [];
@@ -2795,6 +3227,7 @@ function initConfiguredTracking() {
     window.fbq = fbq;
     appendTrackingScript('gta-meta-pixel', 'https://connect.facebook.net/en_US/fbevents.js');
     window.fbq('init', metaId);
+    if (/^\d{8,24}$/.test(metaBackupId) && metaBackupId !== metaId) window.fbq('init', metaBackupId);
   }
 
   const tiktokId = String(tracking.tiktokPixel || '').trim();
@@ -2849,6 +3282,8 @@ function trackConfiguredEvent(name, data = {}) {
   const explicitEventId = String(data?.event_id || '').trim().slice(0, 120);
   const eventData = { ...data };
   delete eventData.event_id;
+  const serverHandled = eventData.server_handled === true;
+  delete eventData.server_handled;
   const eventId = explicitEventId || `evt_${normalizedName.replace(/[^a-z0-9_]+/g, '_').slice(0, 48) || 'event'}_${
     crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`
   }`.slice(0, 120);
@@ -2862,7 +3297,7 @@ function trackConfiguredEvent(name, data = {}) {
     } catch (_error) {}
     try { window.gtag?.('event', googleEventName, eventData); } catch (_error) {}
   }
-  if (siteConfig.tracking?.serverEvents === true) {
+  if (siteConfig.tracking?.serverEvents === true && !serverHandled) {
     fetch('/api/tracking/event', {
       method: 'POST',
       credentials: 'include',
@@ -2873,7 +3308,7 @@ function trackConfiguredEvent(name, data = {}) {
         sessionId: getSessionId(),
         eventId,
         sourceUrl: window.location.href,
-        data: eventData,
+        data: { ...eventData, utm: readJson(storageKeys.utm, {}) },
       }),
     }).catch(() => null);
   }
@@ -2888,15 +3323,76 @@ async function loadSiteConfig() {
   } catch (_error) {}
 }
 
+function baseDeviceContext() {
+  const ua = String(navigator.userAgent || '');
+  const uaData = navigator.userAgentData;
+  const isIpad = /ipad/i.test(ua) || (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints || 0) > 1);
+  const mobile = uaData?.mobile === true || /iphone|ipod|android.*mobile/i.test(ua);
+  const tablet = isIpad || /tablet|kindle|silk|android(?!.*mobile)/i.test(ua);
+  const brands = Array.isArray(uaData?.brands) ? uaData.brands : [];
+  const preferredBrand = brands.find((item) => !/not.?a.?brand|chromium/i.test(item?.brand || '')) || brands[0] || {};
+  const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+  return {
+    type: tablet ? 'Tablet' : mobile ? 'Celular' : 'Desktop',
+    mobile: mobile || tablet,
+    platform: String(uaData?.platform || navigator.platform || '').slice(0, 100),
+    browserBrand: String(preferredBrand.brand || '').slice(0, 120),
+    browserVersion: String(preferredBrand.version || '').slice(0, 80),
+    screen: {
+      width: Number(window.screen?.width || 0),
+      height: Number(window.screen?.height || 0),
+      availWidth: Number(window.screen?.availWidth || 0),
+      availHeight: Number(window.screen?.availHeight || 0),
+    },
+    viewport: { width: Number(window.innerWidth || 0), height: Number(window.innerHeight || 0) },
+    orientation: String(window.screen?.orientation?.type || '').slice(0, 40),
+    pixelRatio: Number(window.devicePixelRatio || 1),
+    timezone: String(Intl.DateTimeFormat().resolvedOptions().timeZone || '').slice(0, 100),
+    language: String(navigator.language || '').slice(0, 40),
+    languages: Array.isArray(navigator.languages) ? navigator.languages.slice(0, 8) : [],
+    touchPoints: Number(navigator.maxTouchPoints || 0),
+    network: {
+      effectiveType: String(connection.effectiveType || '').slice(0, 24),
+      downlink: Number.isFinite(Number(connection.downlink)) ? Number(connection.downlink) : undefined,
+      rtt: Number.isFinite(Number(connection.rtt)) ? Number(connection.rtt) : undefined,
+      saveData: typeof connection.saveData === 'boolean' ? connection.saveData : undefined,
+    },
+  };
+}
+
+async function getDeviceContext() {
+  if (deviceContextPromise) return deviceContextPromise;
+  deviceContextPromise = (async () => {
+    const context = baseDeviceContext();
+    if (typeof navigator.userAgentData?.getHighEntropyValues !== 'function') return context;
+    try {
+      const entropy = await navigator.userAgentData.getHighEntropyValues(['model', 'platformVersion', 'uaFullVersion']);
+      context.model = String(entropy?.model || '').slice(0, 120);
+      context.platformVersion = String(entropy?.platformVersion || '').slice(0, 80);
+      if (entropy?.uaFullVersion) context.browserVersion = String(entropy.uaFullVersion).slice(0, 80);
+    } catch (_error) {}
+    return context;
+  })();
+  return deviceContextPromise;
+}
+
 async function trackLead(payload = {}) {
   await initSession({ force: payload.event === 'personal_submitted' });
+  const trackingSessionId = getSessionId();
+  const trackingEventId = String(payload.eventId || `${payload.event || 'lead'}_${trackingSessionId}`).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 120);
+  const safePayload = { ...payload };
+  delete safePayload.answers;
+  delete safePayload.quizAnswers;
+  if (Object.prototype.hasOwnProperty.call(safePayload, 'quiz')) safePayload.quiz = sanitizeQuizSummary(safePayload.quiz);
   const body = {
-    sessionId: getSessionId(),
+    sessionId: trackingSessionId,
     utm: readJson(storageKeys.utm, {}),
     referrer: document.referrer || '',
     landing_page: window.location.pathname,
     sourceUrl: window.location.href,
-    ...payload,
+    device: await getDeviceContext(),
+    ...safePayload,
+    eventId: trackingEventId,
   };
   try {
     const send = () => fetch('/api/lead/track', {
@@ -2914,7 +3410,7 @@ async function trackLead(payload = {}) {
       response = await send();
     }
     const result = await response.json().catch(() => ({}));
-    if (response.ok && payload.event) trackConfiguredEvent(payload.event, { stage: payload.stage || routeName() });
+    if (response.ok && payload.event) trackConfiguredEvent(payload.event, { stage: payload.stage || routeName(), event_id: trackingEventId, server_handled: true });
     return response.ok
       ? result
       : { ok: false, status: response.status, reason: result.reason || result.error || 'request_failed' };
@@ -2925,14 +3421,24 @@ async function trackLead(payload = {}) {
 
 async function trackPage(page) {
   await initSession();
+  const pageSessionId = getSessionId();
+  const pageViewEventId = `pv_${pageSessionId}_${page}`.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 120);
   trackClarityEvent(`page_view_${page}`, { page, stage: page });
-  trackConfiguredEvent('PageView', { page });
+  trackConfiguredEvent('PageView', { page, event_id: pageViewEventId, server_handled: true });
   try {
     await fetch('/api/lead/pageview', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: getSessionId(), page }),
+      body: JSON.stringify({
+        sessionId: pageSessionId,
+        page,
+        pageViewEventId,
+        sourceUrl: window.location.href,
+        utm: readJson(storageKeys.utm, {}),
+        referrer: document.referrer || '',
+        device: await getDeviceContext(),
+      }),
     });
   } catch (_error) {}
 }
@@ -3022,7 +3528,7 @@ function resetQuiz() {
   currentQuestion = 0;
   score = 0;
   isLocked = false;
-  quizAnswers = [];
+  quizStartedAt = 0;
   render();
 }
 

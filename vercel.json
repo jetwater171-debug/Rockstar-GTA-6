@@ -6,5 +6,8 @@
     { "source": "/ofertas", "destination": "/index.html" },
     { "source": "/checkout", "destination": "/index.html" },
     { "source": "/admin", "destination": "/index.html" }
+  ],
+  "crons": [
+    { "path": "/api/jobs/dispatch?limit=120", "schedule": "* * * * *" }
   ]
 }
