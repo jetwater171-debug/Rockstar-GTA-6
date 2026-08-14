@@ -52,12 +52,59 @@ alter table public.leads add column if not exists bump_price numeric(12,2) not n
 update public.leads
 set payload = case
   when jsonb_typeof(payload -> 'quiz') = 'object'
-    then jsonb_set(payload - 'answers' - 'quizAnswers', '{quiz}', (payload -> 'quiz') - 'answers' - 'quizAnswers', true)
-  else payload - 'answers' - 'quizAnswers'
+    then jsonb_set(
+      payload - 'answers' - 'quizAnswers' - 'quizResponses',
+      '{quiz}',
+      (payload -> 'quiz') - 'answers' - 'responses' - 'questions' - 'selections' - 'quizAnswers' - 'quizResponses',
+      true
+    )
+  else payload - 'answers' - 'quizAnswers' - 'quizResponses'
 end
 where payload ? 'answers'
    or payload ? 'quizAnswers'
-   or (jsonb_typeof(payload -> 'quiz') = 'object' and ((payload -> 'quiz') ? 'answers' or (payload -> 'quiz') ? 'quizAnswers'));
+   or payload ? 'quizResponses'
+   or (
+     jsonb_typeof(payload -> 'quiz') = 'object'
+     and (
+       (payload -> 'quiz') ? 'answers'
+       or (payload -> 'quiz') ? 'responses'
+       or (payload -> 'quiz') ? 'questions'
+       or (payload -> 'quiz') ? 'selections'
+       or (payload -> 'quiz') ? 'quizAnswers'
+       or (payload -> 'quiz') ? 'quizResponses'
+     )
+   );
+
+create or replace function public.sanitize_lead_quiz_payload()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if jsonb_typeof(new.payload) <> 'object' then
+    new.payload := '{}'::jsonb;
+  end if;
+
+  new.payload := new.payload - 'answers' - 'quizAnswers' - 'quizResponses';
+  if jsonb_typeof(new.payload -> 'quiz') = 'object' then
+    new.payload := jsonb_set(
+      new.payload,
+      '{quiz}',
+      (new.payload -> 'quiz') - 'answers' - 'responses' - 'questions' - 'selections' - 'quizAnswers' - 'quizResponses',
+      true
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists leads_sanitize_quiz_payload on public.leads;
+create trigger leads_sanitize_quiz_payload
+before insert or update of payload on public.leads
+for each row execute function public.sanitize_lead_quiz_payload();
+
+revoke all on function public.sanitize_lead_quiz_payload() from public, anon, authenticated;
+grant execute on function public.sanitize_lead_quiz_payload() to service_role;
 
 create index if not exists leads_updated_at_idx on public.leads (updated_at desc);
 create index if not exists leads_email_idx on public.leads (email);

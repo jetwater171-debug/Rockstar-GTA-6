@@ -82,4 +82,5 @@ test('client and SQL migration contain no path that persists quiz answers', asyn
   assert.match(mainSource, /Respostas individuais não são armazenadas/);
   assert.match(sqlSource, /payload\s*->\s*'quiz'/);
   assert.match(sqlSource, /-\s*'answers'/);
+  assert.match(sqlSource, /create trigger leads_sanitize_quiz_payload/);
 });
