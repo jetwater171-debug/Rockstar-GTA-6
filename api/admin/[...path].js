@@ -22,7 +22,7 @@ import { getGatewayTransaction } from '../../lib/checkout-payments.js';
 import { invalidateSharedCommerceCaches, runCoreAdmin } from '../../lib/shared-commerce-adapter.js';
 
 const require = createRequire(import.meta.url);
-const { describeLeadDevice, sanitizeLeadPayload } = require('../../backend/shared-core/lib/lead-privacy.js');
+const { describeLeadDevice, sanitizeLeadPayload } = require('../../backend/shared-core/lib/lead-storage.js');
 
 const gateways = ['ghostspay', 'sunize', 'paradise', 'atomopay', 'bravopay'];
 const defaultSettings = {

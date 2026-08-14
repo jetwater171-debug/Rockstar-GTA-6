@@ -1,7 +1,7 @@
 const fetchFn = global.fetch
     ? global.fetch.bind(global)
     : (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-const { sanitizeLeadPayload } = require('./lead-privacy.js');
+const { sanitizeLeadPayload } = require('./lead-storage.js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE || '';
@@ -168,7 +168,6 @@ function sanitizeStoredEvent(value) {
         stage,
         page,
         at: toText(source.at, 40),
-        sourceUrl: toText(source.sourceUrl, 300),
         gateway: toText(source.gateway, 80),
         status: toText(source.status, 80),
         txid: toText(source.txid, 120),
@@ -190,7 +189,6 @@ function appendOperationalEvent(payloadValue, incomingValue) {
         stage: incoming.stage,
         page: incoming.page,
         at: incoming.eventAt || new Date().toISOString(),
-        sourceUrl: incoming.sourceUrl,
         gateway: incoming.gateway || incoming.pixGateway || incoming.paymentGateway || payment.gateway || pix.gateway,
         status: incoming.pixStatus || payment.status || pix.status,
         txid: incoming.pixTxid || payment.txid || payment.idTransaction || pix.txid || pix.idTransaction,
@@ -208,7 +206,7 @@ function appendOperationalEvent(payloadValue, incomingValue) {
         if (existingIndex >= 0) events[existingIndex] = { ...events[existingIndex], ...event };
         else events.push(event);
     }
-    if (events.length) payload.leadEvents = events.slice(-150);
+    if (events.length) payload.leadEvents = events.slice(-40);
     else delete payload.leadEvents;
     return payload;
 }

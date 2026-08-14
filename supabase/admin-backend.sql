@@ -47,8 +47,8 @@ alter table public.leads add column if not exists shipping_price numeric(12,2);
 alter table public.leads add column if not exists bump_selected boolean not null default false;
 alter table public.leads add column if not exists bump_price numeric(12,2) not null default 0;
 
--- Privacidade do quiz: remove respostas individuais antigas e mantém apenas
--- score, total, status e tempos agregados no objeto quiz.
+-- Otimizacao de armazenamento: remove respostas individuais antigas do quiz
+-- e mantém apenas score, total, status e tempos agregados.
 update public.leads
 set payload = case
   when jsonb_typeof(payload -> 'quiz') = 'object'

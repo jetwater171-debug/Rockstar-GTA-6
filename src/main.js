@@ -2262,10 +2262,10 @@ function leadDetailMarkup(lead) {
             </section>
 
             <section class="lead-detail-section-rs lead-detail-section-rs--wide">
-              <div class="admin-section-head-rs"><h2>Resumo do quiz</h2><span>privacidade</span></div>
-              <div class="lead-privacy-note-rs">
+              <div class="admin-section-head-rs"><h2>Resumo do quiz</h2><span>armazenamento enxuto</span></div>
+              <div class="lead-storage-note-rs">
                 <strong>Respostas individuais não são armazenadas.</strong>
-                <span>O painel mantém apenas o resultado agregado necessário para medir o funil.</span>
+                <span>O painel mantém somente score, total, status e duração para reduzir o tamanho salvo no Supabase.</span>
               </div>
               <div class="lead-detail-stat-grid-rs lead-detail-stat-grid-rs--compact">
                 ${leadInfoCard('Pontuação', quiz.score !== undefined ? String(quiz.score) : '-', 'agregado')}
@@ -2310,7 +2310,7 @@ function leadDetailMarkup(lead) {
             </section>
 
             <section class="lead-detail-section-rs lead-detail-section-rs--wide">
-              <div class="admin-section-head-rs"><h2>Payload sanitizado</h2><span>debug sem respostas</span></div>
+              <div class="admin-section-head-rs"><h2>Payload operacional</h2><span>compacto, sem respostas</span></div>
               <pre class="lead-json-rs" id="leadPayloadJson">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
             </section>
           </div>

@@ -3444,7 +3444,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.lead-privacy-note-rs {
+.lead-storage-note-rs {
   background: rgba(66, 211, 146, 0.08);
   border: 1px solid rgba(66, 211, 146, 0.22);
   border-radius: 0.9rem;
@@ -3453,11 +3453,11 @@
   padding: 0.85rem;
 }
 
-.lead-privacy-note-rs strong {
+.lead-storage-note-rs strong {
   color: #83efbb;
 }
 
-.lead-privacy-note-rs span {
+.lead-storage-note-rs span {
   color: rgba(255, 255, 255, 0.62);
   font-size: 0.82rem;
 }

@@ -4,7 +4,7 @@ import { ensureNotBlocked } from '../../lib/ip-blacklist.js';
 
 const require = createRequire(import.meta.url);
 const { upsertLead } = require('../../backend/shared-core/lib/lead-store.js');
-const { sanitizeLeadPayload } = require('../../backend/shared-core/lib/lead-privacy.js');
+const { sanitizeLeadPayload } = require('../../backend/shared-core/lib/lead-storage.js');
 const { getSettings } = require('../../backend/shared-core/lib/settings-store.js');
 const { enqueueDispatch, processDispatchQueue } = require('../../backend/shared-core/lib/dispatch-queue.js');
 const { buildLeadTrackDispatchJobs } = require('../../backend/shared-core/lib/meta-capi.js');

@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const require = createRequire(import.meta.url);
-const { describeLeadDevice, sanitizeLeadPayload } = require('../backend/shared-core/lib/lead-privacy.js');
+const { describeLeadDevice, sanitizeLeadPayload } = require('../backend/shared-core/lib/lead-storage.js');
 const { __test: leadStoreTest } = require('../backend/shared-core/lib/lead-store.js');
 
 test('lead payload discards individual quiz responses and preserves aggregate metrics', () => {
@@ -58,13 +58,11 @@ test('lead merge removes legacy responses and appends a deduplicated operational
     eventId: 'evt-personal-1',
     event: 'personal_submitted',
     stage: 'dados',
-    sourceUrl: 'https://example.test/dados',
   });
   const repeated = leadStoreTest.appendOperationalEvent(first, {
     eventId: 'evt-personal-1',
     event: 'personal_submitted',
     stage: 'dados',
-    sourceUrl: 'https://example.test/dados',
   });
 
   assert.equal('answers' in repeated.quiz, false);
@@ -72,14 +70,14 @@ test('lead merge removes legacy responses and appends a deduplicated operational
   assert.equal(repeated.leadEvents[0].event, 'personal_submitted');
 });
 
-test('client and SQL migration contain no path that persists quiz answers', async () => {
+test('client and SQL storage rules contain no path that persists quiz answers', async () => {
   const [mainSource, sqlSource] = await Promise.all([
     readFile(new URL('../src/main.js', import.meta.url), 'utf8'),
     readFile(new URL('../supabase/admin-backend.sql', import.meta.url), 'utf8'),
   ]);
 
   assert.doesNotMatch(mainSource, /answers\s*:\s*quizAnswers/);
-  assert.match(mainSource, /Respostas individuais não são armazenadas/);
+  assert.match(mainSource, /reduzir o tamanho salvo no Supabase/);
   assert.match(sqlSource, /payload\s*->\s*'quiz'/);
   assert.match(sqlSource, /-\s*'answers'/);
   assert.match(sqlSource, /create trigger leads_sanitize_quiz_payload/);
