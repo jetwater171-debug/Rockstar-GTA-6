@@ -445,8 +445,8 @@ function renderAdminPage() {
                 <h1 id="adminTitle">Visão geral</h1>
                 <p class="admin-muted-rs" id="adminSubtitle">Monitoramento do funil promocional em tempo real.</p>
               </div>
-              <div class="admin-actions-rs">
-                <button class="admin-button-rs admin-button-rs--ghost" id="saveAdminSettings" type="button">Salvar</button>
+            <div class="admin-actions-rs">
+                <button class="admin-button-rs admin-button-rs--ghost" id="saveAdminSettings" type="button">Salvar configs</button>
                 <button class="admin-button-rs" id="refreshAdmin" type="button">Atualizar</button>
                 <button class="admin-button-rs admin-button-rs--ghost" id="adminLogout" type="button">Sair</button>
               </div>
@@ -1654,6 +1654,10 @@ async function loadAdminData({ force = false } = {}) {
 }
 
 function renderAdminPanel() {
+  const adminPanel = document.querySelector('.admin-panel-rs');
+  const adminScreen = document.querySelector('.admin-screen');
+  if (adminPanel) adminPanel.dataset.adminTab = adminCurrentTab;
+  if (adminScreen) adminScreen.dataset.adminTab = adminCurrentTab;
   document.querySelectorAll('[data-admin-tab]').forEach((button) => {
     button.classList.toggle('is-active', button.dataset.adminTab === adminCurrentTab);
   });
