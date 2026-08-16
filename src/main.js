@@ -6,6 +6,7 @@ import './desktop-polish.css';
 import './processing-unified.css';
 import './offers-clean.css';
 import './checkout-clean.css';
+import './admin-lead-modal.css';
 import QRCode from 'qrcode';
 
 const quiz = [
@@ -162,6 +163,7 @@ let adminSettings = null;
 let adminExtras = {};
 let adminCurrentTab = 'overview';
 let adminSelectedLeadSession = null;
+const adminLeadTransactionLookups = new Map();
 let adminLeadPagination = { offset: 0, limit: 200, hasMore: false, total: null };
 let adminLeadFilters = { q: '', from: '', to: '' };
 let siteConfig = { tracking: {}, features: {} };
@@ -1587,6 +1589,7 @@ function bindAdmin() {
   document.querySelectorAll('[data-admin-tab]').forEach((button) => {
     button.addEventListener('click', () => {
       adminCurrentTab = button.dataset.adminTab || 'overview';
+      if (adminCurrentTab !== 'leads') adminSelectedLeadSession = null;
       renderAdminPanel();
     });
   });
@@ -1698,9 +1701,19 @@ function renderAdminPanel() {
   else if (adminCurrentTab === 'pages') content.innerHTML = pagesMarkup();
   else content.innerHTML = overviewMarkup();
   bindAdminContent();
+  document.body.classList.toggle('admin-modal-open-rs', Boolean(document.querySelector('.lead-modal-rs')));
 }
 
 function bindAdminContent() {
+  const leadModal = document.querySelector('.lead-modal-rs');
+  if (leadModal) {
+    leadModal.focus({ preventScroll: true });
+    leadModal.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      adminSelectedLeadSession = null;
+      renderAdminPanel();
+    });
+  }
   document.querySelector('#adminSearch')?.addEventListener('input', debounce(() => loadAdminData(), 320));
   document.querySelector('[data-pushcut-test]')?.addEventListener('click', async () => {
     const status = document.querySelector('#adminStatus');
@@ -1790,6 +1803,7 @@ function bindAdminContent() {
   document.querySelectorAll('[data-close-lead]').forEach((button) => {
     button.addEventListener('click', () => {
       adminSelectedLeadSession = null;
+      document.body.classList.remove('admin-modal-open-rs');
       renderAdminPanel();
     });
   });
@@ -1847,12 +1861,71 @@ function bindAdminContent() {
         method: 'POST',
         body: JSON.stringify({ txid, gateway, sessionId: adminSelectedLeadSession, mutate: 1 }),
       });
+      adminLeadTransactionLookups.set(adminSelectedLeadSession, result.item || {
+        ok: false,
+        txid,
+        gateway,
+        detail: 'Nenhum detalhe retornado pelo gateway.',
+      });
       if (status) status.textContent = result.item?.statusRaw ? `Status: ${result.item.statusRaw}` : 'Reconciliação concluída.';
       await loadAdminData({ force: true });
     } catch (error) {
+      adminLeadTransactionLookups.set(adminSelectedLeadSession, {
+        ok: false,
+        txid,
+        gateway,
+        detail: error.message || 'Falha ao consultar a transação.',
+      });
       if (status) status.textContent = error.message || 'Falha ao reconciliar o pagamento.';
+      renderAdminPanel();
+      const nextStatus = document.querySelector('#leadCopyStatus');
+      if (nextStatus) nextStatus.textContent = error.message || 'Falha ao reconciliar o pagamento.';
     } finally {
       if (button.isConnected) button.disabled = false;
+    }
+  });
+  document.querySelector('[data-block-lead-ip]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const ip = String(button.dataset.blockLeadIp || '').trim();
+    const status = document.querySelector('#leadCopyStatus');
+    if (!ip || !adminSelectedLeadSession) return;
+    if (!window.confirm(`Tem certeza que deseja bloquear o IP ${ip}?`)) return;
+    button.disabled = true;
+    if (status) status.textContent = `Bloqueando ${ip}...`;
+    try {
+      const result = await adminFetch('/api/admin/ip-blacklist', {
+        method: 'POST',
+        body: JSON.stringify({
+          ip,
+          sessionId: adminSelectedLeadSession,
+          reason: 'Bloqueio manual pelo detalhe do lead',
+        }),
+      });
+      adminExtras.blacklist = { ...(adminExtras.blacklist || {}), ...result };
+      renderAdminPanel();
+      const nextStatus = document.querySelector('#leadCopyStatus');
+      if (nextStatus) nextStatus.textContent = `IP ${ip} bloqueado com sucesso.`;
+    } catch (error) {
+      if (status) status.textContent = error.message || 'Falha ao bloquear IP.';
+      button.disabled = false;
+    }
+  });
+  document.querySelector('[data-unblock-lead-ip]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const ip = String(button.dataset.unblockLeadIp || '').trim();
+    const status = document.querySelector('#leadCopyStatus');
+    if (!ip) return;
+    button.disabled = true;
+    if (status) status.textContent = `Removendo ${ip} da blacklist...`;
+    try {
+      const result = await adminFetch(`/api/admin/ip-blacklist?ip=${encodeURIComponent(ip)}`, { method: 'DELETE' });
+      adminExtras.blacklist = { ...(adminExtras.blacklist || {}), ...result };
+      renderAdminPanel();
+      const nextStatus = document.querySelector('#leadCopyStatus');
+      if (nextStatus) nextStatus.textContent = `IP ${ip} removido da blacklist.`;
+    } catch (error) {
+      if (status) status.textContent = error.message || 'Falha ao remover IP da blacklist.';
+      button.disabled = false;
     }
   });
   document.querySelectorAll('[data-block-cloner]').forEach((button) => {
@@ -2107,7 +2180,7 @@ function leadDetailMarkup(lead) {
   const shipping = payload.shipping || {};
   const bump = payload.bump || {};
   const paymentHistory = Array.isArray(payload.paymentHistory) ? payload.paymentHistory : [];
-  const currentTxid = lead.pix_txid || payload.pixTxid || payload.pix?.idTransaction || payload.payment?.txid || '';
+  const currentTxid = lead.pix_txid || payload.pixTxid || payload.pix?.idTransaction || payload.pix?.txid || payload.payment?.txid || '';
   const currentGateway = payload.gateway || payload.pixGateway || payload.paymentGateway || payload.pix?.gateway || payload.payment?.gateway || lead.gateway || '';
   const currentPaymentStatus = payload.pixStatus || payload.payment?.status || payload.pix?.status || lead.last_event || '-';
   const currentAmount = Number(lead.pix_amount || payload.pixAmount || payload.payment?.amount || payload.pix?.amount || offer.price || 0);
@@ -2115,8 +2188,21 @@ function leadDetailMarkup(lead) {
   const phoneDigits = String(phone).replace(/\D/g, '');
   const whatsappDigits = phoneDigits.startsWith('55') ? phoneDigits : `55${phoneDigits}`;
   const network = device.network || {};
+  const blacklistEntries = Array.isArray(adminExtras?.blacklist?.entries) ? adminExtras.blacklist.entries : [];
+  const blockedEntry = blacklistEntries.find((entry) => String(entry?.ip || '').trim() === String(device.clientIp || '').trim()) || null;
+  const transactionLookup = adminLeadTransactionLookups.get(lead.session_id) || null;
+  const paymentSummary = paymentHistory.length
+    ? `${paymentHistory.length} tentativa${paymentHistory.length === 1 ? '' : 's'}`
+    : currentTxid
+      ? currentPaymentStatus
+      : 'Sem pagamentos';
+  const selectionSummary = [
+    offer.title || offer.name,
+    lead.shipping_name || shipping.name,
+    lead.bump_selected || bump.selected ? 'Order bump' : '',
+  ].filter(Boolean).join(' + ') || 'Sem seleção';
   return `
-    <div class="lead-modal-rs" role="dialog" aria-modal="true" aria-label="Detalhes do lead">
+    <div class="lead-modal-rs lead-modal-rs--ifood-copy" role="dialog" aria-modal="true" aria-label="Detalhes do lead" tabindex="-1">
       <div class="lead-modal-backdrop-rs" data-close-lead></div>
       <article class="lead-modal-panel-rs lead-modal-panel-rs--ifood">
         <button class="lead-modal-close-rs" data-close-lead type="button" aria-label="Fechar detalhes do lead">×</button>
@@ -2128,30 +2214,47 @@ function leadDetailMarkup(lead) {
               <p>${escapeHtml(lead.session_id || '-')} | ${escapeHtml(lead.stage || '-')} | ${escapeHtml(lead.last_event || '-')}</p>
             </div>
             <div class="lead-detail-tags-rs">
+              <span class="admin-chip-rs">${escapeHtml(currentPaymentStatus || 'sem pagamento')}</span>
               <span class="admin-chip-rs">${escapeHtml(quiz.status || 'sem quiz')}</span>
               <span class="admin-chip-rs">${escapeHtml(lead.utm_source || utm.utm_source || 'sem origem')}</span>
               <span class="admin-chip-rs">${escapeHtml(device.model || device.type)}</span>
               <span class="admin-chip-rs">${escapeHtml(pageviews.length ? `${pageviews.length} páginas` : 'sem pageviews')}</span>
+              <span class="admin-chip-rs ${blockedEntry ? 'admin-chip-rs--danger' : ''}">${blockedEntry ? 'IP bloqueado' : 'IP livre'}</span>
+            </div>
+            <div class="lead-detail-block-state-rs ${blockedEntry ? 'is-blocked' : ''}">
+              <strong>${blockedEntry ? 'IP na blacklist' : 'IP monitorado'}</strong>
+              <span>${blockedEntry
+                ? `${escapeHtml(device.clientIp || '-')} · ${escapeHtml(blockedEntry.reason || 'Bloqueio manual')} · ${escapeHtml(formatDate(blockedEntry.createdAt || blockedEntry.blockedAt))}`
+                : `Bloqueio exato disponível para ${escapeHtml(device.clientIp || 'IP não identificado')}.`}</span>
             </div>
             <div class="lead-detail-summary-rs">
-              ${leadSummaryCard('Pagamento', currentAmount ? formatMoney(currentAmount) : 'Sem cobrança', currentPaymentStatus)}
+              ${leadSummaryCard('Valor atual', currentAmount ? formatMoney(currentAmount) : 'Sem cobrança', currentPaymentStatus)}
+              ${leadSummaryCard('Seleção base', selectionSummary, offer.id || '-')}
+              ${leadSummaryCard('Pagamentos', paymentSummary, currentGateway || '-')}
               ${leadSummaryCard('Contato', lead.email || lead.phone ? 'Capturado' : 'Pendente', lead.email || lead.phone || '-')}
               ${leadSummaryCard('Dispositivo', device.model || device.type, `${device.os} · ${device.browser}`)}
               ${leadSummaryCard('Atualizado', formatShortDate(lead.updated_at || lead.created_at), device.clientIp || '-')}
             </div>
             <div class="lead-detail-actions-rs">
+              <button class="admin-row-button-rs lead-detail-primary-action-rs" data-reconcile-lead data-txid="${escapeAttr(currentTxid)}" data-gateway="${escapeAttr(currentGateway)}" type="button" ${currentTxid && currentGateway ? '' : 'disabled'}>Consultar transação</button>
               ${phoneDigits ? `<a class="admin-row-button-rs lead-action-link-rs" href="https://wa.me/${escapeAttr(whatsappDigits)}" target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>` : ''}
-              ${phone ? `<button class="admin-row-button-rs" data-copy-value="${escapeAttr(phone)}" type="button">Copiar telefone</button>` : ''}
-              ${lead.email ? `<button class="admin-row-button-rs" data-copy-value="${escapeAttr(lead.email)}" type="button">Copiar email</button>` : ''}
-              <button class="admin-row-button-rs" data-copy-value="${escapeAttr(lead.session_id || '')}" type="button">Copiar sessão</button>
-              <button class="admin-row-button-rs" data-copy-lead-payload type="button">Copiar JSON</button>
-              ${currentTxid ? `<button class="admin-row-button-rs" data-reconcile-lead data-txid="${escapeAttr(currentTxid)}" data-gateway="${escapeAttr(currentGateway)}" type="button">Reconciliar PIX</button>` : ''}
+              <div class="lead-detail-copy-actions-rs">
+                ${phone ? `<button class="admin-row-button-rs" data-copy-value="${escapeAttr(phone)}" type="button">Telefone</button>` : ''}
+                ${lead.email ? `<button class="admin-row-button-rs" data-copy-value="${escapeAttr(lead.email)}" type="button">Email</button>` : ''}
+                <button class="admin-row-button-rs" data-copy-value="${escapeAttr(lead.session_id || '')}" type="button">Sessão</button>
+                <button class="admin-row-button-rs" data-copy-lead-payload type="button">JSON</button>
+              </div>
+              ${device.clientIp
+                ? blockedEntry
+                  ? `<button class="admin-row-button-rs lead-detail-unblock-rs" data-unblock-lead-ip="${escapeAttr(device.clientIp)}" type="button">Remover da blacklist</button>`
+                  : `<button class="admin-row-button-rs lead-detail-block-rs" data-block-lead-ip="${escapeAttr(device.clientIp)}" type="button">Bloquear IP</button>`
+                : ''}
               <span class="admin-muted-rs" id="leadCopyStatus">Detalhes carregados da sessão.</span>
             </div>
           </aside>
 
           <div class="lead-detail-main-rs">
-            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide lead-section-overview-rs">
               <div class="admin-section-head-rs"><h2>Visão geral</h2><span>perfil</span></div>
               <div class="lead-detail-stat-grid-rs">
                 ${leadInfoCard('Etapa atual', lead.stage || lead.etapa || '-', lead.last_event || lead.evento || '-')}
@@ -2162,10 +2265,11 @@ function leadDetailMarkup(lead) {
                 ${leadInfoCard('Páginas', String(pageviews.length), timeline.length ? `${timeline.length} eventos na timeline` : 'Sem jornada')}
                 ${leadInfoCard('Criado', formatShortDate(lead.created_at), formatDate(lead.created_at))}
                 ${leadInfoCard('Atualizado', formatShortDate(lead.updated_at), formatDate(lead.updated_at))}
+                ${leadInfoCard('IP bloqueado', blockedEntry ? 'Sim' : 'Não', device.clientIp || '-')}
               </div>
             </section>
 
-            <section class="lead-detail-section-rs">
+            <section class="lead-detail-section-rs lead-section-identity-rs">
               <div class="admin-section-head-rs"><h2>Identidade e contato</h2><span>lead</span></div>
               <div class="lead-kv-rs">
                 ${leadKv('Nome', lead.name || lead.nome)}
@@ -2177,8 +2281,8 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs">
-              <div class="admin-section-head-rs"><h2>Dispositivo e acesso</h2><span>telemetria</span></div>
+            <section class="lead-detail-section-rs lead-section-device-rs">
+              <div class="admin-section-head-rs"><h2>Dispositivo e rede</h2><span>telemetria</span></div>
               <div class="lead-kv-rs">
                 ${leadKv('Aparelho', device.model || device.type)}
                 ${leadKv('Tipo', device.type)}
@@ -2200,7 +2304,7 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs">
+            <section class="lead-detail-section-rs lead-section-tracking-rs">
               <div class="admin-section-head-rs"><h2>Origem e tracking</h2><span>utm</span></div>
               <div class="lead-kv-rs">
                 ${leadKv('utm_source', lead.utm_source || utm.utm_source)}
@@ -2219,8 +2323,8 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs">
-              <div class="admin-section-head-rs"><h2>Checkout e pedido</h2><span>conversão</span></div>
+            <section class="lead-detail-section-rs lead-section-payment-rs">
+              <div class="admin-section-head-rs"><h2>Pagamento e oferta</h2><span>conversão</span></div>
               <div class="lead-kv-rs">
                 ${leadKv('Pedido', order.id || payload.orderId || metadata.orderId)}
                 ${leadKv('Status do pedido', order.status)}
@@ -2235,8 +2339,8 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs">
-              <div class="admin-section-head-rs"><h2>Entrega e endereço</h2><span>logística</span></div>
+            <section class="lead-detail-section-rs lead-section-address-rs">
+              <div class="admin-section-head-rs"><h2>Endereço e entrega</h2><span>logística</span></div>
               <div class="lead-kv-rs">
                 ${leadKv('CEP', lead.cep || address.cep)}
                 ${leadKv('Endereço', lead.address_line || address.street || address.streetLine)}
@@ -2249,7 +2353,7 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide lead-section-journey-rs">
               <div class="admin-section-head-rs"><h2>Jornada registrada</h2><span>${timeline.length} eventos</span></div>
               <div class="lead-detail-pages-rs">
                 ${timeline.length ? timeline.map((item, index) => `
@@ -2265,7 +2369,7 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide lead-section-quiz-rs">
               <div class="admin-section-head-rs"><h2>Resumo do quiz</h2><span>armazenamento enxuto</span></div>
               <div class="lead-storage-note-rs">
                 <strong>Respostas individuais não são armazenadas.</strong>
@@ -2279,7 +2383,7 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide lead-section-payment-history-rs">
               <div class="admin-section-head-rs"><h2>Histórico de pagamentos</h2><span>${paymentHistory.length}</span></div>
               <div class="lead-detail-pages-rs">
                 ${paymentHistory.length ? paymentHistory.slice().reverse().map((payment, index) => `
@@ -2295,8 +2399,14 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
-              <div class="admin-section-head-rs"><h2>Dados técnicos</h2><span>auditoria</span></div>
+            ${leadTransactionLookupMarkup(transactionLookup, {
+              txid: currentTxid,
+              gateway: currentGateway,
+              status: currentPaymentStatus,
+            })}
+
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide lead-section-technical-rs">
+              <div class="admin-section-head-rs"><h2>Contexto técnico</h2><span>auditoria</span></div>
               <div class="lead-kv-rs lead-kv-rs--four">
                 ${leadKv('Gateway atual', currentGateway)}
                 ${leadKv('Status atual', currentPaymentStatus)}
@@ -2313,8 +2423,8 @@ function leadDetailMarkup(lead) {
               </div>
             </section>
 
-            <section class="lead-detail-section-rs lead-detail-section-rs--wide">
-              <div class="admin-section-head-rs"><h2>Payload operacional</h2><span>compacto, sem respostas</span></div>
+            <section class="lead-detail-section-rs lead-detail-section-rs--wide lead-section-payload-rs">
+              <div class="admin-section-head-rs"><h2>Payload operacional completo</h2><span>compacto, sem respostas</span></div>
               <pre class="lead-json-rs" id="leadPayloadJson">${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
             </section>
           </div>
@@ -2325,15 +2435,56 @@ function leadDetailMarkup(lead) {
 }
 
 function leadSummaryCard(label, value, hint) {
-  return `<article><strong>${escapeHtml(value || '-')}</strong><span>${escapeHtml(label)}</span><em>${escapeHtml(hint || '-')}</em></article>`;
+  const safeValue = value === null || value === undefined || value === '' ? '-' : value;
+  const safeHint = hint === null || hint === undefined || hint === '' ? '-' : hint;
+  return `<article class="lead-detail-summary-card-rs"><strong>${escapeHtml(safeValue)}</strong><span>${escapeHtml(label)}</span><em>${escapeHtml(safeHint)}</em></article>`;
 }
 
 function leadInfoCard(label, value, hint) {
-  return `<div class="lead-info-card-rs"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || '-')}</strong><em>${escapeHtml(hint || '-')}</em></div>`;
+  const safeValue = value === null || value === undefined || value === '' ? '-' : value;
+  const safeHint = hint === null || hint === undefined || hint === '' ? '-' : hint;
+  return `<article class="lead-info-card-rs lead-detail-stat-rs"><strong>${escapeHtml(safeValue)}</strong><span>${escapeHtml(label)}</span><em>${escapeHtml(safeHint)}</em></article>`;
 }
 
 function leadKv(label, value) {
-  return `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || '-')}</strong></div>`;
+  const safeValue = value === null || value === undefined || value === '' ? '-' : value;
+  return `<div><span>${escapeHtml(label)}</span><strong>${escapeHtml(safeValue)}</strong></div>`;
+}
+
+function leadTransactionLookupMarkup(lookup, current) {
+  const consulted = Boolean(lookup);
+  const failed = lookup?.ok === false;
+  const status = consulted
+    ? failed
+      ? 'Falha na consulta'
+      : lookup.statusRaw || lookup.bucket || 'Consultada'
+    : 'Não consultada';
+  const raw = consulted
+    ? lookup.transaction || lookup
+    : { instrucao: 'Clique em Consultar transação para consultar o gateway e sincronizar o lead.' };
+  return `
+    <section class="lead-detail-section-rs lead-detail-section-rs--wide lead-transaction-section-rs">
+      <div class="admin-section-head-rs">
+        <h2>Consulta da transação</h2>
+        <span class="${failed ? 'is-danger' : ''}">${escapeHtml(status)}</span>
+      </div>
+      <div class="lead-kv-rs lead-kv-rs--four lead-transaction-grid-rs">
+        ${leadKv('Gateway', lookup?.gatewayLabel || lookup?.gateway || current.gateway)}
+        ${leadKv('TXID', lookup?.txid || current.txid)}
+        ${leadKv('Status atual', lookup?.statusRaw || current.status)}
+        ${leadKv('Classificação', lookup?.bucket)}
+        ${leadKv('Pago', consulted ? (lookup?.isPaid ? 'Sim' : 'Não') : '-')}
+        ${leadKv('Estornado', consulted ? (lookup?.isRefunded ? 'Sim' : 'Não') : '-')}
+        ${leadKv('Recusado', consulted ? (lookup?.isRefused ? 'Sim' : 'Não') : '-')}
+        ${leadKv('Pendente', consulted ? (lookup?.isPending ? 'Sim' : 'Não') : '-')}
+        ${leadKv('Linhas atualizadas', lookup?.updatedRows)}
+        ${leadKv('Regressão preservada', consulted ? (lookup?.skippedRegression ? 'Sim' : 'Não') : '-')}
+        ${leadKv('Alterado em', formatDate(lookup?.changedAt))}
+        ${leadKv('Detalhe', lookup?.detail)}
+      </div>
+      <pre class="lead-json-rs lead-detail-payload-rs">${escapeHtml(JSON.stringify(raw, null, 2))}</pre>
+    </section>
+  `;
 }
 
 function leadTimeline(lead, pageviews = []) {
