@@ -8,6 +8,6 @@
     { "source": "/admin", "destination": "/index.html" }
   ],
   "crons": [
-    { "path": "/api/jobs/dispatch?limit=120", "schedule": "* * * * *" }
+    { "path": "/api/jobs/dispatch?limit=120", "schedule": "0 3 * * *" }
   ]
 }
