@@ -1,0 +1,4 @@
+# Legacy API entrypoints replaced by the current checkout and catch-all admin routes.
+api/admin/leads.js
+api/pix/create.js
+api/pix/status.js
