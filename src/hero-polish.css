@@ -2290,3 +2290,83 @@ body.is-home-screen .experience .hero.screen .rockstar-button {
     width: 39rem;
   }
 }
+
+/* Subtle finishing touches, preserving the original campaign artwork. */
+body.is-home-screen .hero__copy {
+  text-wrap: pretty;
+}
+body.is-home-screen .experience .hero.screen .rockstar-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 6px;
+}
+body.is-home-screen .experience .hero.screen .rockstar-button span {
+  transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+@media (max-width: 899px) {
+  body.is-home-screen .hero__copy {
+    line-height: 1.4;
+    max-width: min(23rem, calc(100vw - 3rem));
+    margin-top: clamp(.85rem, 1.8svh, 1.2rem);
+  }
+  body.is-home-screen .hero__actions {
+    margin-top: clamp(1rem, 2.3svh, 1.5rem);
+  }
+  body.is-home-screen .experience .hero.screen .rockstar-button {
+    max-width: min(26rem, calc(100vw - 2.5rem));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.is-home-screen .hero__content,
+  body.is-home-screen .hero__art,
+  body.is-home-screen .particle-field span {
+    animation: none;
+  }
+}
+
+/* Mobile finishing: comfortable text and safe spacing around phone controls. */
+@media (max-width: 899px) and (orientation: portrait) {
+  body.is-home-screen .hero__content {
+    padding-bottom: calc(clamp(1.25rem, 2.8svh, 1.75rem) + env(safe-area-inset-bottom));
+  }
+  body.is-home-screen .hero__copy {
+    font-size: clamp(.94rem, 3.8vw, 1.05rem);
+    line-height: 1.4;
+    max-width: min(23rem, calc(100vw - 2.5rem));
+  }
+  body.is-home-screen .experience .hero.screen .rockstar-button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body.is-home-screen .experience .hero.screen .rockstar-button span {
+    min-height: 3.8rem;
+  }
+}
+@media (max-width: 899px) and (max-height: 650px) and (orientation: portrait) {
+  body.is-home-screen .hero__copy { font-size: .9rem; line-height: 1.3; }
+  body.is-home-screen .hero__actions { margin-top: .9rem; }
+}
+
+/* Landscape phones use the existing wide artwork so the invitation never clips. */
+@media (max-width: 899px) and (orientation: landscape) {
+  body.is-home-screen .hero.screen.is-active,
+  body.is-home-screen .hero__art {
+    background: linear-gradient(90deg, rgba(0,0,0,.88), rgba(0,0,0,.65) 40%, rgba(0,0,0,.15) 75%), url('/assets/gta-vi-lucia-jason.jpg') center / cover no-repeat;
+  }
+  body.is-home-screen .hero__content {
+    align-self: center;
+    margin: 0 0 0 4vw;
+    padding: 1rem 0;
+    width: 48vw;
+    max-width: 48vw;
+    transform: none;
+  }
+  body.is-home-screen .hero__gta-lockup { width: 5.5rem; margin-bottom: .4rem; }
+  body.is-home-screen .hero__promo-title { max-width: 100%; }
+  body.is-home-screen .hero__promo-title .hero__title-top { font-size: 2.6rem; }
+  body.is-home-screen .hero__promo-title .hero__title-bottom { font-size: 3.5rem; }
+  body.is-home-screen .hero__palm { height: 3.5rem; width: 2.5rem; left: -.5rem; }
+  body.is-home-screen .hero__copy { font-size: .875rem; line-height: 1.3; margin-top: .75rem; }
+  body.is-home-screen .hero__actions { margin-top: .8rem; }
+  body.is-home-screen .experience .hero.screen .rockstar-button span { min-height: 3rem; font-size: 1rem; }
+  body.is-home-screen .experience .hero.screen .topbar__logo { left: auto; right: 1.25rem; transform: none; }
+}
